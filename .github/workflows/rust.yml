@@ -24,10 +24,10 @@ jobs:
           toolchain: stable
           override: true
 #      - uses: actions/cache@v2
-        with:
-          path: |
-            target
-          key: ${{ runner.os }}-cargo-check-test-stable-${{ hashFiles('**/Cargo.lock') }}
+#        with:
+#          path: |
+#            target
+#          key: ${{ runner.os }}-cargo-check-test-stable-${{ hashFiles('**/Cargo.lock') }}
 # Note: These are my own runners, it has all prerequisites already.
 #      - name: Install prerequisites
 #        run: sudo apt-get install --no-install-recommends libasound2-dev libudev-dev python
