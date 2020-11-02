@@ -147,7 +147,6 @@ impl<T: Tile> Chunk<T> for WorldChunk<T> {
 
 impl<T: Tile> Drop for WorldChunk<T> {
     fn drop(&mut self) {
-        println!("World chunk de-spawned");
         self.clean();
     }
 }

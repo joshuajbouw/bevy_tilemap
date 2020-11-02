@@ -58,8 +58,8 @@ impl<T: Tile, C: Chunk<T>, M: TileMap<T, C>> Plugin for ChunkTilesPlugin<T, C, M
 mod lib {
     pub use ::bevy::{
         self, app as bevy_app, asset as bevy_asset, ecs as bevy_ecs, math as bevy_math,
-        render as bevy_render, sprite as bevy_sprite, transform as bevy_transform,
-        type_registry as bevy_type_registry, utils as bevy_utils,
+        render as bevy_render, sprite as bevy_sprite, tasks as bevy_tasks,
+        transform as bevy_transform, type_registry as bevy_type_registry, utils as bevy_utils,
     };
 
     pub use self::{
@@ -69,6 +69,7 @@ mod lib {
         bevy_math::{Vec2, Vec3},
         bevy_render::texture::Texture,
         bevy_sprite::{entity::SpriteComponents, ColorMaterial, Rect, TextureAtlas},
+        bevy_tasks::TaskPoolBuilder,
         bevy_transform::components::Transform,
         bevy_type_registry::{TypeUuid, Uuid},
         bevy_utils::{HashMap, HashMapExt, HashSet},
@@ -88,6 +89,8 @@ mod lib {
         option::Option::{self, *},
         result::Result::{self, *},
         slice::{Iter, IterMut},
+        string::ToString,
+        sync::{Arc, Mutex},
         vec::Vec,
     };
 

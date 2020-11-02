@@ -198,7 +198,9 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
     ) -> DimensionResult<Option<&'a C>> {
         let index = v.to_index(self.dimensions().x(), self.dimensions().y());
         self.check_index(index)?;
-        Ok(self.get_chunk_handle(index).and_then(|handle| chunks.get(handle)))
+        Ok(self
+            .get_chunk_handle(index)
+            .and_then(|handle| chunks.get(handle)))
     }
 
     /// Gets a mutable reference to a `Chunk` from `Chunk` assets and checks if the request is
@@ -432,19 +434,30 @@ fn set_tiles<T>(
         let end = begin + rect_width * chunk_format_size;
         let sprite_begin = (sprite_y * width + sprite_x) * format_size;
         let sprite_end = sprite_begin + rect_width * format_size;
+        // let mut chunk_texture = chunk_texture.lock().unwrap();
         chunk_texture.data[begin..end]
             .copy_from_slice(&sprite_sheet_texture.data[sprite_begin..sprite_end]);
         sprite_y += 1;
     }
 }
 
+struct MapSystemContext<'a, T: Tile, C: Chunk<T>, M: TileMap<T, C>> {
+    commands: Mutex<Commands>,
+    chunks: Mutex<ResMut<'a, Assets<C>>>,
+    map: Mutex<ResMut<'a, M>>,
+    materials: Mutex<ResMut<'a, Assets<ColorMaterial>>>,
+    textures: Mutex<ResMut<'a, Assets<Texture>>>,
+    sprite_sheet: Mutex<Texture>,
+    tile_kind: PhantomData<T>,
+}
+
 /// The event handling system for the `TileMap` which takes the types `Tile`, `Chunk`, and `TileMap`.
 pub fn map_system<T, C, M>(
-    mut commands: Commands,
-    mut chunks: ResMut<Assets<C>>,
+    commands: Commands,
+    chunks: ResMut<Assets<C>>,
     mut map: ResMut<M>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut textures: ResMut<Assets<Texture>>,
+    materials: ResMut<Assets<ColorMaterial>>,
+    textures: ResMut<Assets<Texture>>,
     texture_atlases: Res<Assets<TextureAtlas>>,
 ) where
     T: Tile,
@@ -482,84 +495,168 @@ pub fn map_system<T, C, M>(
         }
     }
 
+    let pool = TaskPoolBuilder::new()
+        .thread_name("map_system".to_string())
+        .build();
     let sprite_sheet_atlas = texture_atlases.get(map.texture_atlas_handle()).unwrap();
     let sprite_sheet = textures.get(&sprite_sheet_atlas.texture).unwrap().clone();
-    for (idx, chunk_handle) in new_chunks.iter() {
-        let map_coord = map.decode_coord_unchecked(*idx);
-        let map_center = map.center();
-        let translation = Vec3::new(
-            (map_coord.x() - map_center.x() + 0.5) * T::WIDTH * C::WIDTH,
-            (map_coord.y() - map_center.y() + 0.5) * T::HEIGHT * C::HEIGHT,
-            1.,
-        );
-        let chunk = chunks.get_mut(chunk_handle).unwrap();
-        let chunk_texture = textures.get_mut(chunk.texture_handle().unwrap()).unwrap();
-        for (idx, tile) in chunk.tiles().iter().enumerate() {
-            if let Some(tile) = tile {
-                let (rect, rect_coord) = {
-                    let rect = chunk.textures()[idx];
-                    let rect_x = idx % (chunk.dimensions().x() as usize / rect.width() as usize)
-                        * rect.width() as usize;
-                    let rect_y = idx / (chunk.dimensions().y() as usize / rect.height() as usize)
-                        * rect.height() as usize;
-                    (rect, Vec2::new(rect_x as f32, rect_y as f32))
+    let context = Arc::new(MapSystemContext {
+        commands: Mutex::new(commands),
+        chunks: Mutex::new(chunks),
+        map: Mutex::new(map),
+        materials: Mutex::new(materials),
+        textures: Mutex::new(textures),
+        sprite_sheet: Mutex::new(sprite_sheet),
+        tile_kind: Default::default(),
+    });
+    pool.scope(|scope| {
+        for (idx, chunk_handle) in new_chunks.iter() {
+            let context = context.clone();
+            scope.spawn(async move {
+                let context = context.clone();
+                let textures = context.textures.lock().unwrap();
+                let chunks = context.chunks.lock().unwrap();
+                let sprite_sheet_mutex = context.sprite_sheet.lock().unwrap();
+                let sprite_sheet = sprite_sheet_mutex.clone();
+                let chunk = chunks.get(chunk_handle).unwrap();
+                let chunk_tiles = chunk.tiles().clone();
+                let chunk_textures = Vec::from(chunk.textures());
+                let chunk_texture_handle = chunk.texture_handle().unwrap().clone_weak();
+                // clone the texture.
+                let mut chunk_texture = textures.get(chunk_texture_handle.clone_weak()).unwrap().clone();
+                // drop all so that other threads can use them.
+                ::std::mem::drop(chunks);
+                ::std::mem::drop(textures);
+                ::std::mem::drop(sprite_sheet_mutex);
+
+                let chunk_texture_size = chunk_texture.size;
+                let map_coord = context.map.lock().unwrap().decode_coord_unchecked(*idx);
+                let map_center = context.map.lock().unwrap().center();
+                for (idx, tile) in chunk_tiles.iter().enumerate() {
+                    if let Some(tile) = tile {
+                        let (rect, rect_coord) = {
+                            let rect = chunk_textures[idx];
+                            let rect_x = idx
+                                % (chunk_texture_size.x() as usize / rect.width() as usize)
+                                * rect.width() as usize;
+                            let rect_y = idx
+                                / (chunk_texture_size.y() as usize / rect.height() as usize)
+                                * rect.height() as usize;
+                            (rect, Vec2::new(rect_x as f32, rect_y as f32))
+                        };
+                        set_tiles(
+                            tile,
+                            &mut chunk_texture,
+                            &sprite_sheet,
+                            sprite_sheet_atlas,
+                            rect,
+                            rect_coord,
+                        )
+                    }
+                }
+                let translation = Vec3::new(
+                    (map_coord.x() - map_center.x() + 0.5) * T::WIDTH * C::WIDTH,
+                    (map_coord.y() - map_center.y() + 0.5) * T::HEIGHT * C::HEIGHT,
+                    1.,
+                );
+
+                let mut textures = context.textures.lock().unwrap();
+                textures.set(chunk_texture_handle.clone_weak(), chunk_texture);
+                ::std::mem::drop(textures);
+
+                let sprite = {
+                    SpriteComponents {
+                        material: context.materials
+                            .lock()
+                            .unwrap()
+                            .add(chunk_texture_handle.into()),
+                        transform: Transform {
+                            translation,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    }
                 };
-                set_tiles(
-                    tile,
-                    chunk_texture,
-                    &sprite_sheet,
-                    sprite_sheet_atlas,
-                    rect,
-                    rect_coord,
-                )
-            }
+                let entity = context.commands
+                    .lock()
+                    .unwrap()
+                    .spawn(sprite)
+                    .current_entity()
+                    .unwrap();
+                context.map.lock().unwrap().insert_entity(*idx, entity);
+            });
         }
-        let sprite = {
-            SpriteComponents {
-                material: materials.add(chunk.texture_handle().unwrap().clone().into()),
-                transform: Transform {
-                    translation,
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
-        };
-        let entity = commands.spawn(sprite).current_entity().unwrap();
-        map.insert_entity(*idx, entity);
-    }
+    });
 
-    for (chunk_handle, setter) in modified_chunks.iter() {
-        let chunk = chunks.get_mut(chunk_handle).unwrap();
-        let chunk_texture = textures.get_mut(chunk.texture_handle().unwrap()).unwrap();
-        for (setter_coord, setter_tile) in setter.iter() {
-            let idx = chunk.encode_coord_unchecked(&setter_coord);
-            let (rect, rect_coord) = {
-                let rect = chunk.textures()[idx];
-                let rect_x = idx % (chunk_texture.size.x() as usize / rect.width() as usize)
-                    * rect.width() as usize;
-                let rect_y = idx / (chunk_texture.size.y() as usize / rect.height() as usize)
-                    * rect.height() as usize;
-                (rect, Vec2::new(rect_x as f32, rect_y as f32))
-            };
-            set_tiles(
-                setter_tile,
-                chunk_texture,
-                &sprite_sheet,
-                sprite_sheet_atlas,
-                rect,
-                rect_coord,
-            )
+    pool.scope(|scope| {
+        for (chunk_handle, setter) in modified_chunks.iter() {
+            let context = context.clone();
+            scope.spawn(async move {
+                let context = context.clone();
+                let mut chunks = context.chunks.lock().unwrap();
+                let mut textures = context.textures.lock().unwrap();
+                let sprite_sheet_mutex = context.sprite_sheet.lock().unwrap();
+                let sprite_sheet = sprite_sheet_mutex.clone();
+                let chunk = chunks.get_mut(chunk_handle).unwrap();
+                let chunk_texture_handle = chunk.texture_handle().unwrap().clone_weak();
+                let chunk_textures = Vec::from(chunk.textures());
+                let chunk_dimensions = chunk.dimensions();
+                let mut chunk_texture = textures.get_mut(&chunk_texture_handle).unwrap().clone();
+                ::std::mem::drop(chunks);
+                ::std::mem::drop(textures);
+                ::std::mem::drop(sprite_sheet_mutex);
+
+                for (setter_coord, setter_tile) in setter.iter() {
+                    let idx = setter_coord.to_index(chunk_dimensions.x(), chunk_dimensions.y());
+                    let (rect, rect_coord) = {
+                        let rect = chunk_textures[idx];
+                        let rect_x = idx % (chunk_texture.size.x() as usize / rect.width() as usize)
+                            * rect.width() as usize;
+                        let rect_y = idx / (chunk_texture.size.y() as usize / rect.height() as usize)
+                            * rect.height() as usize;
+                        (rect, Vec2::new(rect_x as f32, rect_y as f32))
+                    };
+                    set_tiles(
+                        setter_tile,
+                        &mut chunk_texture,
+                        &sprite_sheet,
+                        sprite_sheet_atlas,
+                        rect,
+                        rect_coord,
+                    );
+                }
+
+                let mut textures = context.textures.lock().unwrap();
+                textures.set(chunk_texture_handle.clone_weak(), chunk_texture);
+                ::std::mem::drop(textures);
+            });
         }
-    }
+    });
 
-    for (chunk_handle, entity) in despawned_chunks.iter() {
-        let chunk = chunks.get_mut(chunk_handle).unwrap();
-        chunk.clean();
-        commands.despawn(*entity);
-    }
+    pool.scope(|scope| {
+        for (chunk_handle, entity) in despawned_chunks.iter() {
+            let context = context.clone();
+            scope.spawn(async move {
+                let context = context.clone();
+                let mut chunks = context.chunks.lock().unwrap();
+                let mut commands = context.commands.lock().unwrap();
+                let chunk = chunks.get_mut(chunk_handle).unwrap();
+                chunk.clean();
+                commands.despawn(*entity);
+            });
+        }
+    });
 
-    for (index, entity) in removed_chunks.iter() {
-        map.remove_chunk_handle(*index);
-        commands.despawn(*entity);
-    }
+    pool.scope(|scope| {
+        for (index, entity) in removed_chunks.iter() {
+            let context = context.clone();
+            scope.spawn(async move {
+                let context = context.clone();
+                let mut map = context.map.lock().unwrap();
+                let mut commands = context.commands.lock().unwrap();
+                map.remove_chunk_handle(*index);
+                commands.despawn(*entity);
+            });
+        }
+    });
 }
