@@ -1,13 +1,34 @@
+//! # Bevy Chunk Tiles
+//!
+//! Bevy Chunk Tiles allows for Bevy native tile maps to be created with chunk based loading
+//! efficiently and generically.
+//!
+//! Through the use of the power of traits, it is possible to define your own tiles, chunks, and
+//! maps exclusive from each other. This allows this to be used as a framework to expand upon it
+//! further.
+//!
+//! ## Design
+//!
+//! Throughout much of the Bevy code, you must use the structs that are provided making it a bit
+//! difficult if you want a custom texture for example. There was emphasis put on traits to enhance
+//! extensibility instead of expecting users of the library to use the same interfaces. This may be
+//! not ideal in most circumstances. This allows anyone to create their own tiles, chunks and maps
+//! and still retain the speed of a handcrafted chunk loader and tile map.
 #![allow(clippy::too_many_arguments)]
 // Rustc lints.
 #![no_implicit_prelude]
 #![forbid(unsafe_code, dead_code)]
-// #![deny(missing_docs, unused_imports)]
+#![deny(missing_docs, unused_imports)]
 
+/// Chunk traits to implement for a custom chunk and a basic struct for use.
 pub mod chunk;
+/// Various coordinate traits used for converting indexes and coordinates.
 pub mod coord;
+/// Various dimension based traits.
 pub mod dimensions;
+/// Map traits to implement for a custom map and a basic struct for use.
 pub mod map;
+/// Tile traits to implement for a custom tile.
 pub mod tile;
 
 use crate::{
@@ -17,6 +38,7 @@ use crate::{
     tile::Tile,
 };
 
+/// The Bevy Chunk Tiles main plugin.
 #[derive(Default)]
 pub struct ChunkTilesPlugin<T: Tile, C: Chunk<T>, M: TileMap<T, C>> {
     tile_type: PhantomData<T>,
@@ -32,6 +54,7 @@ impl<T: Tile, C: Chunk<T>, M: TileMap<T, C>> Plugin for ChunkTilesPlugin<T, C, M
     }
 }
 
+/// A custom prelude around all the types we need from `std`, `bevy`, and `serde`.
 mod lib {
     pub use ::bevy::{
         self, app as bevy_app, asset as bevy_asset, ecs as bevy_ecs, math as bevy_math,

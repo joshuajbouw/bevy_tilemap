@@ -1,5 +1,6 @@
 use crate::{chunk::Chunk, dimensions::Dimensions3, lib::*, map::TileMap, tile::Tile};
 
+/// A trait for use to easily convert a chunk tile coordinate back to a world coordinate.
 pub trait ToWorldCoordinates<T: Tile, C: Chunk<T>, M: TileMap<T, C>>:
     Dimensions3 + Chunk<T>
 {
@@ -14,7 +15,9 @@ pub trait ToWorldCoordinates<T: Tile, C: Chunk<T>, M: TileMap<T, C>>:
     }
 }
 
+/// A trait that converts a primitive into a 2 dimensional coordinate.
 pub trait ToCoord2 {
+    /// The conversion from self into a 2 dimensional Vec2 object.
     fn to_coord2(&self, width: f32, height: f32) -> Vec2;
 }
 
@@ -32,7 +35,9 @@ impl ToCoord2 for usize {
     }
 }
 
+/// A trait that converts a primitive into a 3 dimensional coordinate.
 pub trait ToCoord3 {
+    /// The conversion from self into a 3 dimensional Vec3 object.
     fn to_coord3(&self, width: f32, height: f32) -> Vec3;
 }
 
@@ -52,7 +57,9 @@ impl ToCoord3 for usize {
     }
 }
 
+/// A trait that takes a dimensional coordinate and translates it back into an index.
 pub trait ToIndex {
+    /// The conversion from self into an index value.
     fn to_index(&self, width: f32, height: f32) -> usize;
 }
 

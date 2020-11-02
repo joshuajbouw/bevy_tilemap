@@ -6,7 +6,10 @@ use crate::{
     tile::Tile,
 };
 
-pub trait TileChunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send + Sync {
+/// A **chunk** that can be used in a `TileMap`.
+///
+/// Provides standard `Chunk` implementations to be used in the library's
+/// systems and methods.
 pub trait Chunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send + Sync {
     /// The constant width in `Tile`s.
     const WIDTH: f32;
@@ -15,20 +18,26 @@ pub trait Chunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send + Sy
     /// The constant depth in `Tile`s.
     const DEPTH: f32;
 
+    /// The constant maximum X value in `Tile`s.
     const X_MAX: f32 = Self::WIDTH - 1.;
 
+    /// The constant maximum Y value in `Tile`s.
     const Y_MAX: f32 = Self::HEIGHT - 1.;
 
+    /// The constant maximum Z value in `Tile`s.
     const Z_MAX: f32 = Self::DEPTH - 1.;
 
     /// Sets the texture handle with a new one.
+    ///
+    /// # Warning
+    /// This should **only** be used when creating a new `Chunk` from the
+    /// `default` method.
     fn set_texture_handle(&mut self, handle: Option<Handle<Texture>>);
 
-    fn set_tiles(&mut self, tiles: Vec<Option<T>>);
-
-    /// Returns a copy of the `Texture` dimensions in pixels.
+    /// Returns a copy of the dimensions in `Tile`s.
     fn tile_dimensions(&self) -> Vec2;
 
+    /// Returns a copy of the pixel dimensions.
     fn pixel_dimensions(&self) -> Vec2;
 
     /// Returns a reference to the `Texture` `Handle`.
@@ -47,6 +56,13 @@ pub trait Chunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send + Sy
     fn clean(&mut self);
 }
 
+/// A basic use of the `Chunk` trait that has the bare minimum methods.
+///
+/// Serde skips the textures and texture_handle field for three reasons:
+/// * Handle doesn't support it.
+/// * Rect doesn't support it.
+/// * Even if the above supported it, there shouldn't be a need to store that
+/// information anyways as they are temporary.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorldChunk<T: Tile> {
     #[serde(skip)]
@@ -97,10 +113,6 @@ impl<T: Tile> Chunk<T> for WorldChunk<T> {
         self.texture_handle = handle;
     }
 
-    fn set_tiles(&mut self, tiles: Vec<Option<T>>) {
-        self.tiles = tiles;
-    }
-
     fn tile_dimensions(&self) -> Vec2 {
         Vec2::new(T::WIDTH, T::HEIGHT)
     }
@@ -143,7 +155,11 @@ impl<T: Tile> Drop for WorldChunk<T> {
 impl<T: Tile, M: TileMap<T, Self>> ToWorldCoordinates<T, Self, M> for WorldChunk<T> {}
 
 impl<T: Tile> WorldChunk<T> {
-    /// Returns a new `TileMap`.
+    /// Returns a new `WorldChunk`.
+    ///
+    /// # Arguments
+    /// * texture_handle - Takes in a `Handle<Texture>` to store for use with
+    /// getting the correct texture from Bevy assets.
     pub fn new(texture_handle: Handle<Texture>) -> WorldChunk<T> {
         let mut sprites = Vec::new();
         for y in 0..Self::WIDTH as u32 {

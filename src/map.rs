@@ -9,6 +9,7 @@ use crate::{
 #[derive(Clone, Copy, PartialEq)]
 /// The kinds of errors that can occur for a `[MapError]`.
 pub enum ErrorKind {
+    /// If the coordinate or index is out of bounds.
     OutOfBounds,
 }
 
@@ -55,60 +56,104 @@ pub type MapResult<T> = Result<T, MapError>;
 /// Events that happen on a `Chunk` by index value.
 #[derive(Debug)]
 pub enum MapEvent<T: Tile, C: Chunk<T>> {
+    /// To be used when a chunk is created.
     Created {
+        /// The map index where the chunk needs to be stored.
         index: usize,
+        /// The `Handle` of the `Chunk`.
         handle: Handle<C>,
     },
+    /// If the chunk needs to be refreshed.
+    ///
+    /// # Warning
+    /// May never be used, and may be removed.
     Refresh {
+        /// The `Handle` of the `Chunk`.
         handle: Handle<C>,
     },
+    /// If the chunk had been modified.
     Modified {
+        /// The `Handle` of the `Chunk`.
         handle: Handle<C>,
+        /// The `TileSetter` that is used to set all the tiles.
         setter: TileSetter<T>,
     },
+    /// If the chunk needs to be despawned.
     Despawned {
+        /// The `Handle` of the `Chunk`.
         handle: Handle<C>,
+        /// The `Entity` that needs to be despawned.
         entity: Entity,
     },
+    /// If the chunk needs to be removed.
+    ///
+    /// # Warning
+    /// This is destructive action! All data will be dropped and removed.
     Removed {
+        /// The map index where the chunk needs to be removed.
         index: usize,
+        /// The `Entity` that needs to be despawned.
         entity: Entity,
     },
 }
 
+/// Trait methods for a `TileMap`.
+///
+/// Provides standard methods for a basic `TileMap` which must be used when
+/// using the library's systems.
 pub trait TileMap<T: Tile, C: Chunk<T>>:
     'static + Dimensions2 + TypeUuid + Default + Send + Sync
 {
+    /// Sets the dimensions of the `TileMap`.
     fn set_dimensions(&mut self, dimensions: Vec2);
 
+    /// Sets the sprite sheet, or `TextureAtlas` for use in the `TileMap`.
     fn set_texture_atlas(&mut self, handle: Handle<TextureAtlas>);
 
+    /// Returns a reference the `Handle` of the `TextureAtlas`.
     fn texture_atlas_handle(&self) -> &Handle<TextureAtlas>;
 
-    fn handle(&self, index: usize) -> Option<&Handle<C>>;
-
-    fn contains_entity(&self, index: usize) -> bool;
-
-    fn push_chunk_handle(&mut self, index: usize, handle: Option<Handle<C>>);
-
+    /// Gets the chunk handle at an index position, if it exists.
     fn get_chunk_handle(&self, index: usize) -> Option<&Handle<C>>;
 
-    fn remove_chunk(&mut self, index: usize);
+    /// Returns a bool if the entity exists.
+    fn contains_entity(&self, index: usize) -> bool;
 
+    /// Pushes a chunk handle to an index position.
+    ///
+    /// Do **not** use this with out
+    /// storing the `Chunk` as an asset. Preferably, use `add_chunk` instead
+    /// which is the correct way to store a `Chunk`.
+    fn push_chunk_handle(&mut self, index: usize, handle: Option<Handle<C>>);
+
+    /// Removes a chunk at an index position.
+    fn remove_chunk_handle(&mut self, index: usize);
+
+    /// Inserts an `[Entity]` at an index position.
     fn insert_entity(&mut self, index: usize, entity: Entity);
 
+    /// Gets an `[Entity]` at an index position, if it exists.
     fn get_entity(&self, index: &usize) -> Option<&Entity>;
 
+    /// Returns the `[Events]` for the `MapEvent`s.
     fn events(&self) -> &Events<MapEvent<T, C>>;
 
+    /// "Sends" an event by writing it to the current event buffer.
+    /// `[EventReader]`s can then read the event.
     fn send_event(&mut self, event: MapEvent<T, C>);
 
+    /// Swaps the event buffers and clears the oldest event buffer. In general,
+    /// this should be called once per frame/update.
     fn events_update(&mut self);
 
+    /// Returns the `[EventReader]` containing all `MapEvent`s.
     fn events_reader(&mut self) -> EventReader<MapEvent<T, C>>;
 
-    fn add_chunk<I: ToIndex>(&mut self, chunk: C, idx: I, chunks: &mut ResMut<Assets<C>>) {
-        let index = idx.to_index(self.dimensions().x(), self.dimensions().y());
+    /// Adds a `Chunk`, creates a handle and stores it at a coordinate position.
+    ///
+    /// This is the correct way to add a `Chunk`.
+    fn add_chunk<I: ToIndex>(&mut self, chunk: C, v: I, chunks: &mut ResMut<Assets<C>>) {
+        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
         let handle = chunks.add(chunk);
         self.send_event(MapEvent::Created {
             index,
@@ -117,14 +162,21 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
         self.push_chunk_handle(index, Some(handle));
     }
 
+    /// Sets a `Chunk` with a custom handle at a coordinate position.
+    ///
+    /// If a `Chunk` already exists, it'll refresh it. If not, it'll create a
+    /// new one.
+    ///
+    /// # Errors
+    /// Returns an error if the coordinate is out of bounds.
     fn set_chunk<H: Into<HandleId>, I: ToIndex>(
         &mut self,
         handle: H,
         chunk: C,
-        idx: I,
+        v: I,
         chunks: &mut ResMut<Assets<C>>,
     ) -> DimensionResult<()> {
-        let index = idx.to_index(self.dimensions().x(), self.dimensions().y());
+        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
         self.check_index(index)?;
         let handle = chunks.set(handle, chunk);
         if self.contains_entity(index) {
@@ -135,38 +187,52 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
         Ok(())
     }
 
+    /// Gets a reference to a `Chunk` from `Chunk` assets and checks if the request is inbounds.
+    ///
+    /// # Errors
+    /// Returns an error if the coordinate is out of bounds.
     fn get_chunk<'a, I: ToIndex>(
         &self,
-        idx: I,
+        v: I,
         chunks: &'a Assets<C>,
     ) -> DimensionResult<Option<&'a C>> {
-        let index = idx.to_index(self.dimensions().x(), self.dimensions().y());
+        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
         self.check_index(index)?;
-        Ok(self.handle(index).and_then(|handle| chunks.get(handle)))
+        Ok(self.get_chunk_handle(index).and_then(|handle| chunks.get(handle)))
     }
 
+    /// Gets a mutable reference to a `Chunk` from `Chunk` assets and checks if the request is
+    /// inbounds.
+    ///
+    /// # Errors
+    /// Returns an error if the coordinate is out of bounds.
     fn get_chunk_mut<'a, I: ToIndex>(
         &self,
-        idx: I,
+        v: I,
         chunks: &'a mut Assets<C>,
     ) -> DimensionResult<Option<&'a mut C>> {
-        let index = idx.to_index(self.dimensions().x(), self.dimensions().y());
+        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
         self.check_index(index)?;
         Ok(self
-            .handle(index)
+            .get_chunk_handle(index)
             .and_then(move |handle| chunks.get_mut(handle)))
     }
 
-    fn chunk_exists<I: ToIndex>(&self, idx: I) -> bool {
-        let index = idx.to_index(self.dimensions().x(), self.dimensions().y());
-        self.handle(index).is_some()
+    /// Checks if a chunk exists at a coordinate position.
+    fn chunk_exists<I: ToIndex>(&self, v: I) -> bool {
+        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
+        self.get_chunk_handle(index).is_some()
     }
 
-    fn set_tile<I: ToIndex + ToCoord3>(&mut self, idx: I, tile: T) -> DimensionResult<()> {
-        let coord = idx.to_coord3(self.dimensions().x(), self.dimensions().y());
+    /// Sets a single tile at a coordinate position and checks if it the request is inbounds.
+    ///
+    /// # Errors
+    /// Returns an error if the coordinate is out of bounds.
+    fn set_tile<I: ToIndex + ToCoord3>(&mut self, v: I, tile: T) -> DimensionResult<()> {
+        let coord = v.to_coord3(self.dimensions().x(), self.dimensions().y());
         let chunk_coord = self.tile_coord_to_chunk_coord(coord);
         let chunk_index = chunk_coord.to_index(self.dimensions().x(), self.dimensions().y());
-        let handle = self.handle(chunk_index).unwrap().clone_weak();
+        let handle = self.get_chunk_handle(chunk_index).unwrap().clone_weak();
         let tile_y = coord.y() / C::HEIGHT;
         let map_coord = Vec2::new(
             coord.x() / C::WIDTH,
@@ -181,12 +247,13 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
         Ok(())
     }
 
+    /// Sets many tiles using a `TileSetter`.
     fn set_tiles(&mut self, setter: TileSetter<T>) {
         let mut tiles_map: HashMap<Handle<C>, TileSetter<T>> = HashMap::default();
         for (setter_coord, setter_tile) in setter.iter() {
             let chunk_coord = self.tile_coord_to_chunk_coord(*setter_coord);
             let chunk_index = chunk_coord.to_index(self.dimensions().x(), self.dimensions().y());
-            let handle = self.handle(chunk_index).unwrap().clone_weak();
+            let handle = self.get_chunk_handle(chunk_index).unwrap().clone_weak();
             let tile_y = setter_coord.y() / C::HEIGHT;
             let map_coord = Vec2::new(
                 (setter_coord.x() / C::WIDTH).floor(),
@@ -216,6 +283,7 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
         Vec2::new(x.floor(), y.floor())
     }
 
+    /// Takes a tile coordinate and changes it into a chunk coordinate.
     fn tile_coord_to_chunk_coord(&self, coord: Vec3) -> Vec2 {
         let x = (coord.x() / C::WIDTH).floor();
         let y = (coord.y() / C::HEIGHT).floor();
@@ -239,6 +307,7 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
     }
 }
 
+/// A basic implementation of the `TileMap` trait.
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct WorldMap<T: Tile, C: Chunk<T>> {
     dimensions: Vec2,
@@ -276,7 +345,7 @@ impl<T: Tile, C: Chunk<T>> TileMap<T, C> for WorldMap<T, C> {
         &self.texture_atlas
     }
 
-    fn handle(&self, index: usize) -> Option<&Handle<C>> {
+    fn get_chunk_handle(&self, index: usize) -> Option<&Handle<C>> {
         self.handles[index].as_ref()
     }
 
@@ -288,11 +357,7 @@ impl<T: Tile, C: Chunk<T>> TileMap<T, C> for WorldMap<T, C> {
         self.handles[index] = handle;
     }
 
-    fn get_chunk_handle(&self, index: usize) -> Option<&Handle<C>> {
-        self.handles[index].as_ref()
-    }
-
-    fn remove_chunk(&mut self, index: usize) {
+    fn remove_chunk_handle(&mut self, index: usize) {
         self.handles[index] = None;
     }
 
@@ -322,6 +387,7 @@ impl<T: Tile, C: Chunk<T>> TileMap<T, C> for WorldMap<T, C> {
 }
 
 impl<T: Tile, C: Chunk<T>> WorldMap<T, C> {
+    /// Returns a new WorldMap with the types `Tile` and `Chunk`.
     pub fn new(dimensions: Vec2, texture_atlas: Handle<TextureAtlas>) -> WorldMap<T, C> {
         let size = (dimensions.x() * dimensions.y()) as usize;
         WorldMap {
@@ -372,6 +438,7 @@ fn set_tiles<T>(
     }
 }
 
+/// The event handling system for the `TileMap` which takes the types `Tile`, `Chunk`, and `TileMap`.
 pub fn map_system<T, C, M>(
     mut commands: Commands,
     mut chunks: ResMut<Assets<C>>,
@@ -492,7 +559,7 @@ pub fn map_system<T, C, M>(
     }
 
     for (index, entity) in removed_chunks.iter() {
-        map.remove_chunk(*index);
+        map.remove_chunk_handle(*index);
         commands.despawn(*entity);
     }
 }

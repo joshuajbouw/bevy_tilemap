@@ -1,8 +1,9 @@
 use crate::lib::*;
 
 #[derive(Clone, Copy, PartialEq)]
-/// The kinds of errors that can occur for a `[ChunkError]`.
+/// The kinds of errors that can occur for a `[DimensionError]`.
 pub enum ErrorKind {
+    /// If the coordinate or index is out of bounds.
     OutOfBounds,
 }
 
@@ -46,6 +47,7 @@ impl DimensionError {
 /// A chunk result.
 pub type DimensionResult<T> = Result<T, DimensionError>;
 
+/// Trait methods that have to do with the 2nd dimension.
 pub trait Dimensions2 {
     /// A `Vec2` containing the dimensions.
     fn dimensions(&self) -> Vec2;
@@ -123,6 +125,7 @@ pub trait Dimensions2 {
     }
 }
 
+/// Trait methods that have to do with the 3rd dimension.
 pub trait Dimensions3 {
     /// A `Vec3` containing the dimensions.
     fn dimensions(&self) -> Vec3;
