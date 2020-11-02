@@ -9,11 +9,10 @@
 //!
 //! ## Design
 //!
-//! Throughout much of the Bevy code, you must use the structs that are provided making it a bit
-//! difficult if you want a custom texture for example. There was emphasis put on traits to enhance
-//! extensibility instead of expecting users of the library to use the same interfaces. This may be
-//! not ideal in most circumstances. This allows anyone to create their own tiles, chunks and maps
-//! and still retain the speed of a handcrafted chunk loader and tile map.
+//! This is not intended to be just another Tile Map. It is meant to be a framework and extensible by
+//! design, like Bevy. There is an emphasis placed on generic traits to accomplish that. As well as
+//! work done to keep it as close to Bevy API as possible. This allows anyone to create their own tiles,
+//! chunks and maps and still retain the speed of a handcrafted multi-threaded chunk loader and tile map.
 #![allow(clippy::too_many_arguments)]
 // Rustc lints.
 #![no_implicit_prelude]
