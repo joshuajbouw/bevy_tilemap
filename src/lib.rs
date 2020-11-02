@@ -51,7 +51,7 @@ mod lib {
         bevy_utils::{HashMap, HashMapExt, HashSet},
     };
 
-    pub use ::serde::{Deserialize, Serialize};
+    pub use ::serde::{self, Deserialize, Serialize};
 
     pub use ::std::{
         boxed::Box,
