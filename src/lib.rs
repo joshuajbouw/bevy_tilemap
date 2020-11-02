@@ -11,20 +11,20 @@ pub mod map;
 pub mod tile;
 
 use crate::{
-    chunk::TileChunk,
+    chunk::Chunk,
     lib::*,
     map::{map_system, TileMap},
     tile::Tile,
 };
 
 #[derive(Default)]
-pub struct ChunkTilesPlugin<T: Tile, C: TileChunk<T>, M: TileMap<T, C>> {
+pub struct ChunkTilesPlugin<T: Tile, C: Chunk<T>, M: TileMap<T, C>> {
     tile_type: PhantomData<T>,
     chunk_type: PhantomData<C>,
     map_type: PhantomData<M>,
 }
 
-impl<T: Tile, C: TileChunk<T>, M: TileMap<T, C>> Plugin for ChunkTilesPlugin<T, C, M> {
+impl<T: Tile, C: Chunk<T>, M: TileMap<T, C>> Plugin for ChunkTilesPlugin<T, C, M> {
     fn build(&self, app: &mut AppBuilder) {
         app.add_resource(M::default())
             .add_asset::<C>()

@@ -7,6 +7,7 @@ use crate::{
 };
 
 pub trait TileChunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send + Sync {
+pub trait Chunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send + Sync {
     /// The constant width in `Tile`s.
     const WIDTH: f32;
     /// The constant height in `Tile`s.
@@ -87,7 +88,7 @@ impl<T: Tile> Dimensions3 for WorldChunk<T> {
     }
 }
 
-impl<T: Tile> TileChunk<T> for WorldChunk<T> {
+impl<T: Tile> Chunk<T> for WorldChunk<T> {
     const WIDTH: f32 = 32.0;
     const HEIGHT: f32 = 32.0;
     const DEPTH: f32 = 512.0;

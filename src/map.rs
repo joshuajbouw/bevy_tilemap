@@ -54,7 +54,7 @@ pub type MapResult<T> = Result<T, MapError>;
 
 /// Events that happen on a `Chunk` by index value.
 #[derive(Debug)]
-pub enum MapEvent<T: Tile, C: TileChunk<T>> {
+pub enum MapEvent<T: Tile, C: Chunk<T>> {
     Created {
         index: usize,
         handle: Handle<C>,
@@ -76,7 +76,7 @@ pub enum MapEvent<T: Tile, C: TileChunk<T>> {
     },
 }
 
-pub trait TileMap<T: Tile, C: TileChunk<T>>:
+pub trait TileMap<T: Tile, C: Chunk<T>>:
     'static + Dimensions2 + TypeUuid + Default + Send + Sync
 {
     fn set_dimensions(&mut self, dimensions: Vec2);
@@ -240,7 +240,7 @@ pub trait TileMap<T: Tile, C: TileChunk<T>>:
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct WorldMap<T: Tile, C: TileChunk<T>> {
+pub struct WorldMap<T: Tile, C: Chunk<T>> {
     dimensions: Vec2,
     #[serde(skip)]
     handles: Vec<Option<Handle<C>>>,
@@ -252,17 +252,17 @@ pub struct WorldMap<T: Tile, C: TileChunk<T>> {
     texture_atlas: Handle<TextureAtlas>,
 }
 
-impl<T: Tile, C: TileChunk<T>> Dimensions2 for WorldMap<T, C> {
+impl<T: Tile, C: Chunk<T>> Dimensions2 for WorldMap<T, C> {
     fn dimensions(&self) -> Vec2 {
         self.dimensions
     }
 }
 
-impl<T: Tile, C: TileChunk<T>> TypeUuid for WorldMap<T, C> {
+impl<T: Tile, C: Chunk<T>> TypeUuid for WorldMap<T, C> {
     const TYPE_UUID: Uuid = Uuid::from_u128(109481186966523254410691740507722642628);
 }
 
-impl<T: Tile, C: TileChunk<T>> TileMap<T, C> for WorldMap<T, C> {
+impl<T: Tile, C: Chunk<T>> TileMap<T, C> for WorldMap<T, C> {
     fn set_dimensions(&mut self, dimensions: Vec2) {
         self.handles = vec![None; (dimensions.x() * dimensions.y()) as usize];
         self.dimensions = dimensions;
@@ -321,7 +321,7 @@ impl<T: Tile, C: TileChunk<T>> TileMap<T, C> for WorldMap<T, C> {
     }
 }
 
-impl<T: Tile, C: TileChunk<T>> WorldMap<T, C> {
+impl<T: Tile, C: Chunk<T>> WorldMap<T, C> {
     pub fn new(dimensions: Vec2, texture_atlas: Handle<TextureAtlas>) -> WorldMap<T, C> {
         let size = (dimensions.x() * dimensions.y()) as usize;
         WorldMap {
@@ -381,7 +381,7 @@ pub fn map_system<T, C, M>(
     texture_atlases: Res<Assets<TextureAtlas>>,
 ) where
     T: Tile,
-    C: TileChunk<T>,
+    C: Chunk<T>,
     M: TileMap<T, C>,
 {
     map.events_update();

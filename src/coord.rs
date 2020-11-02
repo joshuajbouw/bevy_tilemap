@@ -1,7 +1,7 @@
-use crate::{chunk::TileChunk, dimensions::Dimensions3, lib::*, map::TileMap, tile::Tile};
+use crate::{chunk::Chunk, dimensions::Dimensions3, lib::*, map::TileMap, tile::Tile};
 
-pub trait ToWorldCoordinates<T: Tile, C: TileChunk<T>, M: TileMap<T, C>>:
-    Dimensions3 + TileChunk<T>
+pub trait ToWorldCoordinates<T: Tile, C: Chunk<T>, M: TileMap<T, C>>:
+    Dimensions3 + Chunk<T>
 {
     /// Takes a `Tile` coordinate and returns its location in the `Map`.
     fn to_world_coord(&self, coord: &Vec3, map: &M, translation: Vec2) -> Option<Vec3> {
