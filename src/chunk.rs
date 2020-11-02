@@ -39,9 +39,6 @@ pub trait TileChunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send 
     /// Returns a reference to the `Tile` in the `Chunk`, if it exists.
     fn tile(&self, coord: &Vec3) -> DimensionResult<Option<&T>>;
 
-    /// Returns a mutable reference to the `Tile` in the `Chunk`, if it exists.
-    fn tile_mut(&mut self, coord: &Vec3) -> DimensionResult<Option<&mut T>>;
-
     /// Returns a reference to the `Tile` vector.
     fn tiles(&self) -> &Vec<Option<T>>;
 
@@ -151,11 +148,6 @@ impl<T: Tile> TileChunk<T> for WorldChunk<T> {
     fn tile(&self, coord: &Vec3) -> DimensionResult<Option<&T>> {
         let idx = self.encode_coord(coord)?;
         Ok(self.tiles[idx].as_ref())
-    }
-
-    fn tile_mut(&mut self, coord: &Vec3) -> DimensionResult<Option<&mut T>> {
-        let idx = self.encode_coord(coord)?;
-        Ok(self.tiles[idx].as_mut())
     }
 
     fn tiles(&self) -> &Vec<Option<T>> {
