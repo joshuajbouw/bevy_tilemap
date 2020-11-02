@@ -523,7 +523,10 @@ pub fn map_system<T, C, M>(
                 let chunk_textures = Vec::from(chunk.textures());
                 let chunk_texture_handle = chunk.texture_handle().unwrap().clone_weak();
                 // clone the texture.
-                let mut chunk_texture = textures.get(chunk_texture_handle.clone_weak()).unwrap().clone();
+                let mut chunk_texture = textures
+                    .get(chunk_texture_handle.clone_weak())
+                    .unwrap()
+                    .clone();
                 // drop all so that other threads can use them.
                 ::std::mem::drop(chunks);
                 ::std::mem::drop(textures);
@@ -566,7 +569,8 @@ pub fn map_system<T, C, M>(
 
                 let sprite = {
                     SpriteComponents {
-                        material: context.materials
+                        material: context
+                            .materials
                             .lock()
                             .unwrap()
                             .add(chunk_texture_handle.into()),
@@ -577,7 +581,8 @@ pub fn map_system<T, C, M>(
                         ..Default::default()
                     }
                 };
-                let entity = context.commands
+                let entity = context
+                    .commands
                     .lock()
                     .unwrap()
                     .spawn(sprite)
@@ -610,9 +615,11 @@ pub fn map_system<T, C, M>(
                     let idx = setter_coord.to_index(chunk_dimensions.x(), chunk_dimensions.y());
                     let (rect, rect_coord) = {
                         let rect = chunk_textures[idx];
-                        let rect_x = idx % (chunk_texture.size.x() as usize / rect.width() as usize)
+                        let rect_x = idx
+                            % (chunk_texture.size.x() as usize / rect.width() as usize)
                             * rect.width() as usize;
-                        let rect_y = idx / (chunk_texture.size.y() as usize / rect.height() as usize)
+                        let rect_y = idx
+                            / (chunk_texture.size.y() as usize / rect.height() as usize)
                             * rect.height() as usize;
                         (rect, Vec2::new(rect_x as f32, rect_y as f32))
                     };
