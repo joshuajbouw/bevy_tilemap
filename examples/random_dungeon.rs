@@ -48,7 +48,7 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-    map.set_dimensions(Vec2::new(1., 1.));
+    map.set_dimensions(Vec2::new(3., 3.));
 
     commands.spawn(Camera2dComponents::default());
 }
@@ -64,6 +64,7 @@ fn load_atlas(
         return;
     }
 
+    // Lets load all our textures from our folder!
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
     if let LoadState::Loaded =
         asset_server.get_group_load_state(sprite_handles.handles.iter().map(|handle| handle.id))
@@ -110,6 +111,7 @@ fn build_random_dungeon(
         }
     }
 
+    // Then we need to find out what the handles were to our textures we are going to use.
     let mut floor_sprite = asset_server.get_handle("textures/tile_floor.png");
     let mut wall_sprite: Handle<Texture> = asset_server.get_handle("textures/tile_wall.png");
     floor_sprite.make_strong(&mut textures);
@@ -122,20 +124,25 @@ fn build_random_dungeon(
         texture: wall_sprite,
         coord: Vec2::new(0., 0.),
     };
+    // We must use the new handy `TileSetter` tool which is a wrapped `Vec`.
     let mut setter = TileSetter::with_capacity((height * width) as usize);
+    // Now we push in all floor tiles.
     for y in 0..(height as i32) {
         for x in 0..(width as i32) {
             setter.push(Vec3::new(x as f32, y as f32, 0.), floor_tile.clone());
         }
     }
+    // Then we push in all wall tiles on the X axis.
     for x in 0..(width as i32) {
         setter.push(Vec3::new(x as f32, 0., 0.), wall_tile.clone());
         setter.push(Vec3::new(x as f32, height - 1., 0.), wall_tile.clone());
     }
+    // Then the wall tiles on the Y axis.
     for y in 0..(height as i32) {
         setter.push(Vec3::new(0., y as f32, 0.), wall_tile.clone());
         setter.push(Vec3::new(width - 1., y as f32, 0.), wall_tile.clone());
     }
+    // Lets just generate some random walls to sparsely place around the dungeon!
     let range = (width * height) as usize / 5;
     let mut rng = rand::thread_rng();
     for _ in 0..range {
@@ -146,6 +153,7 @@ fn build_random_dungeon(
             setter.push(Vec3::new(x as f32, y as f32, 0.), wall_tile.clone());
         }
     }
+    // Lets do the same as the above, but lets add in a dwarven friend!
     let mut dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf_idle.png");
     dwarf_sprite.make_strong(&mut textures);
     let dwarf_tile = WorldTile {
