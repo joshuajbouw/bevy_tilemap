@@ -1,9 +1,9 @@
 use crate::{
-    chunk::{TileChunk, TileSetter},
+    chunk::Chunk,
     coord::{ToCoord3, ToIndex},
     dimensions::{DimensionResult, Dimensions2},
     lib::*,
-    tile::Tile,
+    tile::{Tile, TileSetter},
 };
 
 #[derive(Clone, Copy, PartialEq)]

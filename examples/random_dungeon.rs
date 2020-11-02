@@ -3,10 +3,10 @@ use bevy::{
     window::WindowMode,
 };
 use bevy_chunk_tiles::{
-    chunk::{TileChunk, TileSetter, WorldChunk},
+    chunk::{Chunk, WorldChunk},
     dimensions::Dimensions2,
     map::{TileMap, WorldMap},
-    tile::Tile,
+    tile::{Tile, TileSetter},
     ChunkTilesPlugin,
 };
 use rand::Rng;

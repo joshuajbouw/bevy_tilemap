@@ -46,35 +46,6 @@ pub trait TileChunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send 
     fn clean(&mut self);
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct TileSetter<T: Tile>(Vec<(Vec3, T)>);
-
-impl<T: Tile> TileSetter<T> {
-    pub fn new() -> TileSetter<T> {
-        TileSetter(Vec::new())
-    }
-
-    pub fn with_capacity(capacity: usize) -> TileSetter<T> {
-        TileSetter(Vec::with_capacity(capacity))
-    }
-
-    pub fn push(&mut self, coord: Vec3, tile: T) {
-        self.0.push((coord, tile));
-    }
-
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    pub fn iter(&self) -> Iter<'_, (Vec3, T)> {
-        self.0.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> IterMut<'_, (Vec3, T)> {
-        self.0.iter_mut()
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorldChunk<T: Tile> {
     #[serde(skip)]
