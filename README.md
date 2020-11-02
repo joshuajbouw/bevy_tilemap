@@ -1,6 +1,8 @@
 # bevy_chunk_tiles
 Chunk tiles for Bevy game engine.
 
+![](assets/img/example.png)
+
 ### Warning
 This is still very early and experimental. The API will likely change between version 0.1 -> 0.2
 without notice.
