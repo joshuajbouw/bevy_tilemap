@@ -153,16 +153,16 @@ fn build_random_dungeon(
             setter.push(Vec3::new(x as f32, y as f32, 0.), wall_tile.clone());
         }
     }
-    // Lets do the same as the above, but lets add in a dwarven friend!
+    // Lets do the same as the above, but lets add in a dwarf friend!
     let mut dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf_idle.png");
     dwarf_sprite.make_strong(&mut textures);
     let dwarf_tile = WorldTile {
         texture: dwarf_sprite,
         coord: Vec2::new(0., 0.),
     };
-    setter.push(
+    setter.push_stack(
         Vec3::new(width as f32 / 2., height as f32 / 2., 0.),
-        dwarf_tile,
+        vec![floor_tile, dwarf_tile],
     );
 
     map.set_tiles(setter);

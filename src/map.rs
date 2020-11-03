@@ -265,10 +265,10 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
             let y = C::X_MAX - (setter_coord.y() - chunk_coord.y() * C::HEIGHT);
             let coord = Vec3::new(x, y, setter_coord.z());
             if let Some(setters) = tiles_map.get_mut(&handle) {
-                setters.push(coord, setter_tile.clone());
+                setters.push_stack(coord, setter_tile.clone());
             } else {
                 let mut setter = TileSetter::with_capacity((C::WIDTH * C::HEIGHT) as usize);
-                setter.push(coord, setter_tile.clone());
+                setter.push_stack(coord, setter_tile.clone());
                 tiles_map.insert(handle, setter);
             }
         }
@@ -402,8 +402,20 @@ impl<T: Tile, C: Chunk<T>> WorldMap<T, C> {
     }
 }
 
+fn sprite_coord<T: Tile>(tile: &T, sprite_sheet_atlas: &TextureAtlas) -> Option<(usize, usize)> {
+    let sprite_idx = {
+        if let Some(handle) = tile.texture() {
+            sprite_sheet_atlas.get_texture_index(handle).unwrap()
+        } else {
+            return None;
+        }
+    };
+    let sprite_rect = sprite_sheet_atlas.textures[sprite_idx];
+    Some((sprite_rect.min.x() as usize, sprite_rect.min.y() as usize))
+}
+
 fn set_tiles<T>(
-    tile: &T,
+    tiles: &[T],
     chunk_texture: &mut Texture,
     sprite_sheet_texture: &Texture,
     sprite_sheet_atlas: &TextureAtlas,
@@ -415,29 +427,39 @@ fn set_tiles<T>(
     let map_texture_size = chunk_texture.size.x() as usize;
     let chunk_format_size = chunk_texture.format.pixel_size();
     let format_size = chunk_texture.format.pixel_size();
-    let sprite_idx = {
-        if let Some(handle) = tile.texture() {
-            sprite_sheet_atlas.get_texture_index(handle).unwrap()
-        } else {
-            return;
+
+    let mut positions = Vec::with_capacity(tiles.len());
+    for tile in tiles.iter() {
+        if let Some(coord) = sprite_coord(tile, sprite_sheet_atlas) {
+            positions.push(coord);
         }
-    };
-    let sprite_rect = sprite_sheet_atlas.textures[sprite_idx];
+    }
+    positions.shrink_to_fit();
+
     let width = sprite_sheet_texture.size.x() as usize;
     let rect_width = chunk_rect.width() as usize;
     let rect_height = chunk_rect.height() as usize;
     let rect_y = chunk_coord.y() as usize;
     let rect_x = chunk_coord.x() as usize;
-    let (sprite_x, mut sprite_y) = (sprite_rect.min.x() as usize, sprite_rect.min.y() as usize);
-    for bound_y in rect_y..rect_y + rect_height {
-        let begin = (bound_y * map_texture_size + rect_x) * chunk_format_size;
-        let end = begin + rect_width * chunk_format_size;
-        let sprite_begin = (sprite_y * width + sprite_x) * format_size;
-        let sprite_end = sprite_begin + rect_width * format_size;
-        // let mut chunk_texture = chunk_texture.lock().unwrap();
-        chunk_texture.data[begin..end]
-            .copy_from_slice(&sprite_sheet_texture.data[sprite_begin..sprite_end]);
-        sprite_y += 1;
+    for (sprite_x, mut sprite_y) in positions {
+        for bound_y in rect_y..rect_y + rect_height {
+            let begin = (bound_y * map_texture_size + rect_x) * chunk_format_size;
+            let end = begin + rect_width * chunk_format_size;
+            let sprite_begin = (sprite_y * width + sprite_x) * format_size;
+            let sprite_end = sprite_begin + rect_width * format_size;
+            let data = &mut chunk_texture.data[begin..end];
+            let sprite_data = &sprite_sheet_texture.data[sprite_begin..sprite_end];
+            for x in 0..((sprite_end - sprite_begin) / format_size) {
+                let inner_begin = x * format_size;
+                let inner_end = inner_begin + format_size;
+                let inner_data = &sprite_data[inner_begin..inner_end];
+                if inner_data[3] != 0 {
+                    data[inner_begin..inner_end]
+                        .copy_from_slice(&sprite_data[inner_begin..inner_end])
+                }
+            }
+            sprite_y += 1;
+        }
     }
 }
 

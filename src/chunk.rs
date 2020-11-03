@@ -47,10 +47,10 @@ pub trait Chunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send + Sy
     fn textures(&self) -> &[Rect];
 
     /// Returns a reference to the `Tile` in the `Chunk`, if it exists.
-    fn tile(&self, coord: &Vec3) -> DimensionResult<Option<&T>>;
+    fn tile_stack(&self, coord: &Vec3) -> DimensionResult<Option<&Vec<T>>>;
 
     /// Returns a reference to the `Tile` vector.
-    fn tiles(&self) -> &Vec<Option<T>>;
+    fn tiles(&self) -> &Vec<Option<Vec<T>>>;
 
     /// Cleans all the unneeded parameters when despawning.
     fn clean(&mut self);
@@ -72,7 +72,7 @@ pub struct WorldChunk<T: Tile> {
     /// A vector of `Rect`s that share where the sprite is located.
     textures: Vec<Rect>,
     /// A vector of all the tiles in the `TileMap`.
-    tiles: Vec<Option<T>>,
+    tiles: Vec<Option<Vec<T>>>,
 }
 
 impl<T: Tile> TypeUuid for WorldChunk<T> {
@@ -129,12 +129,12 @@ impl<T: Tile> Chunk<T> for WorldChunk<T> {
         &self.textures
     }
 
-    fn tile(&self, coord: &Vec3) -> DimensionResult<Option<&T>> {
+    fn tile_stack(&self, coord: &Vec3) -> DimensionResult<Option<&Vec<T>>> {
         let idx = self.encode_coord(coord)?;
         Ok(self.tiles[idx].as_ref())
     }
 
-    fn tiles(&self) -> &Vec<Option<T>> {
+    fn tiles(&self) -> &Vec<Option<Vec<T>>> {
         &self.tiles
     }
 

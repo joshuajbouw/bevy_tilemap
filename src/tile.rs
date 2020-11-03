@@ -18,7 +18,7 @@ pub trait Tile: 'static + Debug + Default + Clone + Send + Sync {
 ///
 /// This is the preferred and fastest way to set tiles. Optionally, you can set them individually.
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct TileSetter<T: Tile>(Vec<(Vec3, T)>);
+pub struct TileSetter<T: Tile>(Vec<(Vec3, Vec<T>)>);
 
 impl<T: Tile> TileSetter<T> {
     /// Returns a new `TileSetter` with the type `Tile`.
@@ -31,9 +31,14 @@ impl<T: Tile> TileSetter<T> {
         TileSetter(Vec::with_capacity(capacity))
     }
 
-    /// Pushes a tile with a coordinate into the `TileSetter`.
+    /// Pushes a single tile with a coordinate into the `TileSetter`.
     pub fn push(&mut self, coord: Vec3, tile: T) {
-        self.0.push((coord, tile));
+        self.0.push((coord, vec![tile]));
+    }
+
+    /// Pushes a stack of tiles to be rendered from background to foreground.
+    pub fn push_stack(&mut self, coord: Vec3, tiles: Vec<T>) {
+        self.0.push((coord, tiles))
     }
 
     /// Returns the length of the `TileSetter`.
@@ -47,12 +52,12 @@ impl<T: Tile> TileSetter<T> {
     }
 
     /// Iterates over all coordinates and tiles in the `TileSetter`.
-    pub fn iter(&self) -> Iter<'_, (Vec3, T)> {
+    pub fn iter(&self) -> Iter<'_, (Vec3, Vec<T>)> {
         self.0.iter()
     }
 
     /// Mutably iterates over all coordinates and tiles in the `TileSetter`.
-    pub fn iter_mut(&mut self) -> IterMut<'_, (Vec3, T)> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, (Vec3, Vec<T>)> {
         self.0.iter_mut()
     }
 }
