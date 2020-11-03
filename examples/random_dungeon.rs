@@ -182,7 +182,7 @@ fn main() {
         })
         .init_resource::<TileSpriteHandles>()
         .init_resource::<MapState>()
-        .add_default_plugins()
+        .add_plugins(DefaultPlugins)
         .add_plugin(ChunkTilesPlugin::<
             WorldTile,
             WorldChunk<WorldTile>,
