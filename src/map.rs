@@ -435,27 +435,34 @@ fn set_tiles<T>(
         }
     }
     positions.shrink_to_fit();
+    // We need this bool here to prevent borrow issues in the loop.
+    let is_single = positions.len() == 1;
 
     let width = sprite_sheet_texture.size.x() as usize;
     let rect_width = chunk_rect.width() as usize;
     let rect_height = chunk_rect.height() as usize;
     let rect_y = chunk_coord.y() as usize;
     let rect_x = chunk_coord.x() as usize;
-    for (sprite_x, mut sprite_y) in positions {
+    for (sprite_x, mut sprite_y) in positions.iter_mut() {
         for bound_y in rect_y..rect_y + rect_height {
             let begin = (bound_y * map_texture_size + rect_x) * chunk_format_size;
             let end = begin + rect_width * chunk_format_size;
-            let sprite_begin = (sprite_y * width + sprite_x) * format_size;
+            let sprite_begin = (sprite_y * width + *sprite_x) * format_size;
             let sprite_end = sprite_begin + rect_width * format_size;
-            let data = &mut chunk_texture.data[begin..end];
-            let sprite_data = &sprite_sheet_texture.data[sprite_begin..sprite_end];
-            for x in 0..((sprite_end - sprite_begin) / format_size) {
-                let inner_begin = x * format_size;
-                let inner_end = inner_begin + format_size;
-                let inner_data = &sprite_data[inner_begin..inner_end];
-                if inner_data[3] != 0 {
-                    data[inner_begin..inner_end]
-                        .copy_from_slice(&sprite_data[inner_begin..inner_end])
+            if is_single {
+                chunk_texture.data[begin..end]
+                    .copy_from_slice(&sprite_sheet_texture.data[sprite_begin..sprite_end]);
+            } else {
+                let data = &mut chunk_texture.data[begin..end];
+                let sprite_data = &sprite_sheet_texture.data[sprite_begin..sprite_end];
+                for x in 0..((sprite_end - sprite_begin) / format_size) {
+                    let inner_begin = x * format_size;
+                    let inner_end = inner_begin + format_size;
+                    let inner_data = &sprite_data[inner_begin..inner_end];
+                    if inner_data[3] != 0 {
+                        data[inner_begin..inner_end]
+                            .copy_from_slice(&sprite_data[inner_begin..inner_end])
+                    }
                 }
             }
             sprite_y += 1;
