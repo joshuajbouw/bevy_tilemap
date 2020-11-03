@@ -1,5 +1,5 @@
-# bevy_chunk_tiles
-Chunk tiles for Bevy game engine.
+# bevy_tilemap
+Chunk based tilemap for Bevy game engine.
 
 ![](assets/img/example.png)
 
@@ -31,7 +31,7 @@ bevy = { git = "https://github.com/bevyengine/bevy", branch = "master" }
 
 [dependencies]
 bevy = 0.2
-bevy_chunk_tiles = { git = "https://github.com/joshuajbouw/bevy_chunk_tiles", branch = "master" }
+bevy_tilemap = { git = "https://github.com/joshuajbouw/bevy_tilemap", branch = "master" }
 ```
 
 ## Live Example

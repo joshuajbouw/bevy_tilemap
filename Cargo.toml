@@ -1,12 +1,12 @@
 [package]
-name = "bevy_chunk_tiles"
+name = "bevy_tilemap"
 version = "0.1.0"
 authors = ["Joshua J. Bouw <dev@joshuajbouw.com>"]
 edition = "2018"
 description = "Tile maps with chunks for the Bevy game engine, a simple-driven game engine and app framework"
-repository = "https://github.com/joshuajbouw/bevy_chunk_tiles"
+repository = "https://github.com/joshuajbouw/bevy_tilemap"
 license = "MIT"
-keywords = ["game", "engine", "gamedev", "graphics", "bevy", "tiles", "chunk"]
+keywords = ["game", "engine", "gamedev", "graphics", "bevy", "tiles", "chunk", "tilemap"]
 categories = ["game-engines", "graphics", "gui"]
 readme = "README.md"
 exclude = ["assets/**/*", ".github/**/*"]

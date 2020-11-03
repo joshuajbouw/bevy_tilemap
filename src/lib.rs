@@ -1,6 +1,6 @@
-//! # Bevy Chunk Tiles
+//! # Bevy Tilemap
 //!
-//! Bevy Chunk Tiles allows for Bevy native tile maps to be created with chunk based loading
+//! Bevy Tilemap allows for Bevy native tile maps to be created with chunk based loading
 //! efficiently and generically.
 //!
 //! Through the use of the power of traits, it is possible to define your own tiles, chunks, and
@@ -37,7 +37,7 @@ pub use crate::{
     tile::Tile,
 };
 
-/// The Bevy Chunk Tiles main plugin.
+/// The Bevy Tilemap main plugin.
 #[derive(Default)]
 pub struct ChunkTilesPlugin<T: Tile, C: Chunk<T>, M: TileMap<T, C>> {
     tile_type: PhantomData<T>,

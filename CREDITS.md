@@ -1,4 +1,4 @@
-# Bevy Chunk Tiles Credits
+# Bevy Tilemap Credits
 ## Inspiration
 * bevy
 * amethyst tiles

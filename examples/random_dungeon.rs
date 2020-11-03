@@ -2,7 +2,7 @@ use bevy::{
     asset::LoadState, prelude::*, render::texture::TextureFormat, sprite::TextureAtlasBuilder,
     window::WindowMode,
 };
-use bevy_chunk_tiles::{
+use bevy_tilemap::{
     chunk::{Chunk, WorldChunk},
     dimensions::Dimensions2,
     map::{TileMap, WorldMap},
