@@ -30,10 +30,10 @@ pub mod map;
 /// Tile traits to implement for a custom tile.
 pub mod tile;
 
-use crate::{
-    chunk::Chunk,
+pub use crate::{
+    chunk::{Chunk, WorldChunk},
     lib::*,
-    map::{map_system, TileMap},
+    map::{TileMap, WorldMap},
     tile::Tile,
 };
 
@@ -49,7 +49,7 @@ impl<T: Tile, C: Chunk<T>, M: TileMap<T, C>> Plugin for ChunkTilesPlugin<T, C, M
     fn build(&self, app: &mut AppBuilder) {
         app.add_resource(M::default())
             .add_asset::<C>()
-            .add_system_to_stage("post_update", map_system::<T, C, M>.system());
+            .add_system_to_stage("post_update", crate::map::map_system::<T, C, M>.system());
     }
 }
 
