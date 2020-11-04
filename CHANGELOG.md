@@ -7,9 +7,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.1.0] - 2020-11-03
+## [0.1.0] - 2020-11-04
 
-### API
+### Notes
+* Rebranded from `bevy_chunk_tiles` to `bevy_tilemap`.
 * `TileSetter` had a `push_stack` method added to it which allows for a whole 
 `Vec<Tile>`. This is then rendered from index 0. For example, if you want to 
 render a character sprite with a tile background you would push the tile in 
@@ -18,12 +19,15 @@ tile in that previous example had something on top of it before or not to cut
 down on pushing the floor tile twice, which is wasteful.
 
 ### Added
-
 - [Tile texture stack](https://github.com/joshuajbouw/bevy_tilemap/commit/d91f9a97645d7f7692ccd532fc3cb941c0c58764)
-- [Multi-thread map events](https://github.com/joshuajbouw/bevy_chunk_tiles/commit/3312090ae3eba9a8e7edf87aaaf63d1cf96ecc07)
-- [Initial commit](https://github.com/joshuajbouw/bevy_chunk_tiles/commit/764b79e037b292d473220f43d9c8776ce626d6cb)
+- [Multi-thread map events](https://github.com/joshuajbouw/bevy_tilemap/commit/3312090ae3eba9a8e7edf87aaaf63d1cf96ecc07)
+- [Initial commit](https://github.com/joshuajbouw/bevy_tilemap/commit/764b79e037b292d473220f43d9c8776ce626d6cb)
 
 ### Fixes
+- [Fix obscure `no_implicit_prelude` issue with serde.](https://github.com/joshuajbouw/bevy_tilemap/commit/33c1317d65be3c1a0d511a2527745046cfd273fb)
+- [Remove dangerous access to tiles mutably](https://github.com/joshuajbouw/bevy_tilemap/commit/90cc791a4f3d8f36421a01451020fbc927e226b2)
 
-- [Fix obscure `no_implicit_prelude` issue with serde.](https://github.com/joshuajbouw/bevy_chunk_tiles/commit/33c1317d65be3c1a0d511a2527745046cfd273fb)
-- [Remove dangerous access to tiles mutably](https://github.com/joshuajbouw/bevy_chunk_tiles/commit/90cc791a4f3d8f36421a01451020fbc927e226b2)
+## [0.1.0-pre] - 2020-11-03
+
+### Notes
+* Initial release
