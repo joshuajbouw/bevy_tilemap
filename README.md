@@ -14,7 +14,7 @@ Chunk based tilemap for Bevy game engine.
 ## Features
 * Multi-threaded chunk based tile maps
 * Generic traits to be easy to implement into any system
-* Helpful traits that help encode and decode coordinates into indexe
+* Helpful traits that help encode and decode coordinates into indexes
 
 ## Design 
 This is not intended to be just another Tile Map. It is meant to be a framework and extensible by
@@ -23,16 +23,11 @@ work done to keep it as close to Bevy API as possible. This allows anyone to cre
 chunks and maps and still retain the speed of a handcrafted multi-threaded chunk loader and tile map.
 
 ## Usage
-Once Bevy 0.3 is released, this will be published.
-
 Add to your `Cargo.toml` file:
 ```toml
-[patch.crates-io]
-bevy = { git = "https://github.com/bevyengine/bevy", branch = "master" }
-
 [dependencies]
-bevy = 0.2
-bevy_tilemap = { git = "https://github.com/joshuajbouw/bevy_tilemap", branch = "master" }
+bevy = 0.3
+bevy_tilemap = 0.1
 ```
 
 ## Live Example
