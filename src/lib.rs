@@ -30,12 +30,12 @@ pub mod map;
 /// Tile traits to implement for a custom tile.
 pub mod tile;
 
+use crate::lib::*;
 pub use crate::{
     chunk::{Chunk, WorldChunk},
     map::{TileMap, WorldMap},
     tile::Tile,
 };
-use crate::lib::*;
 
 /// The Bevy Tilemap main plugin.
 #[derive(Default)]
