@@ -11,11 +11,8 @@ categories = ["game-engines", "graphics", "gui"]
 readme = "README.md"
 exclude = ["assets/**/*", ".github/**/*"]
 
-[patch.crates-io]
-bevy = { git = "https://github.com/bevyengine/bevy", branch = "master" }
-
 [dependencies]
-bevy = { version = "0.2", features = ["default"] }
+bevy = { version = "0.3", features = ["default"] }
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
