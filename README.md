@@ -1,14 +1,15 @@
 # bevy_tilemap
+[![Crates.io](https://img.shields.io/crates/v/bevy_tilemap.svg)](https://crates.io/crates/bevy_tilemap)
+[![Crates.io](https://img.shields.io/crates/d/bevy_tilemap.svg)](https://crates.io/crates/bevy_tilemap)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/joshuajbouw/bevy_tilemap/blob/master/LICENSE)
+[![Rust](https://github.com/joshuajbouw/bevy_tilemap/workflows/CI/badge.svg)](https://github.com/joshuajbouw/bevy_tilemap/actions)
+
 Chunk based tilemap for Bevy game engine.
 
 ![](assets/img/example.png)
 
 ### Warnings
-* This is still very early and experimental. The API will likely change until 0.1 release without 
-notice.
-* This uses a very early stage game engine.
-* This is using latest bleeding edge Bevy engine while should have a 0.3 release very soon. When that
-happens, this warning will be removed.
+* This is still very early and experimental and uses a very new game engine.
 
 ## Features
 * Multi-threaded chunk based tile maps
