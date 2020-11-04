@@ -32,10 +32,10 @@ pub mod tile;
 
 pub use crate::{
     chunk::{Chunk, WorldChunk},
-    lib::*,
     map::{TileMap, WorldMap},
     tile::Tile,
 };
+use crate::lib::*;
 
 /// The Bevy Tilemap main plugin.
 #[derive(Default)]
@@ -55,13 +55,19 @@ impl<T: Tile, C: Chunk<T>, M: TileMap<T, C>> Plugin for ChunkTilesPlugin<T, C, M
 
 /// A custom prelude around all the types we need from `std`, `bevy`, and `serde`.
 mod lib {
-    pub use ::bevy::{
-        self, app as bevy_app, asset as bevy_asset, ecs as bevy_ecs, math as bevy_math,
+    // Need to add this here as there is a Rust issue surrounding the fact that
+    // bevy also uses `no_implicit_prelude`. Without this, it would complain
+    // that I am not using `self`, and will refuse to build.
+    // See: https://github.com/rust-lang/rust/issues/72381
+    pub use ::bevy;
+    pub(crate) use ::bevy::{
+        app as bevy_app, asset as bevy_asset, ecs as bevy_ecs, math as bevy_math,
         render as bevy_render, sprite as bevy_sprite, tasks as bevy_tasks,
         transform as bevy_transform, type_registry as bevy_type_registry, utils as bevy_utils,
     };
 
-    pub use self::{
+    #[doc(hidden)]
+    pub(crate) use self::{
         bevy_app::{AppBuilder, EventReader, Events, Plugin},
         bevy_asset::{AddAsset, Assets, Handle, HandleId},
         bevy_ecs::{Commands, Entity, IntoQuerySystem, Res, ResMut},
@@ -71,12 +77,18 @@ mod lib {
         bevy_tasks::TaskPoolBuilder,
         bevy_transform::components::Transform,
         bevy_type_registry::{TypeUuid, Uuid},
-        bevy_utils::{HashMap, HashMapExt, HashSet},
+        bevy_utils::{HashMap, HashSet},
     };
 
-    pub use ::serde::{self, Deserialize, Serialize};
+    // Need to add this here as there is a Rust issue surrounding the fact that
+    // serde also uses `no_implicit_prelude`. Without this, it would complain
+    // that I am not using `self`, and will refuse to build.
+    // See: https://github.com/rust-lang/rust/issues/72381
+    pub use ::serde;
+    #[doc(hidden)]
+    pub(crate) use ::serde::{Deserialize, Serialize};
 
-    pub use ::std::{
+    pub(crate) use ::std::{
         boxed::Box,
         clone::Clone,
         convert::{From, Into},
@@ -94,5 +106,5 @@ mod lib {
     };
 
     // Macros
-    pub use ::std::{println, vec, write};
+    pub(crate) use ::std::{vec, write};
 }
