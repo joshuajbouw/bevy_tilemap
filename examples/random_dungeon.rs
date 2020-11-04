@@ -48,7 +48,7 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-    map.set_dimensions(Vec2::new(3., 3.));
+    map.set_dimensions(Vec2::new(1., 1.));
 
     commands.spawn(Camera2dComponents::default());
 }
