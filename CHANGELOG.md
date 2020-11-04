@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.1.1] - 2020-11-04
+
+### Notes
+This is mostly just a document fix minor patch with nothing else too 
+substantial. It would have been avoided if it could have been but alas, crates
+does not allow you to republish the same version. 
+
+### Fixes
+* [Fixed external doc leak](https://github.com/joshuajbouw/bevy_tilemap/commit/b277f55bf73535a01537e2f775702226cb33178b)
+
 ## [0.1.0] - 2020-11-04
 
 ### Notes
