@@ -32,7 +32,7 @@ pub mod tile;
 
 use crate::lib::*;
 pub use crate::{
-    chunk::{Chunk, WorldChunk},
+    chunk::{Chunk, WorldChunk, ChunkSprite},
     map::{TileMap, WorldMap},
     tile::Tile,
 };

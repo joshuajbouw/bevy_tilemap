@@ -1,5 +1,5 @@
 use crate::{
-    chunk::Chunk,
+    chunk::{Chunk, ChunkSprite},
     coord::{ToCoord3, ToIndex},
     dimensions::{DimensionResult, Dimensions2},
     lib::*,
@@ -615,6 +615,7 @@ pub fn map_system<T, C, M>(
                     .lock()
                     .unwrap()
                     .spawn(sprite)
+                    .with(ChunkSprite)
                     .current_entity()
                     .unwrap();
                 context.map.lock().unwrap().insert_entity(*idx, entity);

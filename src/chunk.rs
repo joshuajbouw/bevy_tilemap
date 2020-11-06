@@ -56,6 +56,10 @@ pub trait Chunk<T: Tile>: 'static + Dimensions3 + TypeUuid + Default + Send + Sy
     fn clean(&mut self);
 }
 
+/// A marker component used to identify map chunk entities
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct ChunkSprite;
+
 /// A basic use of the `Chunk` trait that has the bare minimum methods.
 ///
 /// Serde skips the textures and texture_handle field for three reasons:
