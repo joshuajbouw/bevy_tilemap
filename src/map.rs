@@ -152,7 +152,7 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
     /// Adds a `Chunk`, creates a handle and stores it at a coordinate position.
     ///
     /// This is the correct way to add a `Chunk`.
-    fn add_chunk<I: ToIndex>(&mut self, chunk: C, v: I, chunks: &mut ResMut<Assets<C>>) {
+    fn add_chunk<I: ToIndex>(&mut self, chunk: C, v: I, chunks: &mut Assets<C>) {
         let index = v.to_index(self.dimensions().x(), self.dimensions().y());
         let handle = chunks.add(chunk);
         self.send_event(MapEvent::Created {
@@ -174,7 +174,7 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
         handle: H,
         chunk: C,
         v: I,
-        chunks: &mut ResMut<Assets<C>>,
+        chunks: &mut Assets<C>,
     ) -> DimensionResult<()> {
         let index = v.to_index(self.dimensions().x(), self.dimensions().y());
         self.check_index(index)?;
