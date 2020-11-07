@@ -174,7 +174,7 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
         handle: H,
         chunk: C,
         v: I,
-        chunks: &mut ResMut<Assets<C>>,
+        chunks: &mut Assets<C>,
     ) -> DimensionResult<()> {
         let index = v.to_index(self.dimensions().x(), self.dimensions().y());
         self.check_index(index)?;
