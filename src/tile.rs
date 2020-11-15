@@ -199,7 +199,7 @@ impl TileSetter {
     /// let coord = Vec3::new(1., 1., 0.);
     /// let tile = Tile::new(1);
     /// setter.push(coord, tile);
-    /// assert_eq!(setter.capacity(10), 10);
+    /// assert_eq!(setter.capacity(), 10);
     /// setter.shrink_to_fit();
     /// assert!(setter.capacity() >= 1);
     /// ```
@@ -246,6 +246,20 @@ impl TileSetter {
     /// ```
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    /// Returns the number of elements in the vector can hold without
+    /// reallocating.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::TileSetter;
+    ///
+    /// let mut setter = TileSetter.with_capacity(10);
+    /// assert_eq!(setter.capacity(), 10);
+    /// ```
+    pub fn capacity(&self) -> usize {
+        self.0.capacity()
     }
 
     /// Returns if the `TileSetter` is empty and contains no elements.

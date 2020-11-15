@@ -264,12 +264,61 @@ impl TileMap {
         &self.texture_atlas
     }
 
-    /// Adds a `Chunk`, creates a handle and stores it at a coordinate position.
+    /// Constructs a new `Chunk` and stores it at a coordinate position.
     ///
     /// It requires that you give it either an index or a Vec2 or Vec3
-    /// coordinate as well as a mutable reference to both the `Chunk` and `Mesh`
-    /// assets. It then automatically sets both a sized mesh and chunk for use
-    /// based on the parameters set in the `TileMap`.
+    /// coordinate. It then automatically sets both a sized mesh and chunk for
+    /// use based on the parameters set in the parent `TileMap`.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::TileMap;
+    /// # use bevy::prelude::*;
+    /// # use bevy::type_registry::TypeUuid;
+    /// #
+    /// # // Tile's dimensions in pixels
+    /// # let tile_dimensions = Vec2::new(32., 32.);
+    /// # // Chunk's dimensions in tiles
+    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
+    /// # // Tile map's dimensions in chunks
+    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    /// # // Handle from the sprite sheet you want
+    /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    /// #
+    /// # let mut tile_map = TileMap::new(
+    /// #    tile_map_dimensions,
+    /// #    chunk_dimensions,
+    /// #    tile_dimensions,
+    /// #    atlas_handle,
+    /// # );
+    ///
+    /// // Add some chunks.
+    /// tile_map.new_chunk(0);
+    /// tile_map.new_chunk(1);
+    /// tile_map.new_chunk(2);
+    /// ```
+    pub fn new_chunk<I: ToIndex>(&mut self, v: I) {
+        let index = v.to_index(self.dimensions.width(), self.dimensions.height());
+        let tiles = vec![
+            Tile::new(0);
+            (self.chunk_dimensions().width() * self.chunk_dimensions().height())
+                as usize
+        ];
+        self.events.send(MapEvent::Created { index, tiles });
+    }
+
+    /// Constructs a new `Chunk` and stores it at a coordinate position with
+    /// tiles.
+    ///
+    /// It requires that you give it either an index or a Vec2 or Vec3
+    /// coordinate as well as a vector of `Tile`s. It then automatically sets
+    /// both a sized mesh and chunk for use based on the parameters set in the
+    /// parent `TileMap`.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if you attempt to add a chunk to an out of bounds
+    /// index location or coordinate.
     ///
     /// # Examples
     /// ```
@@ -297,16 +346,11 @@ impl TileMap {
     /// let tiles = vec![Tile::new(0); 32];
     ///
     /// // Add some chunks.
-    /// tile_map.add_chunk(0, tiles.clone());
-    /// tile_map.add_chunk(1, tiles.clone());
-    /// tile_map.add_chunk(2, tiles);
+    /// tile_map.new_chunk_with_tiles(0, tiles.clone());
+    /// tile_map.new_chunk_with_tiles(1, tiles.clone());
+    /// tile_map.new_chunk_with_tiles(2, tiles);
     /// ```
-    ///
-    /// # Panics
-    ///
-    /// This method will panic if you attempt to add a chunk to an out of bounds
-    /// index location or coordinate.
-    pub fn add_chunk<I: ToIndex>(&mut self, v: I, tiles: Vec<Tile>) {
+    pub fn new_chunk_with_tiles<I: ToIndex>(&mut self, v: I, tiles: Vec<Tile>) {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
         self.events.send(MapEvent::Created { index, tiles });
     }
@@ -343,9 +387,9 @@ impl TileMap {
     /// let tiles = vec![Tile::new(0); 32];
     ///-
     /// // Add some chunks.
-    /// tile_map.add_chunk(0, tiles.clone());
-    /// tile_map.add_chunk(1, tiles.clone());
-    /// tile_map.add_chunk(2, tiles);
+    /// tile_map.new_chunk(0, tiles.clone());
+    /// tile_map.new_chunk(1, tiles.clone());
+    /// tile_map.new_chunk(2, tiles);
     ///
     /// // Remove the same chunks in the same frame. Do note that adding then
     /// // removing in the same frame will prevent the entity from spawning at
@@ -391,7 +435,7 @@ impl TileMap {
     /// let tiles = vec![Tile::new(0); 32];
     ///
     /// // Add a chunk
-    /// tile_map.add_chunk(0, tiles.clone());
+    /// tile_map.new_chunk(0, tiles.clone());
     ///
     /// // Set a single tile and unwrap the result
     /// tile_map.set_tile(Vec3::new(15., 15., 0.), Tile::new(1)).unwrap();
@@ -452,7 +496,7 @@ impl TileMap {
     /// let tiles = vec![Tile::new(0); 32];
     ///
     /// // Add a chunk
-    /// tile_map.add_chunk(0, tiles.clone());
+    /// tile_map.new_chunk(0, tiles.clone());
     ///
     /// let mut new_tiles = TileSetter::new();
     /// new_tiles.push(Vec3::new(1., 1., 0.), Tile::new(1));
