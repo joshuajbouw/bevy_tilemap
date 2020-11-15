@@ -383,13 +383,11 @@ impl TileMap {
     /// #    atlas_handle,
     /// # );
     /// use bevy_tilemap::Tile;
-    ///
-    /// let tiles = vec![Tile::new(0); 32];
     ///-
     /// // Add some chunks.
-    /// tile_map.new_chunk(0, tiles.clone());
-    /// tile_map.new_chunk(1, tiles.clone());
-    /// tile_map.new_chunk(2, tiles);
+    /// tile_map.new_chunk(0);
+    /// tile_map.new_chunk(1);
+    /// tile_map.new_chunk(2);
     ///
     /// // Remove the same chunks in the same frame. Do note that adding then
     /// // removing in the same frame will prevent the entity from spawning at
@@ -432,10 +430,8 @@ impl TileMap {
     /// # );
     /// use bevy_tilemap::Tile;
     ///
-    /// let tiles = vec![Tile::new(0); 32];
-    ///
     /// // Add a chunk
-    /// tile_map.new_chunk(0, tiles.clone());
+    /// tile_map.new_chunk(0);
     ///
     /// // Set a single tile and unwrap the result
     /// tile_map.set_tile(Vec3::new(15., 15., 0.), Tile::new(1)).unwrap();
@@ -493,10 +489,8 @@ impl TileMap {
     /// use bevy_tilemap::Tile;
     /// use bevy_tilemap::tile::TileSetter;
     ///
-    /// let tiles = vec![Tile::new(0); 32];
-    ///
     /// // Add a chunk
-    /// tile_map.new_chunk(0, tiles.clone());
+    /// tile_map.new_chunk(0);
     ///
     /// let mut new_tiles = TileSetter::new();
     /// new_tiles.push(Vec3::new(1., 1., 0.), Tile::new(1));
