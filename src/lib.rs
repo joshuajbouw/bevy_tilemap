@@ -74,7 +74,7 @@ mod lib {
     #[doc(hidden)]
     pub(crate) use self::{
         bevy_app::{AppBuilder, Events, Plugin},
-        bevy_asset::{AddAsset, Assets, Handle, HandleId},
+        bevy_asset::{AddAsset, Assets, Handle},
         bevy_ecs::{Bundle, Query},
         bevy_ecs::{Commands, Entity, IntoQuerySystem, ResMut, Resources},
         bevy_math::{Vec2, Vec3},
