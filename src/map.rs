@@ -62,6 +62,8 @@ pub enum MapEvent {
     Created {
         /// The map index where the chunk needs to be stored.
         index: usize,
+        /// The Handle of the Chunk.
+        handle: Handle<Chunk>,
         /// The vector of `Tile`s for the `Chunk`.
         tiles: Vec<Tile>,
     },
@@ -167,7 +169,7 @@ impl TileMap {
             dimensions,
             chunk_dimensions,
             tile_dimensions,
-            chunks: Vec::with_capacity(capacity),
+            chunks: vec![None; capacity],
             entities: HashMap::default(),
             events: Events::<MapEvent>::default(),
             texture_atlas,
@@ -299,12 +301,18 @@ impl TileMap {
     /// ```
     pub fn new_chunk<I: ToIndex>(&mut self, v: I) {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
+        let handle: Handle<Chunk> = Handle::weak(HandleId::random::<Chunk>());
+        self.chunks[index] = Some(handle.clone());
         let tiles = vec![
             Tile::new(0);
             (self.chunk_dimensions().width() * self.chunk_dimensions().height())
                 as usize
         ];
-        self.events.send(MapEvent::Created { index, tiles });
+        self.events.send(MapEvent::Created {
+            index,
+            handle,
+            tiles,
+        });
     }
 
     /// Constructs a new `Chunk` and stores it at a coordinate position with
@@ -352,7 +360,13 @@ impl TileMap {
     /// ```
     pub fn new_chunk_with_tiles<I: ToIndex>(&mut self, v: I, tiles: Vec<Tile>) {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
-        self.events.send(MapEvent::Created { index, tiles });
+        let handle: Handle<Chunk> = Handle::weak(HandleId::random::<Chunk>());
+        self.chunks[index] = Some(handle.clone());
+        self.events.send(MapEvent::Created {
+            index,
+            handle,
+            tiles,
+        });
     }
 
     /// Destructively removes a `Chunk` at a coordinate position.
@@ -762,8 +776,12 @@ pub fn map_system(
         for event in reader.iter(&map.events) {
             use MapEvent::*;
             match event {
-                Created { index, tiles } => {
-                    new_chunks.push((*index, tiles.clone()));
+                Created {
+                    index,
+                    handle,
+                    tiles,
+                } => {
+                    new_chunks.push((*index, handle.clone_weak(), tiles.clone()));
                 }
                 Refresh { ref handle } => {
                     refresh_chunks.insert(handle.clone_weak());
@@ -784,7 +802,7 @@ pub fn map_system(
         }
 
         let mut chunk_entities = Vec::with_capacity(new_chunks.len());
-        for (idx, tiles) in new_chunks.iter() {
+        for (idx, handle, tiles) in new_chunks.iter() {
             let (tile_indexes, tile_colors) = crate::tile::tiles_to_renderer_parts(tiles);
 
             let mut mesh = Mesh::from(ChunkMesh::new(map.chunk_dimensions));
@@ -793,7 +811,7 @@ pub fn map_system(
             let mesh_handle = meshes.add(mesh);
 
             let chunk = Chunk::new(map.chunk_dimensions, mesh_handle.clone());
-            let chunk_handle = chunks.add(chunk);
+            let chunk_handle = chunks.set(handle.clone_weak(), chunk);
             map.chunks[*idx] = Some(chunk_handle);
 
             let map_coord = map.dimensions().decode_coord_unchecked(*idx);
