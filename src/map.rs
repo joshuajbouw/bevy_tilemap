@@ -376,7 +376,7 @@ impl TileMap {
     /// if this action is done.
     ///
     /// # Examples
-    /// ```
+    /// ```no_run
     /// # use bevy_tilemap::TileMap;
     /// # use bevy::prelude::*;
     /// # use bevy::type_registry::TypeUuid;
@@ -397,7 +397,7 @@ impl TileMap {
     /// #    atlas_handle,
     /// # );
     /// use bevy_tilemap::Tile;
-    ///-
+    ///
     /// // Add some chunks.
     /// tile_map.new_chunk(0);
     /// tile_map.new_chunk(1);
@@ -615,7 +615,7 @@ impl TileMap {
     ///
     /// let tile_coord = Vec3::new(15., 15., 0.);
     ///
-    /// let chunk_coord = map.tile_coord_to_chunk_coord(tile_coord);
+    /// let chunk_coord = tile_map.tile_coord_to_chunk_coord(tile_coord);
     ///
     /// assert_eq!(Vec2::new(0., 0.), chunk_coord);
     /// ```

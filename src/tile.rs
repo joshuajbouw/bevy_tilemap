@@ -255,7 +255,7 @@ impl TileSetter {
     /// ```
     /// use bevy_tilemap::TileSetter;
     ///
-    /// let mut setter = TileSetter.with_capacity(10);
+    /// let mut setter = TileSetter::with_capacity(10);
     /// assert_eq!(setter.capacity(), 10);
     /// ```
     pub fn capacity(&self) -> usize {
