@@ -1,13 +1,12 @@
 use crate::{
     chunk::Chunk,
     coord::{ToCoord3, ToIndex},
-    dimensions::{DimensionResult, Dimensions2},
+    dimensions::{DimensionResult, Dimensions2, Dimensions3},
     entity::ChunkComponents,
     lib::*,
     mesh::ChunkMesh,
     tile::{Tile, TileSetter},
 };
-use crate::dimensions::Dimensions3;
 
 #[derive(Clone, Copy, PartialEq)]
 /// The kinds of errors that can occur for a `[MapError]`.
@@ -332,7 +331,8 @@ impl TileMap {
             self.dimensions.height() - (self.dimensions.max_y() as f32 - tile_y),
         );
         let x = coord.x() - (map_coord.x() * self.chunk_dimensions.width());
-        let y = self.chunk_dimensions.max_y() - (coord.y() - tile_y * self.chunk_dimensions.height());
+        let y =
+            self.chunk_dimensions.max_y() - (coord.y() - tile_y * self.chunk_dimensions.height());
         let coord = Vec3::new(x, y, coord.z());
         let mut setter = TileSetter::with_capacity(1);
         setter.push(coord, tile);
@@ -345,7 +345,8 @@ impl TileMap {
         let mut tiles_map: HashMap<Handle<Chunk>, TileSetter> = HashMap::default();
         for (setter_coord, setter_tile) in setter.iter() {
             let chunk_coord = self.tile_coord_to_chunk_coord(*setter_coord);
-            let chunk_index = chunk_coord.to_index(self.dimensions.width(), self.dimensions.height());
+            let chunk_index =
+                chunk_coord.to_index(self.dimensions.width(), self.dimensions.height());
             let handle = self.get_chunk_handle(chunk_index).unwrap().clone_weak();
             let tile_y = setter_coord.y() / self.chunk_dimensions.height();
             let map_coord = Vec2::new(
@@ -433,11 +434,13 @@ impl TileMap {
             + self.dimensions.max_x()
             - 1.;
         let chunk_y = 2.
-            - (translation.y() / self.tile_dimensions.height() / self.dimensions.height() + self.dimensions.max_y()
+            - (translation.y() / self.tile_dimensions.height() / self.dimensions.height()
+                + self.dimensions.max_y()
                 - 1.);
         let x = self.dimensions.width() * chunk_x + coord.x();
-        let y =
-            (self.dimensions.height() * self.dimensions.max_y()) - (self.dimensions.height() * chunk_y) + coord.y();
+        let y = (self.dimensions.height() * self.dimensions.max_y())
+            - (self.dimensions.height() * chunk_y)
+            + coord.y();
         Some(Vec3::new(x, y, coord.z()))
     }
 }
@@ -526,8 +529,10 @@ pub fn map_system(
         for (chunk_handle, setter) in modified_chunks.iter() {
             let chunk = chunks.get_mut(chunk_handle).unwrap();
             for (setter_coord, setter_tile) in setter.iter() {
-                let idx =
-                    setter_coord.to_index(map.chunk_dimensions().width(), map.chunk_dimensions().height());
+                let idx = setter_coord.to_index(
+                    map.chunk_dimensions().width(),
+                    map.chunk_dimensions().height(),
+                );
                 chunk.set_tile(idx, *setter_tile);
             }
 

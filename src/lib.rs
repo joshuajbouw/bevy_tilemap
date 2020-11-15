@@ -64,8 +64,8 @@ mod lib {
     pub use ::bevy;
     use ::bevy::{
         app as bevy_app, asset as bevy_asset, ecs as bevy_ecs, math as bevy_math,
-        render as bevy_render, sprite as bevy_sprite,
-        transform as bevy_transform, type_registry as bevy_type_registry, utils as bevy_utils,
+        render as bevy_render, sprite as bevy_sprite, transform as bevy_transform,
+        type_registry as bevy_type_registry, utils as bevy_utils,
     };
 
     #[doc(hidden)]
@@ -88,15 +88,13 @@ mod lib {
             render_graph::{AssetRenderResourcesNode, RenderGraph},
             renderer::RenderResources,
             shader::{Shader, ShaderStage, ShaderStages},
-            texture::{TextureFormat},
+            texture::TextureFormat,
         },
         bevy_render::{
             pipeline::{RenderPipeline, RenderPipelines},
             render_graph::base::MainPass,
         },
-        bevy_sprite::{
-            {Rect, TextureAtlas},
-        },
+        bevy_sprite::{Rect, TextureAtlas},
         bevy_transform::{
             components::{GlobalTransform, Transform},
             hierarchy::BuildChildren,

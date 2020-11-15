@@ -61,7 +61,10 @@ pub trait TilemapRenderGraphBuilder {
 
 impl TilemapRenderGraphBuilder for RenderGraph {
     fn add_tilemap_graph(&mut self, resources: &Resources) -> &mut Self {
-        self.add_system_node(node::TILE_MAP, AssetRenderResourcesNode::<TileMap>::new(false));
+        self.add_system_node(
+            node::TILE_MAP,
+            AssetRenderResourcesNode::<TileMap>::new(false),
+        );
         let mut pipelines = resources.get_mut::<Assets<PipelineDescriptor>>().unwrap();
         let mut shaders = resources.get_mut::<Assets<Shader>>().unwrap();
         pipelines.set_untracked(CHUNK_PIPELINE_HANDLE, build_chunk_pipeline(&mut shaders));
