@@ -52,10 +52,12 @@ pub trait Dimensions2 {
     /// A `Vec2` containing the dimensions.
     fn dimensions(&self) -> Vec2;
 
+    /// The width of this dimension.
     fn width(&self) -> f32 {
         self.dimensions().x()
     }
 
+    /// The height of this dimension.
     fn height(&self) -> f32 {
         self.dimensions().y()
     }
@@ -144,14 +146,17 @@ pub trait Dimensions3 {
     /// A `Vec3` containing the dimensions.
     fn dimensions(&self) -> Vec3;
 
+    /// The width of this dimension.
     fn width(&self) -> f32 {
         self.dimensions().x()
     }
 
+    /// The height of this dimension.
     fn height(&self) -> f32 {
         self.dimensions().y()
     }
 
+    /// The depth of this dimension.
     fn depth(&self) -> f32 {
         self.dimensions().z()
     }

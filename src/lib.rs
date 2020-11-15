@@ -17,7 +17,7 @@
 // Rustc lints.
 #![no_implicit_prelude]
 #![deny(unsafe_code, dead_code)]
-// #![deny(missing_docs, unused_imports)]
+#![deny(missing_docs, unused_imports)]
 
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
 pub mod chunk;
@@ -29,24 +29,27 @@ pub mod dimensions;
 pub mod entity;
 /// Map traits to implement for a custom map and a basic struct for use.
 pub mod map;
-pub mod mesh;
+/// Meshes for use in rendering.
+pub(crate) mod mesh;
+/// Files and helpers for rendering.
 pub(crate) mod render;
 /// Tile traits to implement for a custom tile.
 pub mod tile;
 
-pub use crate::{chunk::Chunk, map::TileMap, tile::Tile};
-use crate::{lib::*, render::TilemapRenderGraphBuilder};
+use crate::{chunk::Chunk, lib::*, render::TilemapRenderGraphBuilder};
+pub use crate::{
+    map::TileMap,
+    tile::{Tile, TileSetter},
+};
 
 /// The Bevy Tilemap main plugin.
 #[derive(Default)]
 pub struct ChunkTilesPlugin;
 
-pub const CHUNK_MESH_HANDLE: Handle<Mesh> =
-    Handle::weak_from_u64(Mesh::TYPE_UUID, 12039305919028310735);
-
 impl Plugin for ChunkTilesPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_asset::<Chunk>()
+        app.add_asset::<TileMap>()
+            .add_asset::<Chunk>()
             .add_system_to_stage("post_update", crate::map::map_system.system());
 
         let resources = app.resources_mut();
@@ -70,8 +73,8 @@ mod lib {
 
     #[doc(hidden)]
     pub(crate) use self::{
-        bevy_app::{AppBuilder, EventReader, Events, Plugin},
-        bevy_asset::{AddAsset, Assets, Handle, HandleId},
+        bevy_app::{AppBuilder, Events, Plugin},
+        bevy_asset::{AddAsset, Assets, Handle},
         bevy_ecs::{Bundle, Query},
         bevy_ecs::{Commands, Entity, IntoQuerySystem, ResMut, Resources},
         bevy_math::{Vec2, Vec3},
@@ -94,7 +97,7 @@ mod lib {
             pipeline::{RenderPipeline, RenderPipelines},
             render_graph::base::MainPass,
         },
-        bevy_sprite::{Rect, TextureAtlas},
+        bevy_sprite::TextureAtlas,
         bevy_transform::{
             components::{GlobalTransform, Transform},
             hierarchy::BuildChildren,
@@ -119,7 +122,7 @@ mod lib {
         convert::{From, Into},
         default::Default,
         fmt::{Debug, Formatter, Result as FmtResult},
-        iter::Iterator,
+        iter::{Extend, IntoIterator, Iterator},
         ops::{FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},

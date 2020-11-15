@@ -1,14 +1,23 @@
 use crate::{lib::*, render::CHUNK_PIPELINE_HANDLE};
 use bevy::render::pipeline::PipelineSpecialization;
 
+/// A component bundle for `Chunk` entities.
 #[derive(Bundle)]
 pub struct ChunkComponents {
+    /// The handle for a TextureAtlas which contains multiple textures.
     pub texture_atlas: Handle<TextureAtlas>,
+    /// A component that indicates how to draw a component.
     pub draw: Draw,
+    /// The pipeline for the renderer.
     pub render_pipelines: RenderPipelines,
+    /// A component that indicates that an entity should be drawn in the
+    /// "main pass"
     pub main_pass: MainPass,
+    /// A mesh of vertices for a component.
     pub mesh: Handle<Mesh>,
+    /// The transform location in a space for a component.
     pub transform: Transform,
+    /// The global transform location in a space for a component.
     pub global_transform: GlobalTransform,
 }
 
@@ -44,39 +53,5 @@ impl Default for ChunkComponents {
             main_pass: MainPass,
             global_transform: Default::default(),
         }
-    }
-}
-
-impl ChunkComponents {
-    pub fn new() -> ChunkComponents {
-        ChunkComponents::default()
-    }
-
-    // pub fn set_material(&mut self, material: Handle<ColorMaterial>) {
-    //     self.material = material;
-    // }
-
-    pub fn set_texture_atlas(&mut self, texture_atlas: Handle<TextureAtlas>) {
-        self.texture_atlas = texture_atlas;
-    }
-
-    pub fn set_draw(&mut self, draw: Draw) {
-        self.draw = draw;
-    }
-
-    pub fn set_mesh(&mut self, mesh: Handle<Mesh>) {
-        self.mesh = mesh;
-    }
-
-    pub fn set_transform(&mut self, transform: Transform) {
-        self.transform = transform;
-    }
-
-    pub fn set_global_transform(&mut self, global_transform: GlobalTransform) {
-        self.global_transform = global_transform;
-    }
-
-    pub fn add_render_pipeline(&mut self, pipeline: RenderPipeline) {
-        self.render_pipelines.pipelines.push(pipeline);
     }
 }

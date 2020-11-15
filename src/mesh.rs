@@ -1,8 +1,7 @@
-use crate::lib::*;
+use crate::{dimensions::Dimensions3, lib::*};
 use bevy::render::pipeline::PrimitiveTopology;
 
 pub struct ChunkMesh {
-    // size: Vec2,
     width: u32,
     height: u32,
 }
@@ -11,17 +10,12 @@ impl ChunkMesh {
     pub const ATTRIBUTE_TILE_INDEX: &'static str = "Vertex_Tile_Index";
     pub const ATTRIBUTE_TILE_COLOR: &'static str = "Vertex_Tile_Color";
 
-    pub fn new(width: u32, height: u32) -> ChunkMesh {
+    pub fn new(dimensions: Vec3) -> ChunkMesh {
         ChunkMesh {
-            // size,
-            width,
-            height,
+            width: dimensions.width() as u32,
+            height: dimensions.height() as u32,
         }
     }
-
-    // pub fn size(&self) -> Vec2 {
-    //     self.size
-    // }
 
     pub fn width(&self) -> u32 {
         self.width
