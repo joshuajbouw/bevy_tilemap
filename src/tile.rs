@@ -15,7 +15,7 @@ pub fn tiles_to_renderer_parts(tiles: &[Tile]) -> (Vec<f32>, Vec<[f32; 4]>) {
 /// A tile with an index value and color.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub struct Tile {
-    index: u32,
+    index: usize,
     color: Color,
 }
 
@@ -41,7 +41,7 @@ impl Tile {
     /// // Creates a tile with an index of 0
     /// let tile = Tile::new(0);
     /// ```
-    pub fn new(index: u32) -> Tile {
+    pub fn new(index: usize) -> Tile {
         Tile {
             index,
             ..Default::default()
@@ -59,7 +59,7 @@ impl Tile {
     ///
     /// let tile = Tile::with_color(0, Color::BLUE);
     /// ```
-    pub fn with_color(index: u32, color: Color) -> Tile {
+    pub fn with_color(index: usize, color: Color) -> Tile {
         Tile { index, color }
     }
 
@@ -74,7 +74,7 @@ impl Tile {
     ///
     /// assert_eq!(index, tile.index());
     /// ```
-    pub fn index(&self) -> u32 {
+    pub fn index(&self) -> usize {
         self.index
     }
 
