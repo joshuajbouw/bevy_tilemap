@@ -1,19 +1,4 @@
-use crate::{chunk::Chunk, dimensions::Dimensions3, lib::*, map::TileMap, tile::Tile};
-
-/// A trait for use to easily convert a chunk tile coordinate back to a world coordinate.
-pub trait ToWorldCoordinates<T: Tile, C: Chunk<T>, M: TileMap<T, C>>:
-    Dimensions3 + Chunk<T>
-{
-    /// Takes a `Tile` coordinate and returns its location in the `Map`.
-    fn to_world_coord(&self, coord: &Vec3, map: &M, translation: Vec2) -> Option<Vec3> {
-        // takes in translation of tile
-        let chunk_x = (translation.x() / T::WIDTH / Self::WIDTH) + map.max_x() - 1.;
-        let chunk_y = 2. - (translation.y() / T::HEIGHT / Self::HEIGHT + map.max_y() - 1.);
-        let x = Self::WIDTH * chunk_x + coord.x();
-        let y = (Self::HEIGHT * map.max_x()) - (Self::HEIGHT * chunk_y) + coord.y();
-        Some(Vec3::new(x, y, coord.z()))
-    }
-}
+use crate::lib::*;
 
 /// A trait that converts a primitive into a 2 dimensional coordinate.
 pub trait ToCoord2 {

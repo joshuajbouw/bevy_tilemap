@@ -2,9 +2,12 @@ use crate::{
     chunk::Chunk,
     coord::{ToCoord3, ToIndex},
     dimensions::{DimensionResult, Dimensions2},
+    entity::ChunkComponents,
     lib::*,
+    mesh::ChunkMesh,
     tile::{Tile, TileSetter},
 };
+use crate::dimensions::Dimensions3;
 
 #[derive(Clone, Copy, PartialEq)]
 /// The kinds of errors that can occur for a `[MapError]`.
@@ -55,13 +58,13 @@ pub type MapResult<T> = Result<T, MapError>;
 
 /// Events that happen on a `Chunk` by index value.
 #[derive(Debug)]
-pub enum MapEvent<T: Tile, C: Chunk<T>> {
+pub enum MapEvent {
     /// To be used when a chunk is created.
     Created {
         /// The map index where the chunk needs to be stored.
         index: usize,
         /// The `Handle` of the `Chunk`.
-        handle: Handle<C>,
+        handle: Handle<Chunk>,
     },
     /// If the chunk needs to be refreshed.
     ///
@@ -69,19 +72,19 @@ pub enum MapEvent<T: Tile, C: Chunk<T>> {
     /// May never be used, and may be removed.
     Refresh {
         /// The `Handle` of the `Chunk`.
-        handle: Handle<C>,
+        handle: Handle<Chunk>,
     },
     /// If the chunk had been modified.
     Modified {
         /// The `Handle` of the `Chunk`.
-        handle: Handle<C>,
+        handle: Handle<Chunk>,
         /// The `TileSetter` that is used to set all the tiles.
-        setter: TileSetter<T>,
+        setter: TileSetter,
     },
     /// If the chunk needs to be despawned.
     Despawned {
         /// The `Handle` of the `Chunk`.
-        handle: Handle<C>,
+        handle: Handle<Chunk>,
         /// The `Entity` that needs to be despawned.
         entity: Entity,
     },
@@ -97,63 +100,151 @@ pub enum MapEvent<T: Tile, C: Chunk<T>> {
     },
 }
 
-/// Trait methods for a `TileMap`.
-///
-/// Provides standard methods for a basic `TileMap` which must be used when
-/// using the library's systems.
-pub trait TileMap<T: Tile, C: Chunk<T>>:
-    'static + Dimensions2 + TypeUuid + Default + Send + Sync
-{
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TileMapDimensions(Vec2);
+
+impl Dimensions2 for TileMapDimensions {
+    fn dimensions(&self) -> Vec2 {
+        self.0
+    }
+}
+
+impl TileMapDimensions {
+    pub fn new(dimensions: Vec2) -> TileMapDimensions {
+        TileMapDimensions(dimensions)
+    }
+}
+
+impl From<Vec2> for TileMapDimensions {
+    fn from(v: Vec2) -> TileMapDimensions {
+        TileMapDimensions(v)
+    }
+}
+
+/// A basic implementation of the `TileMap` trait.
+#[derive(Debug, Serialize, Deserialize, RenderResources)]
+pub struct TileMap {
+    #[render_resources(ignore)]
+    dimensions: Vec2,
+    chunk_dimensions: Vec3,
+    #[render_resources(ignore)]
+    tile_dimensions: Vec2,
+    #[serde(skip)]
+    // Should change to HashSet when merged into bevy
+    #[render_resources(ignore)]
+    handles: Vec<Option<Handle<Chunk>>>,
+    #[serde(skip)]
+    #[render_resources(ignore)]
+    entities: HashMap<usize, Entity>,
+    #[serde(skip)]
+    #[render_resources(ignore)]
+    events: Events<MapEvent>,
+    #[serde(skip)]
+    #[render_resources(ignore)]
+    texture_atlas: Handle<TextureAtlas>,
+}
+
+impl TypeUuid for TileMap {
+    const TYPE_UUID: Uuid = Uuid::from_u128(109481186966523254410691740507722642628);
+}
+
+impl TileMap {
+    /// Returns a new WorldMap with the types `Tile` and `Chunk`.
+    pub fn new(
+        dimensions: Vec2,
+        chunk_dimensions: Vec3,
+        tile_dimensions: Vec2,
+        texture_atlas: Handle<TextureAtlas>,
+    ) -> TileMap {
+        let capacity = (dimensions.x() * dimensions.y()) as usize;
+        TileMap {
+            dimensions,
+            chunk_dimensions,
+            tile_dimensions,
+            handles: Vec::with_capacity(capacity),
+            entities: HashMap::default(),
+            events: Events::<MapEvent>::default(),
+            texture_atlas,
+        }
+    }
+
     /// Sets the dimensions of the `TileMap`.
-    fn set_dimensions(&mut self, dimensions: Vec2);
+    pub fn set_dimensions(&mut self, dimensions: Vec2) {
+        self.handles = vec![None; (dimensions.x() * dimensions.y()) as usize];
+        self.dimensions = dimensions;
+    }
 
     /// Sets the sprite sheet, or `TextureAtlas` for use in the `TileMap`.
-    fn set_texture_atlas(&mut self, handle: Handle<TextureAtlas>);
+    pub fn set_texture_atlas(&mut self, handle: Handle<TextureAtlas>) {
+        self.texture_atlas = handle;
+    }
 
     /// Returns a reference the `Handle` of the `TextureAtlas`.
-    fn texture_atlas_handle(&self) -> &Handle<TextureAtlas>;
+    pub fn texture_atlas_handle(&self) -> &Handle<TextureAtlas> {
+        &self.texture_atlas
+    }
 
     /// Gets the chunk handle at an index position, if it exists.
-    fn get_chunk_handle(&self, index: usize) -> Option<&Handle<C>>;
+    pub fn get_chunk_handle(&self, index: usize) -> Option<&Handle<Chunk>> {
+        self.handles[index].as_ref()
+    }
 
     /// Returns a bool if the entity exists.
-    fn contains_entity(&self, index: usize) -> bool;
+    pub fn contains_entity(&self, index: usize) -> bool {
+        self.entities.contains_key(&index)
+    }
 
     /// Pushes a chunk handle to an index position.
     ///
     /// Do **not** use this with out
     /// storing the `Chunk` as an asset. Preferably, use `add_chunk` instead
     /// which is the correct way to store a `Chunk`.
-    fn push_chunk_handle(&mut self, index: usize, handle: Option<Handle<C>>);
+    pub fn push_chunk_handle(&mut self, index: usize, handle: Option<Handle<Chunk>>) {
+        self.handles[index] = handle;
+    }
 
     /// Removes a chunk at an index position.
-    fn remove_chunk_handle(&mut self, index: usize);
+    pub fn remove_chunk_handle(&mut self, index: usize) {
+        self.handles[index] = None;
+    }
 
     /// Inserts an `[Entity]` at an index position.
-    fn insert_entity(&mut self, index: usize, entity: Entity);
+    pub fn insert_entity(&mut self, index: usize, entity: Entity) {
+        self.entities.insert(index, entity);
+    }
 
     /// Gets an `[Entity]` at an index position, if it exists.
-    fn get_entity(&self, index: &usize) -> Option<&Entity>;
+    pub fn get_entity(&self, index: &usize) -> Option<&Entity> {
+        self.entities.get(index)
+    }
 
     /// Returns the `[Events]` for the `MapEvent`s.
-    fn events(&self) -> &Events<MapEvent<T, C>>;
+    pub fn events(&self) -> &Events<MapEvent> {
+        &self.events
+    }
 
     /// "Sends" an event by writing it to the current event buffer.
     /// `[EventReader]`s can then read the event.
-    fn send_event(&mut self, event: MapEvent<T, C>);
+    pub fn send_event(&mut self, event: MapEvent) {
+        self.events.send(event);
+    }
 
     /// Swaps the event buffers and clears the oldest event buffer. In general,
     /// this should be called once per frame/update.
-    fn events_update(&mut self);
+    pub fn events_update(&mut self) {
+        self.events.update()
+    }
 
     /// Returns the `[EventReader]` containing all `MapEvent`s.
-    fn events_reader(&mut self) -> EventReader<MapEvent<T, C>>;
+    pub fn events_reader(&mut self) -> EventReader<MapEvent> {
+        self.events.get_reader()
+    }
 
     /// Adds a `Chunk`, creates a handle and stores it at a coordinate position.
     ///
     /// This is the correct way to add a `Chunk`.
-    fn add_chunk<I: ToIndex>(&mut self, chunk: C, v: I, chunks: &mut Assets<C>) {
-        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
+    pub fn add_chunk<I: ToIndex>(&mut self, chunk: Chunk, v: I, chunks: &mut Assets<Chunk>) {
+        let index = v.to_index(self.dimensions.width(), self.dimensions.height());
         let handle = chunks.add(chunk);
         self.send_event(MapEvent::Created {
             index,
@@ -169,15 +260,15 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
     ///
     /// # Errors
     /// Returns an error if the coordinate is out of bounds.
-    fn set_chunk<H: Into<HandleId>, I: ToIndex>(
+    pub fn set_chunk<H: Into<HandleId>, I: ToIndex>(
         &mut self,
         handle: H,
-        chunk: C,
+        chunk: Chunk,
         v: I,
-        chunks: &mut Assets<C>,
+        chunks: &mut Assets<Chunk>,
     ) -> DimensionResult<()> {
-        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
-        self.check_index(index)?;
+        let index = v.to_index(self.dimensions.width(), self.dimensions.y());
+        self.dimensions.check_index(index)?;
         let handle = chunks.set(handle, chunk);
         if self.contains_entity(index) {
             self.send_event(MapEvent::Refresh { handle });
@@ -191,13 +282,13 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
     ///
     /// # Errors
     /// Returns an error if the coordinate is out of bounds.
-    fn get_chunk<'a, I: ToIndex>(
+    pub fn get_chunk<'a, I: ToIndex>(
         &self,
         v: I,
-        chunks: &'a Assets<C>,
-    ) -> DimensionResult<Option<&'a C>> {
-        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
-        self.check_index(index)?;
+        chunks: &'a Assets<Chunk>,
+    ) -> DimensionResult<Option<&'a Chunk>> {
+        let index = v.to_index(self.dimensions.width(), self.dimensions.height());
+        self.dimensions.check_index(index)?;
         Ok(self
             .get_chunk_handle(index)
             .and_then(|handle| chunks.get(handle)))
@@ -208,21 +299,21 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
     ///
     /// # Errors
     /// Returns an error if the coordinate is out of bounds.
-    fn get_chunk_mut<'a, I: ToIndex>(
+    pub fn get_chunk_mut<'a, I: ToIndex>(
         &self,
         v: I,
-        chunks: &'a mut Assets<C>,
-    ) -> DimensionResult<Option<&'a mut C>> {
-        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
-        self.check_index(index)?;
+        chunks: &'a mut Assets<Chunk>,
+    ) -> DimensionResult<Option<&'a mut Chunk>> {
+        let index = v.to_index(self.dimensions.width(), self.dimensions.height());
+        self.dimensions.check_index(index)?;
         Ok(self
             .get_chunk_handle(index)
             .and_then(move |handle| chunks.get_mut(handle)))
     }
 
     /// Checks if a chunk exists at a coordinate position.
-    fn chunk_exists<I: ToIndex>(&self, v: I) -> bool {
-        let index = v.to_index(self.dimensions().x(), self.dimensions().y());
+    pub fn chunk_exists<I: ToIndex>(&self, v: I) -> bool {
+        let index = v.to_index(self.dimensions.width(), self.dimensions.height());
         self.get_chunk_handle(index).is_some()
     }
 
@@ -230,18 +321,18 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
     ///
     /// # Errors
     /// Returns an error if the coordinate is out of bounds.
-    fn set_tile<I: ToIndex + ToCoord3>(&mut self, v: I, tile: T) -> DimensionResult<()> {
-        let coord = v.to_coord3(self.dimensions().x(), self.dimensions().y());
+    pub fn set_tile<I: ToIndex + ToCoord3>(&mut self, v: I, tile: Tile) -> DimensionResult<()> {
+        let coord = v.to_coord3(self.dimensions.width(), self.dimensions.height());
         let chunk_coord = self.tile_coord_to_chunk_coord(coord);
-        let chunk_index = chunk_coord.to_index(self.dimensions().x(), self.dimensions().y());
+        let chunk_index = chunk_coord.to_index(self.dimensions.width(), self.dimensions.height());
         let handle = self.get_chunk_handle(chunk_index).unwrap().clone_weak();
-        let tile_y = coord.y() / C::HEIGHT;
+        let tile_y = coord.y() / self.chunk_dimensions.height();
         let map_coord = Vec2::new(
-            coord.x() / C::WIDTH,
-            self.dimensions().y() - (self.max_y() as f32 - tile_y),
+            coord.x() / self.chunk_dimensions.width(),
+            self.dimensions.height() - (self.dimensions.max_y() as f32 - tile_y),
         );
-        let x = coord.x() - (map_coord.x() * C::WIDTH);
-        let y = C::HEIGHT - 1. - (coord.y() - tile_y * C::HEIGHT);
+        let x = coord.x() - (map_coord.x() * self.chunk_dimensions.width());
+        let y = self.chunk_dimensions.max_y() - (coord.y() - tile_y * self.chunk_dimensions.height());
         let coord = Vec3::new(x, y, coord.z());
         let mut setter = TileSetter::with_capacity(1);
         setter.push(coord, tile);
@@ -250,25 +341,28 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
     }
 
     /// Sets many tiles using a `TileSetter`.
-    fn set_tiles(&mut self, setter: TileSetter<T>) {
-        let mut tiles_map: HashMap<Handle<C>, TileSetter<T>> = HashMap::default();
+    pub fn set_tiles(&mut self, setter: TileSetter) {
+        let mut tiles_map: HashMap<Handle<Chunk>, TileSetter> = HashMap::default();
         for (setter_coord, setter_tile) in setter.iter() {
             let chunk_coord = self.tile_coord_to_chunk_coord(*setter_coord);
-            let chunk_index = chunk_coord.to_index(self.dimensions().x(), self.dimensions().y());
+            let chunk_index = chunk_coord.to_index(self.dimensions.width(), self.dimensions.height());
             let handle = self.get_chunk_handle(chunk_index).unwrap().clone_weak();
-            let tile_y = setter_coord.y() / C::HEIGHT;
+            let tile_y = setter_coord.y() / self.chunk_dimensions.height();
             let map_coord = Vec2::new(
-                (setter_coord.x() / C::WIDTH).floor(),
-                self.max_y() - (self.max_y() as f32 - tile_y),
+                (setter_coord.x() / self.chunk_dimensions.width()).floor(),
+                self.dimensions.max_y() - (self.dimensions.max_y() as f32 - tile_y),
             );
-            let x = setter_coord.x() - (map_coord.x() * C::WIDTH);
-            let y = C::X_MAX - (setter_coord.y() - chunk_coord.y() * C::HEIGHT);
+            let x = setter_coord.x() - (map_coord.x() * self.chunk_dimensions.width());
+            let y = self.chunk_dimensions.max_y()
+                - (setter_coord.y() - chunk_coord.y() * self.chunk_dimensions.height());
             let coord = Vec3::new(x, y, setter_coord.z());
             if let Some(setters) = tiles_map.get_mut(&handle) {
-                setters.push_stack(coord, setter_tile.clone());
+                setters.push(coord, *setter_tile);
             } else {
-                let mut setter = TileSetter::with_capacity((C::WIDTH * C::HEIGHT) as usize);
-                setter.push_stack(coord, setter_tile.clone());
+                let mut setter = TileSetter::with_capacity(
+                    (self.chunk_dimensions.width() * self.chunk_dimensions.height()) as usize,
+                );
+                setter.push(coord, *setter_tile);
                 tiles_map.insert(handle, setter);
             }
         }
@@ -279,420 +373,177 @@ pub trait TileMap<T: Tile, C: Chunk<T>>:
     }
 
     /// Returns the center tile of the `Map` as a `Vec2` `Tile` coordinate.
-    fn center_tile_coord(&self) -> Vec2 {
-        let x = self.dimensions().x() / 2. * C::WIDTH;
-        let y = self.dimensions().y() / 2. * C::HEIGHT;
+    pub fn center_tile_coord(&self) -> Vec2 {
+        let x = self.dimensions.width() / 2. * self.chunk_dimensions.y();
+        let y = self.dimensions.height() / 2. * self.chunk_dimensions.x();
         Vec2::new(x.floor(), y.floor())
     }
 
     /// Takes a tile coordinate and changes it into a chunk coordinate.
-    fn tile_coord_to_chunk_coord(&self, coord: Vec3) -> Vec2 {
-        let x = (coord.x() / C::WIDTH).floor();
-        let y = (coord.y() / C::HEIGHT).floor();
+    pub fn tile_coord_to_chunk_coord(&self, coord: Vec3) -> Vec2 {
+        let x = (coord.x() / self.chunk_dimensions.y()).floor();
+        let y = (coord.y() / self.chunk_dimensions.x()).floor();
         Vec2::new(x, y)
     }
 
     /// Takes a translation and calculates the `Tile` coordinate.
-    fn translation_to_tile_coord(&self, translation: Vec3) -> Vec2 {
+    pub fn translation_to_tile_coord(&self, translation: Vec3) -> Vec2 {
         let center = self.center_tile_coord();
-        let x = translation.x() / T::WIDTH as f32 + center.x();
-        let y = translation.y() / T::HEIGHT as f32 + center.y();
+        let x = translation.x() / self.tile_dimensions.width() as f32 + center.x();
+        let y = translation.y() / self.tile_dimensions.height() as f32 + center.y();
         Vec2::new(x, y)
     }
 
     /// Takes a translation and calculates the `Chunk` coordinate.
-    fn translation_to_chunk_coord(&self, translation: Vec3) -> Vec2 {
-        let center = self.center();
-        let x = translation.x() as i32 / (T::WIDTH as i32 * C::HEIGHT as i32) + center.x() as i32;
-        let y = translation.y() as i32 / (T::HEIGHT as i32 * C::HEIGHT as i32) + center.y() as i32;
+    pub fn translation_to_chunk_coord(&self, translation: Vec3) -> Vec2 {
+        let center = self.dimensions.center();
+        let x = translation.x() as i32
+            / (self.tile_dimensions.width() as i32 * self.chunk_dimensions.width() as i32)
+            + center.x() as i32;
+        let y = translation.y() as i32
+            / (self.tile_dimensions.height() as i32 * self.chunk_dimensions.height() as i32)
+            + center.y() as i32;
         Vec2::new(x as f32, y as f32)
     }
-}
 
-/// A basic implementation of the `TileMap` trait.
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct WorldMap<T: Tile, C: Chunk<T>> {
-    dimensions: Vec2,
-    #[serde(skip)]
-    handles: Vec<Option<Handle<C>>>,
-    #[serde(skip)]
-    entities: HashMap<usize, Entity>,
-    #[serde(skip)]
-    events: Events<MapEvent<T, C>>,
-    #[serde(skip)]
-    texture_atlas: Handle<TextureAtlas>,
-}
-
-impl<T: Tile, C: Chunk<T>> Dimensions2 for WorldMap<T, C> {
-    fn dimensions(&self) -> Vec2 {
+    pub fn dimensions(&self) -> Vec2 {
         self.dimensions
     }
-}
 
-impl<T: Tile, C: Chunk<T>> TypeUuid for WorldMap<T, C> {
-    const TYPE_UUID: Uuid = Uuid::from_u128(109481186966523254410691740507722642628);
-}
-
-impl<T: Tile, C: Chunk<T>> TileMap<T, C> for WorldMap<T, C> {
-    fn set_dimensions(&mut self, dimensions: Vec2) {
-        self.handles = vec![None; (dimensions.x() * dimensions.y()) as usize];
-        self.dimensions = dimensions;
+    pub fn chunk_dimensions(&self) -> Vec3 {
+        self.chunk_dimensions
     }
 
-    fn set_texture_atlas(&mut self, handle: Handle<TextureAtlas>) {
-        self.texture_atlas = handle;
+    /// A Chunk's size in pixels.
+    pub fn chunk_size(&self) -> Vec2 {
+        Vec2::new(
+            self.tile_dimensions.width() * self.chunk_dimensions.width(),
+            self.tile_dimensions.height() * self.chunk_dimensions.height(),
+        )
     }
 
-    fn texture_atlas_handle(&self) -> &Handle<TextureAtlas> {
-        &self.texture_atlas
+    pub fn tile_dimensions(&self) -> Vec2 {
+        self.tile_dimensions
     }
 
-    fn get_chunk_handle(&self, index: usize) -> Option<&Handle<C>> {
-        self.handles[index].as_ref()
-    }
-
-    fn contains_entity(&self, index: usize) -> bool {
-        self.entities.contains_key(&index)
-    }
-
-    fn push_chunk_handle(&mut self, index: usize, handle: Option<Handle<C>>) {
-        self.handles[index] = handle;
-    }
-
-    fn remove_chunk_handle(&mut self, index: usize) {
-        self.handles[index] = None;
-    }
-
-    fn insert_entity(&mut self, index: usize, entity: Entity) {
-        self.entities.insert(index, entity);
-    }
-
-    fn get_entity(&self, index: &usize) -> Option<&Entity> {
-        self.entities.get(index)
-    }
-
-    fn events(&self) -> &Events<MapEvent<T, C>> {
-        &self.events
-    }
-
-    fn send_event(&mut self, event: MapEvent<T, C>) {
-        self.events.send(event);
-    }
-
-    fn events_update(&mut self) {
-        self.events.update()
-    }
-
-    fn events_reader(&mut self) -> EventReader<MapEvent<T, C>> {
-        self.events.get_reader()
+    /// Takes a `Tile` coordinate and returns its location in the `Map`.
+    pub fn chunk_to_world_coord(&self, coord: &Vec3, translation: Vec2) -> Option<Vec3> {
+        // takes in translation of tile
+        let chunk_x = (translation.x() / self.tile_dimensions.width() / self.dimensions.width())
+            + self.dimensions.max_x()
+            - 1.;
+        let chunk_y = 2.
+            - (translation.y() / self.tile_dimensions.height() / self.dimensions.height() + self.dimensions.max_y()
+                - 1.);
+        let x = self.dimensions.width() * chunk_x + coord.x();
+        let y =
+            (self.dimensions.height() * self.dimensions.max_y()) - (self.dimensions.height() * chunk_y) + coord.y();
+        Some(Vec3::new(x, y, coord.z()))
     }
 }
 
-impl<T: Tile, C: Chunk<T>> WorldMap<T, C> {
-    /// Returns a new WorldMap with the types `Tile` and `Chunk`.
-    pub fn new(dimensions: Vec2, texture_atlas: Handle<TextureAtlas>) -> WorldMap<T, C> {
-        let size = (dimensions.x() * dimensions.y()) as usize;
-        WorldMap {
-            dimensions,
-            handles: Vec::with_capacity(size),
-            entities: HashMap::default(),
-            events: Events::<MapEvent<T, C>>::default(),
-            texture_atlas,
-        }
-    }
-}
-
-fn sprite_coord<T: Tile>(tile: &T, sprite_sheet_atlas: &TextureAtlas) -> Option<(usize, usize)> {
-    let sprite_idx = {
-        if let Some(handle) = tile.texture() {
-            sprite_sheet_atlas.get_texture_index(handle).unwrap()
-        } else {
-            return None;
-        }
-    };
-    let sprite_rect = sprite_sheet_atlas.textures[sprite_idx];
-    Some((sprite_rect.min.x() as usize, sprite_rect.min.y() as usize))
-}
-
-fn set_tiles<T>(
-    tiles: &[T],
-    chunk_texture: &mut Texture,
-    sprite_sheet_texture: &Texture,
-    sprite_sheet_atlas: &TextureAtlas,
-    chunk_rect: Rect,
-    chunk_coord: Vec2,
-) where
-    T: Tile,
-{
-    let map_texture_size = chunk_texture.size.x() as usize;
-    let chunk_format_size = chunk_texture.format.pixel_size();
-    let format_size = chunk_texture.format.pixel_size();
-
-    let mut positions = Vec::with_capacity(tiles.len());
-    for tile in tiles.iter() {
-        if let Some(coord) = sprite_coord(tile, sprite_sheet_atlas) {
-            positions.push(coord);
-        }
-    }
-    positions.shrink_to_fit();
-    // We need this bool here to prevent borrow issues in the loop.
-    let is_single = positions.len() == 1;
-
-    let width = sprite_sheet_texture.size.x() as usize;
-    let rect_width = chunk_rect.width() as usize;
-    let rect_height = chunk_rect.height() as usize;
-    let rect_y = chunk_coord.y() as usize;
-    let rect_x = chunk_coord.x() as usize;
-    for (sprite_x, mut sprite_y) in positions.iter_mut() {
-        for bound_y in rect_y..rect_y + rect_height {
-            let begin = (bound_y * map_texture_size + rect_x) * chunk_format_size;
-            let end = begin + rect_width * chunk_format_size;
-            let sprite_begin = (sprite_y * width + *sprite_x) * format_size;
-            let sprite_end = sprite_begin + rect_width * format_size;
-            if is_single {
-                chunk_texture.data[begin..end]
-                    .copy_from_slice(&sprite_sheet_texture.data[sprite_begin..sprite_end]);
-            } else {
-                let data = &mut chunk_texture.data[begin..end];
-                let sprite_data = &sprite_sheet_texture.data[sprite_begin..sprite_end];
-                for x in 0..((sprite_end - sprite_begin) / format_size) {
-                    let inner_begin = x * format_size;
-                    let inner_end = inner_begin + format_size;
-                    let inner_data = &sprite_data[inner_begin..inner_end];
-                    if inner_data[3] != 0 {
-                        data[inner_begin..inner_end]
-                            .copy_from_slice(&sprite_data[inner_begin..inner_end])
-                    }
-                }
-            }
-            sprite_y += 1;
-        }
-    }
-}
-
-struct MapSystemContext<'a, T: Tile, C: Chunk<T>, M: TileMap<T, C>> {
-    commands: Mutex<Commands>,
-    chunks: Mutex<ResMut<'a, Assets<C>>>,
-    map: Mutex<ResMut<'a, M>>,
-    materials: Mutex<ResMut<'a, Assets<ColorMaterial>>>,
-    textures: Mutex<ResMut<'a, Assets<Texture>>>,
-    sprite_sheet: Mutex<Texture>,
-    tile_kind: PhantomData<T>,
+#[derive(Bundle, Debug)]
+pub struct TileMapComponents {
+    pub tile_map: TileMap,
+    pub transform: Transform,
+    pub global_transform: GlobalTransform,
 }
 
 /// The event handling system for the `TileMap` which takes the types `Tile`, `Chunk`, and `TileMap`.
-pub fn map_system<T, C, M>(
-    commands: Commands,
-    chunks: ResMut<Assets<C>>,
-    mut map: ResMut<M>,
-    materials: ResMut<Assets<ColorMaterial>>,
-    textures: ResMut<Assets<Texture>>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-) where
-    T: Tile,
-    C: Chunk<T>,
-    M: TileMap<T, C>,
-{
-    map.events_update();
-    let mut new_chunks = HashSet::<(usize, Handle<C>)>::default();
-    let mut refresh_chunks = HashSet::<Handle<C>>::default();
-    let mut modified_chunks = Vec::new();
-    let mut despawned_chunks = HashSet::<(Handle<C>, Entity)>::default();
-    let mut removed_chunks = HashSet::<(usize, Entity)>::default();
-    let mut reader = map.events_reader();
-    for event in reader.iter(map.events()) {
-        use MapEvent::*;
-        match event {
-            Created { index, ref handle } => {
-                new_chunks.insert((*index, handle.clone_weak()));
+pub fn map_system(
+    mut commands: Commands,
+    mut chunks: ResMut<Assets<Chunk>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut query: Query<(&Entity, &mut TileMap)>,
+) {
+    for (map_entity, mut map) in query.iter_mut() {
+        map.events_update();
+        let mut new_chunks = HashSet::<(usize, Handle<Chunk>)>::default();
+        let mut refresh_chunks = HashSet::<Handle<Chunk>>::default();
+        let mut modified_chunks = Vec::new();
+        let mut despawned_chunks = HashSet::<(Handle<Chunk>, Entity)>::default();
+        let mut removed_chunks = HashSet::<(usize, Entity)>::default();
+        let mut reader = map.events_reader();
+        for event in reader.iter(map.events()) {
+            use MapEvent::*;
+            match event {
+                Created { index, ref handle } => {
+                    new_chunks.insert((*index, handle.clone_weak()));
+                }
+                Refresh { ref handle } => {
+                    refresh_chunks.insert(handle.clone_weak());
+                }
+                Modified {
+                    ref handle,
+                    setter: setters,
+                } => {
+                    modified_chunks.push((handle.clone_weak(), setters.clone()));
+                }
+                Despawned { ref handle, entity } => {
+                    despawned_chunks.insert((handle.clone_weak(), *entity));
+                }
+                Removed { index, entity } => {
+                    removed_chunks.insert((*index, *entity));
+                }
             }
-            Refresh { ref handle } => {
-                refresh_chunks.insert(handle.clone_weak());
+        }
+
+        let mut chunk_entities = Vec::with_capacity(new_chunks.len());
+        for (idx, chunk_handle) in new_chunks.iter() {
+            let chunk = chunks.get(chunk_handle).unwrap();
+            let mesh = meshes.get_mut(chunk.mesh()).unwrap();
+            let map_coord = map.dimensions().decode_coord_unchecked(*idx);
+            let map_center = map.dimensions().center();
+
+            let (tile_indexes, tile_colors) = chunk.tiles_to_renderer_parts();
+            mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, tile_indexes.into());
+            mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, tile_colors.into());
+            let translation = Vec3::new(
+                (map_coord.x() - map_center.x() + 0.5)
+                    * map.tile_dimensions().width()
+                    * map.chunk_dimensions().width(),
+                (map_coord.y() - map_center.y() + 0.5)
+                    * map.tile_dimensions().height()
+                    * map.chunk_dimensions().height(),
+                1.,
+            );
+            let chunk_entity = commands
+                .spawn(ChunkComponents {
+                    texture_atlas: map.texture_atlas_handle().clone_weak(),
+                    draw: Default::default(),
+                    render_pipelines: Default::default(),
+                    main_pass: Default::default(),
+                    mesh: chunk.mesh().clone_weak(),
+                    transform: Transform::from_translation(translation),
+                    global_transform: Default::default(),
+                })
+                .current_entity()
+                .expect("Chunk entity unexpected does not exist.");
+            chunk_entities.push(chunk_entity);
+        }
+        commands.push_children(*map_entity, &chunk_entities);
+
+        for (chunk_handle, setter) in modified_chunks.iter() {
+            let chunk = chunks.get_mut(chunk_handle).unwrap();
+            for (setter_coord, setter_tile) in setter.iter() {
+                let idx =
+                    setter_coord.to_index(map.chunk_dimensions().width(), map.chunk_dimensions().height());
+                chunk.set_tile(idx, *setter_tile);
             }
-            Modified {
-                ref handle,
-                setter: setters,
-            } => {
-                modified_chunks.push((handle.clone_weak(), setters.clone()));
-            }
-            Despawned { ref handle, entity } => {
-                despawned_chunks.insert((handle.clone_weak(), *entity));
-            }
-            Removed { index, entity } => {
-                removed_chunks.insert((*index, *entity));
-            }
+
+            let mesh = meshes.get_mut(chunk.mesh()).unwrap();
+            let (tile_indexes, tile_colors) = chunk.tiles_to_renderer_parts();
+            mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, tile_indexes.into());
+            mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, tile_colors.into());
+        }
+
+        for (_chunk_handle, entity) in despawned_chunks.iter() {
+            commands.despawn(*entity);
+        }
+
+        for (index, entity) in removed_chunks.iter() {
+            map.remove_chunk_handle(*index);
+            commands.despawn(*entity);
         }
     }
-
-    let pool = TaskPoolBuilder::new()
-        .thread_name("map_system".to_string())
-        .build();
-    let sprite_sheet_atlas = texture_atlases.get(map.texture_atlas_handle()).unwrap();
-    let sprite_sheet = textures.get(&sprite_sheet_atlas.texture).unwrap().clone();
-    let context = Arc::new(MapSystemContext {
-        commands: Mutex::new(commands),
-        chunks: Mutex::new(chunks),
-        map: Mutex::new(map),
-        materials: Mutex::new(materials),
-        textures: Mutex::new(textures),
-        sprite_sheet: Mutex::new(sprite_sheet),
-        tile_kind: Default::default(),
-    });
-    pool.scope(|scope| {
-        for (idx, chunk_handle) in new_chunks.iter() {
-            let context = context.clone();
-            scope.spawn(async move {
-                let context = context.clone();
-                let textures = context.textures.lock().unwrap();
-                let chunks = context.chunks.lock().unwrap();
-                let sprite_sheet_mutex = context.sprite_sheet.lock().unwrap();
-                let sprite_sheet = sprite_sheet_mutex.clone();
-                let chunk = chunks.get(chunk_handle).unwrap();
-                let chunk_tiles = chunk.tiles().clone();
-                let chunk_textures = Vec::from(chunk.textures());
-                let chunk_texture_handle = chunk.texture_handle().unwrap().clone_weak();
-                // clone the texture.
-                let mut chunk_texture = textures
-                    .get(chunk_texture_handle.clone_weak())
-                    .unwrap()
-                    .clone();
-                // drop all so that other threads can use them.
-                ::std::mem::drop(chunks);
-                ::std::mem::drop(textures);
-                ::std::mem::drop(sprite_sheet_mutex);
-
-                let chunk_texture_size = chunk_texture.size;
-                let map_coord = context.map.lock().unwrap().decode_coord_unchecked(*idx);
-                let map_center = context.map.lock().unwrap().center();
-                for (idx, tile) in chunk_tiles.iter().enumerate() {
-                    if let Some(tile) = tile {
-                        let (rect, rect_coord) = {
-                            let rect = chunk_textures[idx];
-                            let rect_x = idx
-                                % (chunk_texture_size.x() as usize / rect.width() as usize)
-                                * rect.width() as usize;
-                            let rect_y = idx
-                                / (chunk_texture_size.y() as usize / rect.height() as usize)
-                                * rect.height() as usize;
-                            (rect, Vec2::new(rect_x as f32, rect_y as f32))
-                        };
-                        set_tiles(
-                            tile,
-                            &mut chunk_texture,
-                            &sprite_sheet,
-                            sprite_sheet_atlas,
-                            rect,
-                            rect_coord,
-                        )
-                    }
-                }
-                let translation = Vec3::new(
-                    (map_coord.x() - map_center.x() + 0.5) * T::WIDTH * C::WIDTH,
-                    (map_coord.y() - map_center.y() + 0.5) * T::HEIGHT * C::HEIGHT,
-                    1.,
-                );
-
-                let mut textures = context.textures.lock().unwrap();
-                textures.set(chunk_texture_handle.clone_weak(), chunk_texture);
-                ::std::mem::drop(textures);
-
-                let sprite = {
-                    SpriteComponents {
-                        material: context
-                            .materials
-                            .lock()
-                            .unwrap()
-                            .add(chunk_texture_handle.into()),
-                        transform: Transform {
-                            translation,
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    }
-                };
-                let entity = context
-                    .commands
-                    .lock()
-                    .unwrap()
-                    .spawn(sprite)
-                    .current_entity()
-                    .unwrap();
-                context.map.lock().unwrap().insert_entity(*idx, entity);
-            });
-        }
-    });
-
-    pool.scope(|scope| {
-        for (chunk_handle, setter) in modified_chunks.iter() {
-            let context = context.clone();
-            scope.spawn(async move {
-                let context = context.clone();
-                let mut chunks = context.chunks.lock().unwrap();
-                let mut textures = context.textures.lock().unwrap();
-                let sprite_sheet_mutex = context.sprite_sheet.lock().unwrap();
-                let sprite_sheet = sprite_sheet_mutex.clone();
-                let chunk = chunks.get_mut(chunk_handle).unwrap();
-                let chunk_texture_handle = chunk.texture_handle().unwrap().clone_weak();
-                let chunk_textures = Vec::from(chunk.textures());
-                let chunk_dimensions = chunk.dimensions();
-                let mut chunk_texture = textures.get_mut(&chunk_texture_handle).unwrap().clone();
-                ::std::mem::drop(chunks);
-                ::std::mem::drop(textures);
-                ::std::mem::drop(sprite_sheet_mutex);
-
-                for (setter_coord, setter_tile) in setter.iter() {
-                    let idx = setter_coord.to_index(chunk_dimensions.x(), chunk_dimensions.y());
-                    let (rect, rect_coord) = {
-                        let rect = chunk_textures[idx];
-                        let rect_x = idx
-                            % (chunk_texture.size.x() as usize / rect.width() as usize)
-                            * rect.width() as usize;
-                        let rect_y = idx
-                            / (chunk_texture.size.y() as usize / rect.height() as usize)
-                            * rect.height() as usize;
-                        (rect, Vec2::new(rect_x as f32, rect_y as f32))
-                    };
-                    set_tiles(
-                        setter_tile,
-                        &mut chunk_texture,
-                        &sprite_sheet,
-                        sprite_sheet_atlas,
-                        rect,
-                        rect_coord,
-                    );
-                }
-
-                let mut textures = context.textures.lock().unwrap();
-                textures.set(chunk_texture_handle.clone_weak(), chunk_texture);
-                ::std::mem::drop(textures);
-            });
-        }
-    });
-
-    pool.scope(|scope| {
-        for (chunk_handle, entity) in despawned_chunks.iter() {
-            let context = context.clone();
-            scope.spawn(async move {
-                let context = context.clone();
-                let mut chunks = context.chunks.lock().unwrap();
-                let mut commands = context.commands.lock().unwrap();
-                let chunk = chunks.get_mut(chunk_handle).unwrap();
-                chunk.clean();
-                commands.despawn(*entity);
-            });
-        }
-    });
-
-    pool.scope(|scope| {
-        for (index, entity) in removed_chunks.iter() {
-            let context = context.clone();
-            scope.spawn(async move {
-                let context = context.clone();
-                let mut map = context.map.lock().unwrap();
-                let mut commands = context.commands.lock().unwrap();
-                map.remove_chunk_handle(*index);
-                commands.despawn(*entity);
-            });
-        }
-    });
 }
