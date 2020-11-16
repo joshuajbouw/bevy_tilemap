@@ -38,7 +38,6 @@ fn load(
     if sprite_handles.atlas_loaded {
         return;
     }
-    println!("Loading atlas");
 
     // Lets load all our textures from our folder!
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
@@ -73,7 +72,6 @@ fn load(
 
         sprite_handles.atlas_loaded = true;
     }
-    println!("Loaded atlas");
 }
 
 fn build_random_dungeon(
@@ -86,7 +84,7 @@ fn build_random_dungeon(
     if map_state.map_loaded {
         return;
     }
-    println!("Loading map");
+
     for mut map in query.iter_mut() {
         for y in 0..map.dimensions().x() as i32 {
             for x in 0..map.dimensions().y() as i32 {
@@ -140,7 +138,7 @@ fn build_random_dungeon(
         }
 
         // Lets do the same as the above, but lets add in a dwarf friend!
-        let mut dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf_idle.png");
+        let mut dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf.png");
         dwarf_sprite.make_strong(&mut textures);
 
         let dwarf_idx = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
@@ -153,8 +151,6 @@ fn build_random_dungeon(
         map.set_tiles(setter).unwrap();
 
         map_state.map_loaded = true;
-
-        println!("Loaded map");
     }
 }
 
