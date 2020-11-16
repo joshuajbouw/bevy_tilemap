@@ -526,14 +526,15 @@ impl TileMap {
                 self.dimensions.max_y() - (self.dimensions.max_y() as f32 - tile_y),
             );
             let x = setter_coord.x() - (map_coord.x() * self.chunk_dimensions.width());
-            let y = self.chunk_dimensions.max_y()
-                - (setter_coord.y() - chunk_coord.y() * self.chunk_dimensions.height());
+            let y = setter_coord.y() - chunk_coord.y() * self.chunk_dimensions.height();
             let coord = Vec3::new(x, y, setter_coord.z());
-            let mut setter = TileSetter::with_capacity(
-                (self.chunk_dimensions.width() * self.chunk_dimensions.height()) as usize,
-            );
-            setter.push(coord, *setter_tile);
-            tiles_map.insert(chunk_index, setter);
+            if let Some(setters) = tiles_map.get_mut(&chunk_index) {
+                setters.push(coord, *setter_tile);
+            } else {
+                let mut setter = TileSetter::new();
+                setter.push(coord, *setter_tile);
+                tiles_map.insert(chunk_index, setter);
+            }
         }
 
         for (index, setter) in tiles_map {
