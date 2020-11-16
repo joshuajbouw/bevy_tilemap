@@ -814,12 +814,9 @@ pub fn map_system(
                 .spawn(ChunkComponents {
                     texture_atlas: map.texture_atlas().clone_weak(),
                     chunk_dimensions: map.chunk_dimensions().into(),
-                    draw: Default::default(),
-                    render_pipelines: Default::default(),
-                    main_pass: Default::default(),
                     mesh: mesh_handle.clone_weak(),
                     transform: Transform::from_translation(translation),
-                    global_transform: Default::default(),
+                    ..Default::default()
                 })
                 .current_entity()
                 .expect("Chunk entity unexpected does not exist.");
