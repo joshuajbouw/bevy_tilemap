@@ -3,11 +3,11 @@ use crate::lib::*;
 /// A utility function that takes an array of `Tile`s and splits the indexes and
 /// colors and returns them as separate vectors for use in the renderer.
 pub fn tiles_to_renderer_parts(tiles: &[Tile]) -> (Vec<f32>, Vec<[f32; 4]>) {
-    let mut tile_indexes: Vec<f32> = Vec::with_capacity(tiles.len());
-    let mut tile_colors: Vec<[f32; 4]> = Vec::with_capacity(tiles.len());
+    let mut tile_indexes: Vec<f32> = Vec::with_capacity(tiles.len() * 4);
+    let mut tile_colors: Vec<[f32; 4]> = Vec::with_capacity(tiles.len() * 4);
     for tile in tiles.iter() {
-        tile_indexes.push(tile.index() as f32);
-        tile_colors.push(tile.color().into());
+        tile_indexes.extend([tile.index() as f32; 4].iter());
+        tile_colors.extend([tile.color().into(); 4].iter());
     }
     (tile_indexes, tile_colors)
 }

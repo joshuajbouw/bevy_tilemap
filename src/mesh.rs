@@ -71,18 +71,36 @@ impl From<ChunkMesh> for Mesh {
         let chunk_width = chunk_mesh.width();
         let chunk_height = chunk_mesh.height();
         let step_size = 1.0;
-        let mut positions = Vec::with_capacity(((chunk_width + 1) * (chunk_height + 1)) as usize);
+        let mut positions = Vec::with_capacity((chunk_width * chunk_height) as usize * 4);
+        println!("positions capacity: {}", positions.capacity());
         let mut indices: Vec<u32> =
             Vec::with_capacity((3 * 2 * chunk_width * chunk_height) as usize);
         let normal = [0., 0., 1.];
-        let mut normals = Vec::with_capacity(indices.len());
-        for y in (0..=chunk_height).rev() {
-            for x in 0..=chunk_width {
+        let mut normals: Vec<[f32; 3]> = Vec::with_capacity(positions.len());
+        for y in (0..chunk_height).rev() {
+            for x in 0..chunk_width {
                 positions.push([
                     (x as f32 - 0.5 * chunk_width as f32) * step_size,
                     (y as f32 - 0.5 * chunk_height as f32) * step_size,
                 ]);
-                normals.push(normal);
+                positions.push([
+                    (x as f32 - 0.5 * chunk_width as f32) * step_size,
+                    (y as f32 + 0.5 * chunk_height as f32) * step_size,
+                ]);
+                positions.push([
+                    (x as f32 + 0.5 * chunk_width as f32) * step_size,
+                    (y as f32 + 0.5 * chunk_height as f32) * step_size,
+                ]);
+                positions.push([
+                    (x as f32 + 0.5 * chunk_width as f32) * step_size,
+                    (y as f32 - 0.5 * chunk_height as f32) * step_size,
+                ]);
+                normals.extend([normal; 4].iter());
+            }
+        }
+
+        for y in (0..=chunk_height).rev() {
+            for x in 0..=chunk_width {
                 if y != 0 && x != chunk_width {
                     let i: u32 = (chunk_height - y) * (chunk_width + 1) + x;
                     indices.extend_from_slice(&[
@@ -96,6 +114,7 @@ impl From<ChunkMesh> for Mesh {
                 }
             }
         }
+
         let indices = Indices::U32(indices);
 
         let tile_indexes = vec![0.; positions.len()];

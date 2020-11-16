@@ -753,7 +753,7 @@ pub fn map_system(
     mut commands: Commands,
     mut chunks: ResMut<Assets<Chunk>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut query: Query<(&Entity, &mut TileMap)>,
+    mut query: Query<(Entity, &mut TileMap)>,
 ) {
     for (map_entity, mut map) in query.iter_mut() {
         map.events.update();
@@ -794,7 +794,7 @@ pub fn map_system(
             mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, tile_colors.into());
             let mesh_handle = meshes.add(mesh);
 
-            let chunk = Chunk::new(map.chunk_dimensions, mesh_handle.clone());
+            let chunk = Chunk::new(tiles.clone(), mesh_handle.clone());
             let chunk_handle = chunks.add(chunk);
             map.chunks[*idx] = Some(chunk_handle);
 
@@ -825,7 +825,7 @@ pub fn map_system(
                 .expect("Chunk entity unexpected does not exist.");
             chunk_entities.push(chunk_entity);
         }
-        commands.push_children(*map_entity, &chunk_entities);
+        commands.push_children(map_entity, &chunk_entities);
 
         for (index, setter) in modified_chunks.iter() {
             let chunk_handle = map.chunks[*index].as_ref().unwrap();

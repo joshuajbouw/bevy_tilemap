@@ -39,12 +39,10 @@ impl TypeUuid for Chunk {
 
 impl Chunk {
     /// Returns a new `WorldChunk`.
-    pub(crate) fn new(dimensions: Vec3, mesh: Handle<Mesh>) -> Chunk {
+    pub(crate) fn new(tiles: Vec<Tile>, mesh: Handle<Mesh>) -> Chunk {
         Chunk {
             mesh,
-            tiles: Vec::with_capacity(
-                (dimensions.width() * dimensions.height() * dimensions.depth()) as usize,
-            ),
+            tiles,
         }
     }
 
