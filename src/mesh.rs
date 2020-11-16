@@ -68,61 +68,95 @@ impl From<ChunkMesh> for Mesh {
         //         .collect(),
         // );
 
-        let chunk_width = chunk_mesh.width();
-        let chunk_height = chunk_mesh.height();
-        let step_size = 1.0;
-        let mut positions = Vec::with_capacity((chunk_width * chunk_height) as usize * 4);
-        let mut indices: Vec<u32> =
-            Vec::with_capacity((3 * 2 * chunk_width * chunk_height) as usize);
-        let normal = [0., 0., 1.];
-        let mut normals: Vec<[f32; 3]> = Vec::with_capacity(positions.len());
-        for y in (0..chunk_height).rev() {
-            for x in 0..chunk_width {
-                positions.push([
-                    (x as f32 - 0.5 * chunk_width as f32) * step_size,
-                    (y as f32 - 0.5 * chunk_height as f32) * step_size,
+        // let chunk_width = 2 as i32;
+        // let chunk_height = 2 as i32;
+        let chunk_width = chunk_mesh.width() as i32;
+        let chunk_height = chunk_mesh.height() as i32;
+        let step_size_x = 1. / chunk_width as f32;
+        let step_size_y = 1. / chunk_height as f32;
+        let mut vertices = Vec::with_capacity((chunk_width * chunk_height) as usize * 4);
+        for y in (-chunk_height / 2)..(chunk_height / 2) {
+            for x in (-chunk_width / 2)..(chunk_width / 2) {
+                println!("({},{})", x, y);
+                vertices.push([
+                    x as f32 * step_size_x - step_size_x / 2.0,
+                    y as f32 * step_size_y - step_size_y / 2.0,
+                    0.0,
                 ]);
-                positions.push([
-                    (x as f32 - 0.5 * chunk_width as f32) * step_size,
-                    (y as f32 + 0.5 * chunk_height as f32) * step_size,
+                vertices.push([
+                    x as f32 * step_size_x - step_size_x / 2.0,
+                    y as f32 * step_size_y + step_size_y / 2.0,
+                    0.0,
                 ]);
-                positions.push([
-                    (x as f32 + 0.5 * chunk_width as f32) * step_size,
-                    (y as f32 + 0.5 * chunk_height as f32) * step_size,
+                vertices.push([
+                    x as f32 * step_size_x + step_size_x / 2.0,
+                    y as f32 * step_size_y + step_size_y / 2.0,
+                    0.0,
                 ]);
-                positions.push([
-                    (x as f32 + 0.5 * chunk_width as f32) * step_size,
-                    (y as f32 - 0.5 * chunk_height as f32) * step_size,
+                vertices.push([
+                    x as f32 * step_size_x + step_size_x / 2.0,
+                    y as f32 * step_size_y - step_size_y / 2.0,
+                    0.0,
                 ]);
-                normals.extend([normal; 4].iter());
             }
         }
+        let indices = Indices::U32(
+            (0..(chunk_width * chunk_height) as u32)
+                .flat_map(|i| {
+                    let i = i * 4;
+                    vec![i, i + 2, i + 1, i, i + 3, i + 2]
+                })
+                .collect(),
+        );
+        // for y in (0..chunk_height).rev() {
+        //     for x in 0..chunk_width {
+        //         positions.push([
+        //             (x as f32 - 0.5 * chunk_width as f32) * step_size,
+        //             (y as f32 - 0.5 * chunk_height as f32) * step_size,
+        //             0.,
+        //         ]);
+        //         positions.push([
+        //             (x as f32 - 0.5 * chunk_width as f32) * step_size,
+        //             (y as f32 + 0.5 * chunk_height as f32) * step_size,
+        //             0.,
+        //         ]);
+        //         positions.push([
+        //             (x as f32 + 0.5 * chunk_width as f32) * step_size,
+        //             (y as f32 + 0.5 * chunk_height as f32) * step_size,
+        //             0.,
+        //         ]);
+        //         positions.push([
+        //             (x as f32 + 0.5 * chunk_width as f32) * step_size,
+        //             (y as f32 - 0.5 * chunk_height as f32) * step_size,
+        //             0.,
+        //         ]);
+        //         normals.extend([normal; 4].iter());
+        //     }
+        // }
+        //
+        // for y in (0..=chunk_height).rev() {
+        //     for x in 0..=chunk_width {
+        //         if y != 0 && x != chunk_width {
+        //             let i: u32 = (chunk_height - y) * (chunk_width + 1) + x;
+        //             indices.extend_from_slice(&[
+        //                 i + 1,
+        //                 i,
+        //                 i + chunk_width + 1,
+        //                 i + chunk_width + 1,
+        //                 i + chunk_width + 2,
+        //                 i + 1,
+        //             ]);
+        //         }
+        //     }
+        // }
+        // println!("indices: {:?}", indices);
 
-        for y in (0..=chunk_height).rev() {
-            for x in 0..=chunk_width {
-                if y != 0 && x != chunk_width {
-                    let i: u32 = (chunk_height - y) * (chunk_width + 1) + x;
-                    indices.extend_from_slice(&[
-                        i + 1,
-                        i,
-                        i + chunk_width + 1,
-                        i + chunk_width + 1,
-                        i + chunk_width + 2,
-                        i + 1,
-                    ]);
-                }
-            }
-        }
-
-        let indices = Indices::U32(indices);
-
-        let tile_indexes = vec![0.; positions.len()];
-        let tile_colors: Vec<[f32; 4]> = vec![Color::WHITE.into(); positions.len()];
+        let tile_indexes = vec![0.; vertices.len()];
+        let tile_colors: Vec<[f32; 4]> = vec![Color::WHITE.into(); vertices.len()];
 
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.set_indices(Some(indices));
-        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions.into());
-        mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals.into());
+        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vertices.into());
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, tile_indexes.into());
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, tile_colors.into());
 

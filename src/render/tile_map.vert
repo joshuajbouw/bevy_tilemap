@@ -31,15 +31,15 @@ layout(set = 2, binding = 0) uniform Transform {
     mat4 ChunkTransform;
 };
 
-layout(set = 2, binding = 1) uniform ChunkDimensions_dimensions {
-    vec3 ChunkDimensions;
+layout(set = 2, binding = 1) uniform ChunkDimensions {
+    vec3 Dimensions;
 };
 
 void main() {
     Rect sprite_rect = Textures[Vertex_Tile_Index];
     vec2 sprite_dimensions = sprite_rect.end - sprite_rect.begin;
     vec3 vertex_position = vec3(
-        Vertex_Position.xy * sprite_dimensions * ChunkDimensions.xy,
+        Vertex_Position.xy * sprite_dimensions * Dimensions.xy,
         0.0
     );
     vec2 atlas_positions[4] = vec2[](
