@@ -299,10 +299,10 @@ impl TileMap {
     /// tile_map.new_chunk(1);
     /// tile_map.new_chunk(2);
     /// ```
-    pub fn new_chunk<I: ToIndex>(&mut self, v: I) {
+    pub fn new_chunk<I: ToIndex>(&mut self, v: I) -> DimensionResult<()> {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
-        // let handle: Handle<Chunk> = Handle::weak(HandleId::random::<Chunk>());
-        // self.chunks[index] = Some(handle.clone());
+        self.dimensions.check_index(index)?;
+
         let tiles = vec![
             Tile::new(0);
             (self.chunk_dimensions().width() * self.chunk_dimensions().height())
@@ -310,9 +310,10 @@ impl TileMap {
         ];
         self.events.send(MapEvent::Created {
             index,
-            // handle,
             tiles,
         });
+
+        Ok(())
     }
 
     /// Constructs a new `Chunk` and stores it at a coordinate position with
@@ -358,9 +359,13 @@ impl TileMap {
     /// tile_map.new_chunk_with_tiles(1, tiles.clone());
     /// tile_map.new_chunk_with_tiles(2, tiles);
     /// ```
-    pub fn new_chunk_with_tiles<I: ToIndex>(&mut self, v: I, tiles: Vec<Tile>) {
+    pub fn new_chunk_with_tiles<I: ToIndex>(&mut self, v: I, tiles: Vec<Tile>) -> DimensionResult<()> {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
+        self.dimensions.check_index(index)?;
+        
         self.events.send(MapEvent::Created { index, tiles });
+
+        Ok(())
     }
 
     /// Destructively removes a `Chunk` at a coordinate position.
@@ -404,10 +409,14 @@ impl TileMap {
     /// tile_map.remove_chunk(1);
     /// tile_map.remove_chunk(2);
     /// ```
-    pub fn remove_chunk<I: ToIndex>(&mut self, v: I) {
+    pub fn remove_chunk<I: ToIndex>(&mut self, v: I) -> DimensionResult<()> {
         let index = v.to_index(self.dimensions.width(), self.dimensions.y());
+        self.dimensions.check_index(index)?;
+
         let entity = *self.entities.get(&index).unwrap();
-        self.events.send(MapEvent::Removed { index, entity })
+        self.events.send(MapEvent::Removed { index, entity });
+
+        Ok(())
     }
 
     /// Sets a single tile at a coordinate position and checks if it the request is inbounds.
@@ -452,15 +461,18 @@ impl TileMap {
         let coord = v.to_coord3(self.dimensions.width(), self.dimensions.height());
         let chunk_coord = self.tile_coord_to_chunk_coord(coord);
         let chunk_index = chunk_coord.to_index(self.dimensions.width(), self.dimensions.height());
+        self.dimensions.check_index(chunk_index)?;
+
         let tile_y = coord.y() / self.chunk_dimensions.height();
         let map_coord = Vec2::new(
             coord.x() / self.chunk_dimensions.width(),
             self.dimensions.height() - (self.dimensions.max_y() as f32 - tile_y),
         );
         let x = coord.x() - (map_coord.x() * self.chunk_dimensions.width());
-        let y =
-            self.chunk_dimensions.max_y() - (coord.y() - tile_y * self.chunk_dimensions.height());
+        let y = coord.y() - tile_y * self.chunk_dimensions.height();
         let coord = Vec3::new(x, y, coord.z());
+        self.chunk_dimensions.check_coord(&coord)?;
+
         let mut setter = TileSetter::with_capacity(1);
         setter.push(coord, tile);
         self.events.send(MapEvent::Modified {
@@ -520,6 +532,8 @@ impl TileMap {
             let chunk_coord = self.tile_coord_to_chunk_coord(*setter_coord);
             let chunk_index =
                 chunk_coord.to_index(self.dimensions.width(), self.dimensions.height());
+            self.dimensions.check_index(chunk_index)?;
+
             let tile_y = setter_coord.y() / self.chunk_dimensions.height();
             let map_coord = Vec2::new(
                 (setter_coord.x() / self.chunk_dimensions.width()).floor(),
@@ -528,6 +542,8 @@ impl TileMap {
             let x = setter_coord.x() - (map_coord.x() * self.chunk_dimensions.width());
             let y = setter_coord.y() - chunk_coord.y() * self.chunk_dimensions.height();
             let coord = Vec3::new(x, y, setter_coord.z());
+            self.chunk_dimensions.check_coord(&coord)?;
+
             if let Some(setters) = tiles_map.get_mut(&chunk_index) {
                 setters.push(coord, *setter_tile);
             } else {
