@@ -9,6 +9,7 @@ license = "MIT"
 keywords = ["game", "engine", "bevy", "tiles", "tilemap"]
 categories = ["game-engines", "graphics", "gui"]
 readme = "README.md"
+documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap/"
 exclude = ["assets/**/*", ".github/**/*"]
 
 [dependencies]
