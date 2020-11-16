@@ -16,7 +16,7 @@
 #![allow(clippy::too_many_arguments)]
 // Rustc lints.
 #![no_implicit_prelude]
-#![deny(unsafe_code, dead_code)]
+#![deny(dead_code)]
 #![deny(missing_docs, unused_imports)]
 
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
@@ -132,5 +132,5 @@ mod lib {
     };
 
     // Macros
-    pub(crate) use ::std::{panic, vec, write};
+    pub(crate) use ::std::{panic, vec, write, println};
 }
