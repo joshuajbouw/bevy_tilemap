@@ -89,7 +89,7 @@ fn build_random_dungeon(
         for y in 0..map.dimensions().x() as i32 {
             for x in 0..map.dimensions().y() as i32 {
                 let coord = Vec2::new(x as f32, y as f32);
-                map.new_chunk(coord);
+                map.new_chunk(coord).unwrap();
             }
         }
 

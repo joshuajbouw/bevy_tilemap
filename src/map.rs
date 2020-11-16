@@ -1,25 +1,25 @@
 use crate::{
     chunk::Chunk,
     coord::{ToCoord3, ToIndex},
-    dimensions::{DimensionResult, Dimensions2, Dimensions3},
+    dimensions::{DimensionError, DimensionResult, Dimensions2, Dimensions3},
     entity::ChunkComponents,
     lib::*,
     mesh::ChunkMesh,
     tile::{Tile, TileSetter},
 };
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, PartialEq)]
 /// The kinds of errors that can occur for a `[MapError]`.
 pub enum ErrorKind {
     /// If the coordinate or index is out of bounds.
-    OutOfBounds,
+    DimensionError(DimensionError),
 }
 
 impl Debug for ErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         use ErrorKind::*;
-        match *self {
-            OutOfBounds => write!(f, "out of bounds"),
+        match self {
+            DimensionError(err) => err.fmt(f),
         }
     }
 }
@@ -47,8 +47,14 @@ impl MapError {
     }
 
     /// Returns the underlying error kind `ErrorKind`.
-    pub fn kind(&self) -> ErrorKind {
-        *self.0
+    pub fn kind(&self) -> &ErrorKind {
+        &self.0
+    }
+}
+
+impl From<DimensionError> for MapError {
+    fn from(err: DimensionError) -> MapError {
+        MapError::new(ErrorKind::DimensionError(err))
     }
 }
 
@@ -308,10 +314,7 @@ impl TileMap {
             (self.chunk_dimensions().width() * self.chunk_dimensions().height())
                 as usize
         ];
-        self.events.send(MapEvent::Created {
-            index,
-            tiles,
-        });
+        self.events.send(MapEvent::Created { index, tiles });
 
         Ok(())
     }
@@ -359,10 +362,14 @@ impl TileMap {
     /// tile_map.new_chunk_with_tiles(1, tiles.clone());
     /// tile_map.new_chunk_with_tiles(2, tiles);
     /// ```
-    pub fn new_chunk_with_tiles<I: ToIndex>(&mut self, v: I, tiles: Vec<Tile>) -> DimensionResult<()> {
+    pub fn new_chunk_with_tiles<I: ToIndex>(
+        &mut self,
+        v: I,
+        tiles: Vec<Tile>,
+    ) -> DimensionResult<()> {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
         self.dimensions.check_index(index)?;
-        
+
         self.events.send(MapEvent::Created { index, tiles });
 
         Ok(())
