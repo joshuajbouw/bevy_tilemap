@@ -16,16 +16,11 @@ impl From<Vec3> for ChunkDimensions {
     }
 }
 
-/// A basic use of the `Chunk` trait that has the bare minimum methods.
-///
-/// Serde skips the textures and texture_handle field for three reasons:
-/// * Handle doesn't support it.
-/// * Rect doesn't support it.
-/// * Even if the above supported it, there shouldn't be a need to store that
-/// information anyways as they are temporary.
+/// A chunk which is used internally of the `TileMap`.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Chunk {
     #[serde(skip)]
+    /// A mesh handle.
     mesh: Handle<Mesh>,
     /// A vector of all the tiles in the `TileMap`.
     tiles: Vec<Tile>,
