@@ -108,24 +108,25 @@ pub enum MapEvent {
 }
 
 /// A TileMap which maintains chunks and its tiles within.
-#[derive(Debug, Serialize, Deserialize, RenderResources)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, RenderResources)]
 pub struct TileMap {
     #[render_resources(ignore)]
     dimensions: Vec2,
     chunk_dimensions: Vec3,
     #[render_resources(ignore)]
     tile_dimensions: Vec2,
-    #[serde(skip)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     // Should change to HashSet when merged into bevy
     #[render_resources(ignore)]
     chunks: Vec<Option<Handle<Chunk>>>,
-    #[serde(skip)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     #[render_resources(ignore)]
     entities: HashMap<usize, Entity>,
-    #[serde(skip)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     #[render_resources(ignore)]
     events: Events<MapEvent>,
-    #[serde(skip)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     #[render_resources(ignore)]
     texture_atlas: Handle<TextureAtlas>,
 }

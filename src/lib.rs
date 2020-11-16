@@ -71,7 +71,6 @@ mod lib {
         transform as bevy_transform, type_registry as bevy_type_registry, utils as bevy_utils,
     };
 
-    #[doc(hidden)]
     pub(crate) use self::{
         bevy_app::{AppBuilder, Events, Plugin},
         bevy_asset::{AddAsset, Assets, Handle},
@@ -111,8 +110,9 @@ mod lib {
     // serde also uses `no_implicit_prelude`. Without this, it would complain
     // that I am not using `self`, and will refuse to build.
     // See: https://github.com/rust-lang/rust/issues/72381
+    #[cfg(feature = "serde")]
     pub use ::serde;
-    #[doc(hidden)]
+    #[cfg(feature = "serde")]
     pub(crate) use ::serde::{Deserialize, Serialize};
 
     pub(crate) use ::std::{

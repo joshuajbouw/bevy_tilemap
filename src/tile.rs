@@ -13,7 +13,8 @@ pub fn tiles_to_renderer_parts(tiles: &[Tile]) -> (Vec<f32>, Vec<[f32; 4]>) {
 }
 
 /// A tile with an index value and color.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Tile {
     index: usize,
     color: Color,

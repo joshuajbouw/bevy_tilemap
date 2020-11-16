@@ -17,10 +17,11 @@ impl From<Vec3> for ChunkDimensions {
 }
 
 /// A chunk which is used internally of the `TileMap`.
-#[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug)]
 pub struct Chunk {
-    #[serde(skip)]
     /// A mesh handle.
+    #[cfg_attr(feature = "serde", serde(skip))]
     mesh: Handle<Mesh>,
     /// A vector of all the tiles in the `TileMap`.
     tiles: Vec<Tile>,
