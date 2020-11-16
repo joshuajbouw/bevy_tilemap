@@ -52,6 +52,16 @@ pub trait Dimensions2 {
     /// A `Vec2` containing the dimensions.
     fn dimensions(&self) -> Vec2;
 
+    /// The width of this dimension.
+    fn width(&self) -> f32 {
+        self.dimensions().x()
+    }
+
+    /// The height of this dimension.
+    fn height(&self) -> f32 {
+        self.dimensions().y()
+    }
+
     /// The minimum X value of this dimension.
     fn min_x(&self) -> f32 {
         0.
@@ -125,10 +135,31 @@ pub trait Dimensions2 {
     }
 }
 
+impl Dimensions2 for Vec2 {
+    fn dimensions(&self) -> Vec2 {
+        *self
+    }
+}
+
 /// Trait methods that have to do with the 3rd dimension.
 pub trait Dimensions3 {
     /// A `Vec3` containing the dimensions.
     fn dimensions(&self) -> Vec3;
+
+    /// The width of this dimension.
+    fn width(&self) -> f32 {
+        self.dimensions().x()
+    }
+
+    /// The height of this dimension.
+    fn height(&self) -> f32 {
+        self.dimensions().y()
+    }
+
+    /// The depth of this dimension.
+    fn depth(&self) -> f32 {
+        self.dimensions().z()
+    }
 
     /// The minimum X value of this dimension.
     fn min_x(&self) -> f32 {
@@ -216,5 +247,11 @@ pub trait Dimensions3 {
     fn decode_coord(&self, idx: usize) -> DimensionResult<Vec3> {
         self.check_index(idx)?;
         Ok(self.decode_coord_unchecked(idx))
+    }
+}
+
+impl Dimensions3 for Vec3 {
+    fn dimensions(&self) -> Vec3 {
+        *self
     }
 }

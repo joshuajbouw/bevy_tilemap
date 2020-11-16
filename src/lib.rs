@@ -16,7 +16,7 @@
 #![allow(clippy::too_many_arguments)]
 // Rustc lints.
 #![no_implicit_prelude]
-#![forbid(unsafe_code, dead_code)]
+#![deny(dead_code)]
 #![deny(missing_docs, unused_imports)]
 
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
@@ -25,31 +25,36 @@ pub mod chunk;
 pub mod coord;
 /// Various dimension based traits.
 pub mod dimensions;
+/// Bundles of components for rendering.
+pub mod entity;
 /// Map traits to implement for a custom map and a basic struct for use.
 pub mod map;
+/// Meshes for use in rendering.
+pub(crate) mod mesh;
+/// Files and helpers for rendering.
+pub(crate) mod render;
 /// Tile traits to implement for a custom tile.
 pub mod tile;
 
-use crate::lib::*;
+use crate::{chunk::Chunk, lib::*, render::TilemapRenderGraphBuilder};
 pub use crate::{
-    chunk::{Chunk, WorldChunk},
-    map::{TileMap, WorldMap},
-    tile::Tile,
+    map::TileMap,
+    tile::{Tile, TileSetter},
 };
 
 /// The Bevy Tilemap main plugin.
 #[derive(Default)]
-pub struct ChunkTilesPlugin<T: Tile, C: Chunk<T>, M: TileMap<T, C>> {
-    tile_type: PhantomData<T>,
-    chunk_type: PhantomData<C>,
-    map_type: PhantomData<M>,
-}
+pub struct ChunkTilesPlugin;
 
-impl<T: Tile, C: Chunk<T>, M: TileMap<T, C>> Plugin for ChunkTilesPlugin<T, C, M> {
+impl Plugin for ChunkTilesPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(M::default())
-            .add_asset::<C>()
-            .add_system_to_stage("post_update", crate::map::map_system::<T, C, M>.system());
+        app.add_asset::<TileMap>()
+            .add_asset::<Chunk>()
+            .add_system_to_stage("post_update", crate::map::map_system.system());
+
+        let resources = app.resources_mut();
+        let mut render_graph = resources.get_mut::<RenderGraph>().unwrap();
+        render_graph.add_tilemap_graph(resources);
     }
 }
 
@@ -60,22 +65,44 @@ mod lib {
     // that I am not using `self`, and will refuse to build.
     // See: https://github.com/rust-lang/rust/issues/72381
     pub use ::bevy;
-    pub(crate) use ::bevy::{
-        app as bevy_app, asset as bevy_asset, ecs as bevy_ecs, math as bevy_math,
-        render as bevy_render, sprite as bevy_sprite, tasks as bevy_tasks,
+    use ::bevy::{
+        app as bevy_app, asset as bevy_asset, core as bevy_core, ecs as bevy_ecs,
+        math as bevy_math, render as bevy_render, sprite as bevy_sprite,
         transform as bevy_transform, type_registry as bevy_type_registry, utils as bevy_utils,
     };
 
     #[doc(hidden)]
     pub(crate) use self::{
-        bevy_app::{AppBuilder, EventReader, Events, Plugin},
-        bevy_asset::{AddAsset, Assets, Handle, HandleId},
-        bevy_ecs::{Commands, Entity, IntoQuerySystem, Res, ResMut},
+        bevy_app::{AppBuilder, Events, Plugin},
+        bevy_asset::{AddAsset, Assets, Handle},
+        bevy_core::Byteable,
+        bevy_ecs::{Bundle, Query},
+        bevy_ecs::{Commands, Entity, IntoQuerySystem, ResMut, Resources},
         bevy_math::{Vec2, Vec3},
-        bevy_render::texture::Texture,
-        bevy_sprite::{entity::SpriteComponents, ColorMaterial, Rect, TextureAtlas},
-        bevy_tasks::TaskPoolBuilder,
-        bevy_transform::components::Transform,
+        bevy_render::{
+            color::Color,
+            draw::Draw,
+            mesh::{Indices, Mesh},
+            pipeline::{
+                BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
+                CompareFunction, CullMode, DepthStencilStateDescriptor, DynamicBinding, FrontFace,
+                PipelineDescriptor, RasterizationStateDescriptor, StencilStateDescriptor,
+                StencilStateFaceDescriptor,
+            },
+            render_graph::{RenderGraph, RenderResourcesNode},
+            renderer::{RenderResource, RenderResources},
+            shader::{Shader, ShaderStage, ShaderStages},
+            texture::TextureFormat,
+        },
+        bevy_render::{
+            pipeline::{RenderPipeline, RenderPipelines},
+            render_graph::base::MainPass,
+        },
+        bevy_sprite::TextureAtlas,
+        bevy_transform::{
+            components::{GlobalTransform, Transform},
+            hierarchy::BuildChildren,
+        },
         bevy_type_registry::{TypeUuid, Uuid},
         bevy_utils::{HashMap, HashSet},
     };
@@ -89,22 +116,21 @@ mod lib {
     pub(crate) use ::serde::{Deserialize, Serialize};
 
     pub(crate) use ::std::{
+        self,
         boxed::Box,
         clone::Clone,
+        cmp::Ord,
         convert::{From, Into},
         default::Default,
         fmt::{Debug, Formatter, Result as FmtResult},
-        iter::Iterator,
-        marker::{PhantomData, Send, Sync},
-        ops::Drop,
+        iter::{Extend, IntoIterator, Iterator},
+        ops::{FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},
         slice::{Iter, IterMut},
-        string::ToString,
-        sync::{Arc, Mutex},
         vec::Vec,
     };
 
     // Macros
-    pub(crate) use ::std::{vec, write};
+    pub(crate) use ::std::{panic, vec, write};
 }
