@@ -77,7 +77,6 @@ impl From<ChunkMesh> for Mesh {
         let mut vertices = Vec::with_capacity((chunk_width * chunk_height) as usize * 4);
         for y in (-chunk_height / 2)..(chunk_height / 2) {
             for x in (-chunk_width / 2)..(chunk_width / 2) {
-                println!("({},{})", x, y);
                 vertices.push([
                     x as f32 * step_size_x - step_size_x / 2.0,
                     y as f32 * step_size_y - step_size_y / 2.0,
