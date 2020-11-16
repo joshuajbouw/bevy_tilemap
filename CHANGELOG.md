@@ -7,6 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Notes
+A big update had been released which brings the project to being more realized
+with the original goals. This update takes all the work that was done by the CPU
+and shifted it to the GPU through the use of GLSL shaders. This brings it more
+inline with other modern tile maps in other projects.
+
+This release also brings in much better documentation to help developers with
+integration.
+
+### Added
+- [GLSL shaders for TileMap](https://github.com/joshuajbouw/bevy_tilemap/commit/5956f451094159ddede1486d123a8c546f0a37fb)
+
 ## [0.1.1] - 2020-11-04
 
 ### Notes
