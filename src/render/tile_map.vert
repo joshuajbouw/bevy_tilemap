@@ -1,7 +1,7 @@
 #version 450
 
 layout(location = 0) in vec3 Vertex_Position;
-layout(location = 1) in int Vertex_Tile_Index;
+layout(location = 1) in float Vertex_Tile_Index;
 layout(location = 2) in vec4 Vertex_Tile_Color;
 
 layout(location = 0) out vec2 v_Uv;
@@ -36,7 +36,7 @@ layout(set = 2, binding = 1) uniform ChunkDimensions {
 };
 
 void main() {
-    Rect sprite_rect = Textures[Vertex_Tile_Index];
+    Rect sprite_rect = Textures[int(Vertex_Tile_Index)];
     vec2 sprite_dimensions = sprite_rect.end - sprite_rect.begin;
     vec3 vertex_position = vec3(
         Vertex_Position.xy * sprite_dimensions * Dimensions.xy,
@@ -51,5 +51,5 @@ void main() {
     );
     v_Uv = (atlas_positions[gl_VertexIndex % 4] + vec2(0.01, 0.01)) / AtlasSize;
     v_Color = Vertex_Tile_Color;
-    gl_Position = ViewProj * ChunkTransform * vec4(vertex_position, 1.0);
+    gl_Position = ViewProj * ChunkTransform * vec4(ceil(vertex_position), 1.0);
 }
