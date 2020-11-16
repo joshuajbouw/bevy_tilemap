@@ -72,7 +72,6 @@ impl From<ChunkMesh> for Mesh {
         let chunk_height = chunk_mesh.height();
         let step_size = 1.0;
         let mut positions = Vec::with_capacity((chunk_width * chunk_height) as usize * 4);
-        println!("positions capacity: {}", positions.capacity());
         let mut indices: Vec<u32> =
             Vec::with_capacity((3 * 2 * chunk_width * chunk_height) as usize);
         let normal = [0., 0., 1.];
