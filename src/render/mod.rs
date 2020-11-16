@@ -63,7 +63,7 @@ impl TilemapRenderGraphBuilder for RenderGraph {
     fn add_tilemap_graph(&mut self, resources: &Resources) -> &mut Self {
         self.add_system_node(
             node::CHUNK_DIMENSIONS,
-            RenderResourcesNode::<ChunkDimensions>::new(false),
+            RenderResourcesNode::<ChunkDimensions>::new(true),
         );
         let mut pipelines = resources.get_mut::<Assets<PipelineDescriptor>>().unwrap();
         let mut shaders = resources.get_mut::<Assets<Shader>>().unwrap();
