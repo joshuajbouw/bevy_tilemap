@@ -1,11 +1,14 @@
 use crate::{lib::*, render::CHUNK_PIPELINE_HANDLE};
 use bevy::render::pipeline::PipelineSpecialization;
+use crate::chunk::ChunkDimensions;
 
 /// A component bundle for `Chunk` entities.
 #[derive(Bundle)]
 pub struct ChunkComponents {
     /// The handle for a TextureAtlas which contains multiple textures.
     pub texture_atlas: Handle<TextureAtlas>,
+    /// The chunk's dimensions which are passed to the renderer.
+    pub chunk_dimensions: ChunkDimensions,
     /// A component that indicates how to draw a component.
     pub draw: Draw,
     /// The pipeline for the renderer.
@@ -43,6 +46,7 @@ impl Default for ChunkComponents {
         );
         ChunkComponents {
             texture_atlas: Default::default(),
+            chunk_dimensions: Default::default(),
             mesh: Default::default(),
             transform: Default::default(),
             render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),

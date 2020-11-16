@@ -31,7 +31,7 @@ layout(set = 2, binding = 0) uniform Transform {
     mat4 ChunkTransform;
 };
 
-layout(set = 2, binding = 1) uniform TileMap_chunk_dimensions {
+layout(set = 2, binding = 1) uniform ChunkDimensions_dimensions {
     vec3 ChunkDimensions;
 };
 

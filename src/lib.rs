@@ -66,15 +66,16 @@ mod lib {
     // See: https://github.com/rust-lang/rust/issues/72381
     pub use ::bevy;
     use ::bevy::{
-        app as bevy_app, asset as bevy_asset, ecs as bevy_ecs, math as bevy_math,
-        render as bevy_render, sprite as bevy_sprite, transform as bevy_transform,
-        type_registry as bevy_type_registry, utils as bevy_utils,
+        app as bevy_app, asset as bevy_asset, core as bevy_core, ecs as bevy_ecs,
+        math as bevy_math, render as bevy_render, sprite as bevy_sprite,
+        transform as bevy_transform, type_registry as bevy_type_registry, utils as bevy_utils,
     };
 
     #[doc(hidden)]
     pub(crate) use self::{
         bevy_app::{AppBuilder, Events, Plugin},
         bevy_asset::{AddAsset, Assets, Handle},
+        bevy_core::Byteable,
         bevy_ecs::{Bundle, Query},
         bevy_ecs::{Commands, Entity, IntoQuerySystem, ResMut, Resources},
         bevy_math::{Vec2, Vec3},
@@ -88,8 +89,8 @@ mod lib {
                 PipelineDescriptor, RasterizationStateDescriptor, StencilStateDescriptor,
                 StencilStateFaceDescriptor,
             },
-            render_graph::{AssetRenderResourcesNode, RenderGraph},
-            renderer::RenderResources,
+            render_graph::{RenderGraph, RenderResourcesNode},
+            renderer::{RenderResource, RenderResources},
             shader::{Shader, ShaderStage, ShaderStages},
             texture::TextureFormat,
         },

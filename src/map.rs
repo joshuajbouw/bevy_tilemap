@@ -813,6 +813,7 @@ pub fn map_system(
             let chunk_entity = commands
                 .spawn(ChunkComponents {
                     texture_atlas: map.texture_atlas().clone_weak(),
+                    chunk_dimensions: map.chunk_dimensions().into(),
                     draw: Default::default(),
                     render_pipelines: Default::default(),
                     main_pass: Default::default(),

@@ -1,4 +1,22 @@
-use crate::{dimensions::Dimensions3, lib::*, tile::Tile};
+use crate::{lib::*, tile::Tile};
+
+/// A component that stores the dimensions of the Chunk for the renderer.
+#[derive(Debug, Default, RenderResources, RenderResource)]
+#[render_resources(from_self)]
+pub struct ChunkDimensions {
+    /// The chunk dimensions.
+    pub dimensions: Vec3,
+}
+
+unsafe impl Byteable for ChunkDimensions {}
+
+impl From<Vec3> for ChunkDimensions {
+    fn from(vec: Vec3) -> Self {
+        ChunkDimensions {
+            dimensions: vec,
+        }
+    }
+}
 
 /// A basic use of the `Chunk` trait that has the bare minimum methods.
 ///

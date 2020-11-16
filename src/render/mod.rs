@@ -1,4 +1,4 @@
-use crate::{lib::*, TileMap};
+use crate::{chunk::ChunkDimensions, lib::*};
 
 pub const CHUNK_PIPELINE_HANDLE: Handle<PipelineDescriptor> =
     Handle::weak_from_u64(PipelineDescriptor::TYPE_UUID, 2110840099625352487);
@@ -52,7 +52,7 @@ pub fn build_chunk_pipeline(shaders: &mut Assets<Shader>) -> PipelineDescriptor 
 }
 
 pub mod node {
-    pub const TILE_MAP: &str = "tile_map";
+    pub const CHUNK_DIMENSIONS: &str = "chunk_dimensions";
 }
 
 pub trait TilemapRenderGraphBuilder {
@@ -62,8 +62,8 @@ pub trait TilemapRenderGraphBuilder {
 impl TilemapRenderGraphBuilder for RenderGraph {
     fn add_tilemap_graph(&mut self, resources: &Resources) -> &mut Self {
         self.add_system_node(
-            node::TILE_MAP,
-            AssetRenderResourcesNode::<TileMap>::new(false),
+            node::CHUNK_DIMENSIONS,
+            RenderResourcesNode::<ChunkDimensions>::new(false),
         );
         let mut pipelines = resources.get_mut::<Assets<PipelineDescriptor>>().unwrap();
         let mut shaders = resources.get_mut::<Assets<Shader>>().unwrap();
