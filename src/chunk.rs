@@ -12,9 +12,7 @@ unsafe impl Byteable for ChunkDimensions {}
 
 impl From<Vec3> for ChunkDimensions {
     fn from(vec: Vec3) -> Self {
-        ChunkDimensions {
-            dimensions: vec,
-        }
+        ChunkDimensions { dimensions: vec }
     }
 }
 
@@ -40,10 +38,7 @@ impl TypeUuid for Chunk {
 impl Chunk {
     /// Returns a new `WorldChunk`.
     pub(crate) fn new(tiles: Vec<Tile>, mesh: Handle<Mesh>) -> Chunk {
-        Chunk {
-            mesh,
-            tiles,
-        }
+        Chunk { mesh, tiles }
     }
 
     pub(crate) fn mesh(&self) -> &Handle<Mesh> {

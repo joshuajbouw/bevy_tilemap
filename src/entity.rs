@@ -1,6 +1,5 @@
-use crate::{lib::*, render::CHUNK_PIPELINE_HANDLE};
+use crate::{chunk::ChunkDimensions, lib::*, render::CHUNK_PIPELINE_HANDLE};
 use bevy::render::pipeline::PipelineSpecialization;
-use crate::chunk::ChunkDimensions;
 
 /// A component bundle for `Chunk` entities.
 #[derive(Bundle)]

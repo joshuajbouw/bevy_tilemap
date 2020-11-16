@@ -132,5 +132,5 @@ mod lib {
     };
 
     // Macros
-    pub(crate) use ::std::{panic, vec, write, println};
+    pub(crate) use ::std::{panic, println, vec, write};
 }
