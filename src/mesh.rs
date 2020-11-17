@@ -32,27 +32,24 @@ impl From<ChunkMesh> for Mesh {
         let chunk_height = chunk_mesh.height() as i32;
         let step_size_x = 1. / chunk_width as f32;
         let step_size_y = 1. / chunk_height as f32;
+        let start_x = chunk_width as f32 * -0.5;
+        let start_y = chunk_height as f32 * -0.5;
         let mut vertices = Vec::with_capacity((chunk_width * chunk_height) as usize * 4);
-        for y in (-chunk_height / 2)..(chunk_height / 2) {
-            for x in (-chunk_width / 2)..(chunk_width / 2) {
-                vertices.push([x as f32 * step_size_x, y as f32 * step_size_y, 0.0]);
+        for y in 0..chunk_height {
+            for x in 0..chunk_width {
+                let y = start_y + y as f32;
+                let x = start_x + x as f32;
+                vertices.push([x * step_size_x, y * step_size_y, 0.0]);
+                vertices.push([x * step_size_x, y * step_size_y + step_size_y, 0.0]);
                 vertices.push([
-                    x as f32 * step_size_x,
-                    y as f32 * step_size_y + step_size_y,
+                    x * step_size_x + step_size_x,
+                    y * step_size_y + step_size_y,
                     0.0,
                 ]);
-                vertices.push([
-                    x as f32 * step_size_x + step_size_x,
-                    y as f32 * step_size_y + step_size_y,
-                    0.0,
-                ]);
-                vertices.push([
-                    x as f32 * step_size_x + step_size_x,
-                    y as f32 * step_size_y,
-                    0.0,
-                ]);
+                vertices.push([x * step_size_x + step_size_x, y * step_size_y, 0.0]);
             }
         }
+
         let indices = Indices::U32(
             (0..(chunk_width * chunk_height) as u32)
                 .flat_map(|i| {
