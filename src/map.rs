@@ -455,12 +455,11 @@ impl TileMap {
     }
 
     #[doc(hidden)]
-    #[deprecated(since = "0.2.0", note = "please use `new_chunk` instead")]
-    pub fn new_chunk_with_tiles<I: ToIndex>(
-        &mut self,
-        v: I,
-        _tiles: Vec<Tile>,
-    ) -> MapResult<()> {
+    #[deprecated(
+        since = "0.2.0",
+        note = "please use `new_chunk` instead, will be removed by v0.3.0"
+    )]
+    pub fn new_chunk_with_tiles<I: ToIndex>(&mut self, v: I, _tiles: Vec<Tile>) -> MapResult<()> {
         self.new_chunk(v)
     }
 
