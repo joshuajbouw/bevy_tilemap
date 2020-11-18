@@ -142,6 +142,15 @@ impl Deref for LayerKindInner {
     }
 }
 
+impl DerefMut for LayerKindInner {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match self {
+            LayerKindInner::Dense(s) => s,
+            LayerKindInner::Sparse(s) => s,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct SpriteLayer {
     inner: LayerKindInner,
