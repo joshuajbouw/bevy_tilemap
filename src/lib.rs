@@ -75,8 +75,7 @@ mod lib {
         bevy_app::{AppBuilder, Events, Plugin},
         bevy_asset::{AddAsset, Assets, Handle},
         bevy_core::Byteable,
-        bevy_ecs::{Bundle, Query},
-        bevy_ecs::{Commands, Entity, IntoQuerySystem, ResMut, Resources},
+        bevy_ecs::{Bundle, Commands, Entity, IntoQuerySystem, Query, ResMut, Resources},
         bevy_math::{Vec2, Vec3},
         bevy_render::{
             color::Color,
@@ -85,17 +84,13 @@ mod lib {
             pipeline::{
                 BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
                 CompareFunction, CullMode, DepthStencilStateDescriptor, DynamicBinding, FrontFace,
-                PipelineDescriptor, RasterizationStateDescriptor, StencilStateDescriptor,
-                StencilStateFaceDescriptor,
+                PipelineDescriptor, RasterizationStateDescriptor, RenderPipeline, RenderPipelines,
+                StencilStateDescriptor, StencilStateFaceDescriptor,
             },
-            render_graph::{RenderGraph, RenderResourcesNode},
+            render_graph::{base::MainPass, RenderGraph, RenderResourcesNode},
             renderer::{RenderResource, RenderResources},
             shader::{Shader, ShaderStage, ShaderStages},
             texture::TextureFormat,
-        },
-        bevy_render::{
-            pipeline::{RenderPipeline, RenderPipelines},
-            render_graph::base::MainPass,
         },
         bevy_sprite::TextureAtlas,
         bevy_transform::{
