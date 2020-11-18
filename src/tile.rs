@@ -35,8 +35,8 @@ pub(crate) fn sparse_tiles_to_renderer_parts(
     // If tiles are set with an alpha of 0, they are discarded.
     let mut tile_colors = vec![[0.0, 0.0, 0.0, 0.0]; layer_size * 4];
     for (index, tile) in tiles.iter() {
-        if *index >= start && *index <= end {
-            for i in 0..3 {
+        if *index >= start || *index <= end {
+            for i in 0..4 {
                 tile_indexes[index * 4 + i] = tile.index as f32;
                 tile_colors[index * 4 + i] = tile.color.into();
             }
