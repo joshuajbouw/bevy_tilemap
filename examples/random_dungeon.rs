@@ -1,10 +1,5 @@
 use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode};
-use bevy_tilemap::{
-    dimensions::{Dimensions2, Dimensions3},
-    map::{TileMap, TileMapComponents},
-    tile::{Tile, TileSetter},
-    ChunkTilesPlugin,
-};
+use bevy_tilemap::prelude::*;
 use rand::Rng;
 
 #[derive(Default, Clone)]
@@ -112,18 +107,18 @@ fn build_random_dungeon(
         let mut setter = TileSetter::with_capacity((height * width) as usize);
         for y in 0..(height as i32) {
             for x in 0..(width as i32) {
-                setter.push(Vec3::new(x as f32, y as f32, 0.), floor_tile);
+                setter.push(Vec3::new(x as f32, y as f32, 0.), floor_tile, 0);
             }
         }
         // Then we push in all wall tiles on the X axis.
         for x in 0..(width as i32) {
-            setter.push(Vec3::new(x as f32, 0., 0.), wall_tile);
-            setter.push(Vec3::new(x as f32, height - 1., 0.), wall_tile);
+            setter.push(Vec3::new(x as f32, 0., 0.), wall_tile, 0);
+            setter.push(Vec3::new(x as f32, height - 1., 0.), wall_tile, 0);
         }
         // Then the wall tiles on the Y axis.
         for y in 0..(height as i32) {
-            setter.push(Vec3::new(0., y as f32, 0.), wall_tile);
-            setter.push(Vec3::new(width - 1., y as f32, 0.), wall_tile);
+            setter.push(Vec3::new(0., y as f32, 0.), wall_tile, 0);
+            setter.push(Vec3::new(width - 1., y as f32, 0.), wall_tile, 0);
         }
         // Lets just generate some random walls to sparsely place around the dungeon!
         let range = (width * height) as usize / 5;
@@ -133,7 +128,7 @@ fn build_random_dungeon(
             let y = rng.gen_range(1, height as i32);
             let coord = Vec3::new(x as f32, y as f32, 0.);
             if coord != Vec3::new(width as f32 / 2., height as f32 / 2., 0.) {
-                setter.push(Vec3::new(x as f32, y as f32, 0.), wall_tile);
+                setter.push(Vec3::new(x as f32, y as f32, 0.), wall_tile, 0);
             }
         }
 
@@ -146,6 +141,7 @@ fn build_random_dungeon(
         setter.push(
             Vec3::new(width as f32 / 2., height as f32 / 2., 0.),
             dwarf_tile,
+            0,
         );
 
         map.set_tiles(setter).unwrap();

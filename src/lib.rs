@@ -14,7 +14,6 @@
 //! work done to keep it as close to Bevy API as possible. This allows anyone to create their own tiles,
 //! chunks and maps and still retain the speed of a handcrafted multi-threaded chunk loader and tile map.
 #![allow(clippy::too_many_arguments)]
-// Rustc lints.
 #![no_implicit_prelude]
 #![deny(dead_code)]
 #![deny(missing_docs, unused_imports)]
@@ -25,22 +24,21 @@ pub mod chunk;
 pub mod coord;
 /// Various dimension based traits.
 pub mod dimensions;
-/// Bundles of components for rendering.
+/// Bundles of components for spawning entities.
 pub mod entity;
 /// Map traits to implement for a custom map and a basic struct for use.
 pub mod map;
 /// Meshes for use in rendering.
 pub(crate) mod mesh;
+pub mod prelude;
 /// Files and helpers for rendering.
 pub(crate) mod render;
 /// Tile traits to implement for a custom tile.
 pub mod tile;
+/// A growable heap used for setting multiple tiles at once.
+pub mod tile_setter;
 
-use crate::{chunk::Chunk, lib::*, render::TilemapRenderGraphBuilder};
-pub use crate::{
-    map::TileMap,
-    tile::{Tile, TileSetter},
-};
+use crate::{chunk::Chunk, lib::*, map::TileMap, render::TilemapRenderGraphBuilder};
 
 /// The Bevy Tilemap main plugin.
 #[derive(Default)]
@@ -98,7 +96,7 @@ mod lib {
             hierarchy::BuildChildren,
         },
         bevy_type_registry::{TypeUuid, Uuid},
-        bevy_utils::{HashMap, HashSet},
+        bevy_utils::HashMap,
     };
 
     // Need to add this here as there is a Rust issue surrounding the fact that
@@ -119,7 +117,7 @@ mod lib {
         default::Default,
         fmt::{Debug, Formatter, Result as FmtResult},
         iter::{Extend, IntoIterator, Iterator},
-        ops::{FnMut, FnOnce},
+        ops::{Deref, FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},
         slice::{Iter, IterMut},

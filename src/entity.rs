@@ -1,26 +1,26 @@
-use crate::{chunk::ChunkDimensions, lib::*, render::CHUNK_PIPELINE_HANDLE};
+use crate::{chunk::ChunkDimensions, lib::*, render::CHUNK_PIPELINE_HANDLE, TileMap};
 use bevy::render::pipeline::PipelineSpecialization;
 
 /// A component bundle for `Chunk` entities.
 #[derive(Bundle)]
-pub struct ChunkComponents {
+pub(crate) struct ChunkComponents {
     /// The handle for a TextureAtlas which contains multiple textures.
-    pub texture_atlas: Handle<TextureAtlas>,
+    pub(crate) texture_atlas: Handle<TextureAtlas>,
     /// The chunk's dimensions which are passed to the renderer.
-    pub chunk_dimensions: ChunkDimensions,
+    pub(crate) chunk_dimensions: ChunkDimensions,
     /// A component that indicates how to draw a component.
-    pub draw: Draw,
+    pub(crate) draw: Draw,
     /// The pipeline for the renderer.
-    pub render_pipelines: RenderPipelines,
+    pub(crate) render_pipelines: RenderPipelines,
     /// A component that indicates that an entity should be drawn in the
     /// "main pass"
-    pub main_pass: MainPass,
+    pub(crate) main_pass: MainPass,
     /// A mesh of vertices for a component.
-    pub mesh: Handle<Mesh>,
+    pub(crate) mesh: Handle<Mesh>,
     /// The transform location in a space for a component.
-    pub transform: Transform,
+    pub(crate) transform: Transform,
     /// The global transform location in a space for a component.
-    pub global_transform: GlobalTransform,
+    pub(crate) global_transform: GlobalTransform,
 }
 
 impl Default for ChunkComponents {
@@ -57,4 +57,15 @@ impl Default for ChunkComponents {
             global_transform: Default::default(),
         }
     }
+}
+
+/// A component bundle for `TileMap` entities.
+#[derive(Bundle, Debug)]
+pub struct TileMapComponents {
+    /// A `TileMap` which maintains chunks and its tiles.
+    pub tile_map: TileMap,
+    /// The transform location in a space for a component.
+    pub transform: Transform,
+    /// The global transform location in a space for a component.
+    pub global_transform: GlobalTransform,
 }
