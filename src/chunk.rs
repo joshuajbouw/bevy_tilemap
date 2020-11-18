@@ -152,17 +152,23 @@ pub(crate) struct SpriteLayer {
 #[uuid = "47691827-0b89-4474-a14e-f2ea3c88320f"]
 #[doc(hidden)]
 pub struct Chunk {
+    coord: Vec2,
     sprite_layers: Vec<Option<SpriteLayer>>,
     // flags: Vec<u32>, // TODO
     dimensions: Vec3,
 }
 
 impl Chunk {
-    pub(crate) fn new(dimensions: Vec3, max_layers: usize) -> Chunk {
+    pub(crate) fn new(coord: Vec2, dimensions: Vec3, max_layers: usize) -> Chunk {
         Chunk {
-            sprite_layers: Vec::with_capacity(max_layers),
+            coord,
+            sprite_layers: vec![None; max_layers],
             dimensions,
         }
+    }
+
+    pub(crate) fn coord(&self) -> Vec2 {
+        self.coord
     }
 
     pub(crate) fn max_size(&self) -> usize {
