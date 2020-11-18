@@ -131,22 +131,20 @@ enum LayerKindInner {
     Sparse(SparseLayer),
 }
 
-impl Deref for LayerKindInner {
-    type Target = dyn Layer;
-
-    fn deref(&self) -> &Self::Target {
+impl AsRef<dyn Layer> for LayerKindInner {
+    fn as_ref(&self) -> &dyn Layer {
         match self {
-            LayerKindInner::Dense(ref s) => s,
-            LayerKindInner::Sparse(ref s) => s,
+            LayerKindInner::Dense(s) => s,
+            LayerKindInner::Sparse(s) => s
         }
     }
 }
 
-impl DerefMut for LayerKindInner {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+impl AsMut<dyn Layer> for LayerKindInner {
+    fn as_mut(&mut self) -> &mut dyn Layer {
         match self {
             LayerKindInner::Dense(s) => s,
-            LayerKindInner::Sparse(s) => s,
+            LayerKindInner::Sparse(s) => s
         }
     }
 }
@@ -225,12 +223,12 @@ impl Chunk {
 
     pub(crate) fn set_mesh(&mut self, z_layer: usize, mesh: Handle<Mesh>) {
         let layer = self.sprite_layers[z_layer].as_mut().unwrap();
-        layer.inner.set_mesh(mesh);
+        layer.inner.as_mut().set_mesh(mesh);
     }
 
     pub(crate) fn set_tile(&mut self, z_layer: usize, index: usize, tile: Tile) {
         let layer = self.sprite_layers[z_layer].as_mut().unwrap();
-        layer.inner.set_tile(index, tile);
+        layer.inner.as_mut().set_tile(index, tile);
     }
 
     pub(crate) fn add_entity(&mut self, z_layer: usize, entity: Entity) {
@@ -254,6 +252,7 @@ impl Chunk {
         self.sprite_layers[z].as_ref().map(|sprite_layer| {
             sprite_layer
                 .inner
+                .as_ref()
                 .tiles_to_renderer_parts(z, self.layer_size())
         })
     }

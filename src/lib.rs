@@ -15,8 +15,7 @@
 //! chunks and maps and still retain the speed of a handcrafted multi-threaded chunk loader and tile map.
 #![allow(clippy::too_many_arguments)]
 #![no_implicit_prelude]
-#![deny(dead_code)]
-#![deny(missing_docs, unused_imports)]
+#![deny(dead_code, missing_docs, unused_imports)]
 
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
 pub mod chunk;
@@ -113,11 +112,11 @@ mod lib {
         boxed::Box,
         clone::Clone,
         cmp::Ord,
-        convert::{From, Into},
+        convert::{From, Into, AsRef, AsMut},
         default::Default,
         fmt::{Debug, Formatter, Result as FmtResult},
         iter::{Extend, IntoIterator, Iterator},
-        ops::{Deref, DerefMut, FnMut, FnOnce},
+        ops::{FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},
         slice::{Iter, IterMut},
