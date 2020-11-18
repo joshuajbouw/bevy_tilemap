@@ -135,7 +135,7 @@ impl AsRef<dyn Layer> for LayerKindInner {
     fn as_ref(&self) -> &dyn Layer {
         match self {
             LayerKindInner::Dense(s) => s,
-            LayerKindInner::Sparse(s) => s
+            LayerKindInner::Sparse(s) => s,
         }
     }
 }
@@ -144,7 +144,7 @@ impl AsMut<dyn Layer> for LayerKindInner {
     fn as_mut(&mut self) -> &mut dyn Layer {
         match self {
             LayerKindInner::Dense(s) => s,
-            LayerKindInner::Sparse(s) => s
+            LayerKindInner::Sparse(s) => s,
         }
     }
 }

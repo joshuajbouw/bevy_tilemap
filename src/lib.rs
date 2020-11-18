@@ -112,7 +112,7 @@ mod lib {
         boxed::Box,
         clone::Clone,
         cmp::Ord,
-        convert::{From, Into, AsRef, AsMut},
+        convert::{AsMut, AsRef, From, Into},
         default::Default,
         fmt::{Debug, Formatter, Result as FmtResult},
         iter::{Extend, IntoIterator, Iterator},
