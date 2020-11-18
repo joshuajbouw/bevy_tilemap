@@ -1,6 +1,6 @@
 use crate::{
     chunk::{Chunk, LayerKind},
-    coord::{ToCoord3, ToIndex},
+    coord::{ToCoord2, ToCoord3, ToIndex},
     dimensions::{DimensionError, Dimensions2, Dimensions3},
     entity::ChunkComponents,
     lib::*,
@@ -77,10 +77,10 @@ pub type MapResult<T> = Result<T, MapError>;
 pub(crate) enum MapEvent {
     /// To be used when a chunk is created.
     CreatedChunk {
-        /// The map index where the chunk needs to be stored.
+        /// The index of the chunk.
         index: usize,
-        // /// The Handle of the Chunk.
-        // handle: Handle<Chunk>,
+        /// The Handle of the Chunk.
+        handle: Handle<Chunk>,
     },
     /// An event when a layer is created for all chunks.
     AddedLayer {
@@ -135,7 +135,7 @@ pub struct TileMap {
     current_depth: usize,
     layers: Vec<Option<LayerKind>>,
     #[cfg_attr(feature = "serde", serde(skip))]
-    chunks: Vec<Option<Handle<Chunk>>>,
+    chunks: HashMap<usize, Handle<Chunk>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     entities: HashMap<usize, Vec<Entity>>,
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -196,7 +196,7 @@ impl TileMap {
             tile_dimensions,
             layers: vec![None; 20],
             current_depth: 0,
-            chunks: Vec::with_capacity(capacity),
+            chunks: HashMap::with_capacity(capacity),
             entities: HashMap::default(),
             events: Events::<MapEvent>::default(),
             texture_atlas,
@@ -353,24 +353,24 @@ impl TileMap {
     /// If the tile length is not the same length as the expected tile length
     /// per chunk, then a panic is thrown. This is important as it will lead to
     /// future panics if it is not caught here.
-    pub fn add_layer<I: ToIndex>(&mut self, kind: LayerKind, z: usize) -> MapResult<()> {
+    pub fn add_layer(&mut self, kind: LayerKind, z_layer: usize) -> MapResult<()> {
         // assert_eq!(
         //     tiles.len(),
         //     self.chunk_tile_len(),
         //     "The tiles length must be equal to the expected tile length per chunk."
         // );
 
-        if let Some(some_kind) = self.layers[z] {
+        if let Some(some_kind) = self.layers[z_layer] {
             return if some_kind == kind {
                 Ok(())
             } else {
-                Err(ErrorKind::LayerExists(z).into())
+                Err(ErrorKind::LayerExists(z_layer).into())
             };
         }
 
-        self.layers[z] = Some(kind);
+        self.layers[z_layer] = Some(kind);
 
-        self.events.send(MapEvent::AddedLayer { z, kind });
+        self.events.send(MapEvent::AddedLayer { z: z_layer, kind });
 
         Ok(())
     }
@@ -424,11 +424,11 @@ impl TileMap {
     /// # Errors
     ///
     /// If the coordinate or index is out of bounds, an error will be returned.
-    pub fn spawn_chunk<I: ToIndex>(&mut self, v: usize) -> MapResult<()> {
+    pub fn spawn_chunk<I: ToIndex>(&mut self, v: I) -> MapResult<()> {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
         self.dimensions.check_index(index)?;
 
-        let handle = self.chunks[index].as_ref().unwrap();
+        let handle = self.chunks.get(&index).unwrap();
 
         self.events.send(MapEvent::SpawnedChunk {
             handle: handle.clone_weak(),
@@ -442,7 +442,7 @@ impl TileMap {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
         self.dimensions.check_index(index)?;
 
-        let handle = self.chunks[index].as_ref().unwrap();
+        let handle = self.chunks.get(&index).unwrap();
 
         self.events.send(MapEvent::DespawnedChunk {
             handle: handle.clone_weak(),
@@ -504,7 +504,7 @@ impl TileMap {
         let index = v.to_index(self.dimensions.width(), self.dimensions.y());
         self.dimensions.check_index(index)?;
 
-        let handle = self.chunks[index].as_ref().unwrap(); // should be error
+        let handle = self.chunks.get(&index).unwrap();
 
         self.events.send(MapEvent::RemovedChunk {
             handle: handle.clone_weak(),
@@ -624,7 +624,7 @@ impl TileMap {
         }
 
         for (index, setter) in tiles_map {
-            let handle = self.chunks[index].as_ref().unwrap();
+            let handle = self.chunks.get(&index).unwrap();
             self.events.send(MapEvent::ModifiedChunk {
                 handle: handle.clone_weak(),
                 setter,
@@ -826,11 +826,6 @@ impl TileMap {
             + coord.y();
         Some(Vec3::new(x, y, coord.z()))
     }
-
-    /// Looks up a position of a chunk by the handle and returns the index.
-    pub fn get_chunk_index(&self, chunk: &Handle<Chunk>) -> Option<usize> {
-        self.chunks.iter().position(|x| x.as_ref() == Some(chunk))
-    }
 }
 
 /// The event handling system for the `TileMap` which takes the types `Tile`, `Chunk`, and `TileMap`.
@@ -855,8 +850,11 @@ pub fn map_system(
         for event in reader.iter(&map.events) {
             use MapEvent::*;
             match event {
-                CreatedChunk { ref index } => {
-                    new_chunks.push(*index);
+                CreatedChunk {
+                    ref index,
+                    ref handle,
+                } => {
+                    new_chunks.push((*index, handle.clone_weak()));
                 }
                 AddedLayer { ref z, ref kind } => {
                     added_layers.push((*z, *kind));
@@ -888,50 +886,62 @@ pub fn map_system(
             }
         }
 
-        for idx in new_chunks.iter() {
-            let chunk = Chunk::new(map.chunk_dimensions, map.layers.len());
-            let chunk_handle = chunks.add(chunk);
-            map.chunks[*idx] = Some(chunk_handle);
+        for (index, handle) in new_chunks.iter() {
+            let coord = index.to_coord2(map.dimensions.width(), map.dimensions.height());
+            let mut chunk = Chunk::new(coord, map.chunk_dimensions, map.layers.len());
+            chunk.add_layer(LayerKind::Dense, 0);
+            let handle = chunks.set(handle.clone_weak(), chunk);
+            map.chunks.insert(*index, handle);
         }
 
         for (z, kind) in added_layers.iter() {
-            for handle in &map.chunks {
-                if let Some(handle) = handle {
-                    let chunk = chunks.get_mut(handle).unwrap();
-                    chunk.add_layer(*kind, *z);
-                }
+            for handle in map.chunks.values() {
+                let chunk = chunks.get_mut(handle).unwrap();
+                chunk.add_layer(*kind, *z);
             }
         }
 
         for (from_z, to_z) in moved_layers.iter() {
-            for handle in &map.chunks {
-                if let Some(handle) = handle {
-                    let chunk = chunks.get_mut(handle).unwrap();
-                    chunk.move_layer(*from_z, *to_z);
-                }
+            for handle in map.chunks.values() {
+                let chunk = chunks.get_mut(handle).unwrap();
+                chunk.move_layer(*from_z, *to_z);
             }
         }
 
         for z in removed_layers.iter() {
-            for handle in &map.chunks {
-                if let Some(handle) = handle {
-                    let chunk = chunks.get_mut(handle).unwrap();
-                    chunk.remove_layer(*z);
-                }
+            for handle in map.chunks.values() {
+                let chunk = chunks.get_mut(handle).unwrap();
+                chunk.remove_layer(*z);
+            }
+        }
+
+        for (handle, setter) in modified_chunks.iter() {
+            let chunk = chunks.get_mut(handle).unwrap();
+            for (coord, tile, z_layer) in setter.iter() {
+                let index =
+                    coord.to_index(map.chunk_dimensions.width(), map.chunk_dimensions.height());
+                chunk.set_tile(*z_layer, index, *tile);
             }
         }
 
         for handle in spawned_chunks.iter() {
             let chunk = chunks.get_mut(handle).unwrap();
             let mut entities = Vec::with_capacity(new_chunks.len());
-            for z in 0..map.layers.len() {
+            for z in 0..map.layers.len() - 1 {
                 let mut mesh = Mesh::from(ChunkMesh::new(map.chunk_dimensions));
-                let (indexes, colors) = chunk.tiles_to_renderer_parts(z).unwrap();
+                let (indexes, colors) = if let Some(parts) = chunk.tiles_to_renderer_parts(z) {
+                    parts
+                } else {
+                    continue;
+                };
                 mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes.into());
                 mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors.into());
                 let mesh_handle = meshes.add(mesh);
+                chunk.set_mesh(z, mesh_handle.clone());
 
-                let idx = map.get_chunk_index(&handle).unwrap();
+                let idx = chunk
+                    .coord()
+                    .to_index(map.dimensions.width(), map.dimensions.height());
 
                 let map_coord = map.dimensions().decode_coord_unchecked(idx);
                 let map_center = map.dimensions().center();
@@ -965,13 +975,15 @@ pub fn map_system(
 
         for handle in despawned_chunks.iter() {
             let chunk = chunks.get_mut(handle).unwrap();
-            let idx = map.get_chunk_index(&handle).unwrap();
+            let index = chunk
+                .coord()
+                .to_index(map.dimensions.width(), map.dimensions.height());
             for entity in chunk.get_entities() {
                 commands.despawn(entity);
             }
 
-            let index = map.spawned_chunks.iter().position(|x| *x == idx).unwrap();
-            map.spawned_chunks.remove(index);
+            let spawned_index = map.spawned_chunks.iter().position(|x| *x == index).unwrap();
+            map.spawned_chunks.remove(spawned_index);
         }
 
         for handle in removed_chunks.iter() {
@@ -979,8 +991,13 @@ pub fn map_system(
             for entity in chunk.get_entities() {
                 commands.despawn(entity);
             }
-            let idx = map.get_chunk_index(handle).unwrap();
-            map.chunks[idx] = None;
+            let index = chunk
+                .coord()
+                .to_index(map.dimensions.width(), map.dimensions.height());
+            map.chunks.remove(&index);
+
+            let spawned_index = map.spawned_chunks.iter().position(|x| *x == index).unwrap();
+            map.spawned_chunks.remove(spawned_index);
         }
     }
 }
