@@ -78,8 +78,8 @@ impl TileSetter {
     /// let tile = Tile::new(1);
     /// setter.push(coord, tile, 0);
     /// ```
-    pub fn push(&mut self, coord: Vec3, tile: Tile, z: usize) {
-        self.0.push((coord, tile, z));
+    pub fn push(&mut self, coord: Vec3, tile: Tile, z_layer: usize) {
+        self.0.push((coord, tile, z_layer));
     }
 
     // /// Pushes a stack of tiles to be rendered from background to foreground.
