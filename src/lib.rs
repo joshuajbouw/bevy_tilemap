@@ -71,7 +71,7 @@ mod lib {
 
     pub(crate) use self::{
         bevy_app::{AppBuilder, Events, Plugin},
-        bevy_asset::{AddAsset, Assets, Handle},
+        bevy_asset::{AddAsset, Assets, Handle, HandleId},
         bevy_core::Byteable,
         bevy_ecs::{Bundle, Commands, Entity, IntoQuerySystem, Query, ResMut, Resources},
         bevy_math::{Vec2, Vec3},
@@ -96,7 +96,7 @@ mod lib {
             hierarchy::BuildChildren,
         },
         bevy_type_registry::{TypeUuid, Uuid},
-        bevy_utils::HashMap,
+        bevy_utils::{HashMap, HashMapExt},
     };
 
     // Need to add this here as there is a Rust issue surrounding the fact that
@@ -117,7 +117,7 @@ mod lib {
         default::Default,
         fmt::{Debug, Formatter, Result as FmtResult},
         iter::{Extend, IntoIterator, Iterator},
-        ops::{Deref, FnMut, FnOnce},
+        ops::{Deref, DerefMut, FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},
         slice::{Iter, IterMut},
