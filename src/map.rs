@@ -331,7 +331,10 @@ impl TileMap {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
         self.dimensions.check_index(index)?;
 
-        self.events.send(MapEvent::CreatedChunk { index });
+        let handle: Handle<Chunk> = Handle::weak(HandleId::random::<Chunk>());
+        self.chunks.insert(index, handle.clone_weak());
+
+        self.events.send(MapEvent::CreatedChunk { index, handle });
 
         Ok(())
     }
