@@ -203,12 +203,22 @@ impl Chunk {
         self.sprite_layers[from_z] = None;
     }
 
-    pub(crate) fn remove_layer(&mut self, z: usize) {
-        self.sprite_layers[z] = None;
+    pub(crate) fn remove_layer(&mut self, z_layer: usize) {
+        self.sprite_layers[z_layer] = None;
     }
 
-    pub(crate) fn add_entity(&mut self, z: usize, entity: Entity) {
-        let layer = self.sprite_layers[z].as_mut().unwrap();
+    pub(crate) fn set_mesh(&mut self, z_layer: usize, mesh: Handle<Mesh>) {
+        let layer = self.sprite_layers[z_layer].as_mut().unwrap();
+        layer.inner.set_mesh(mesh);
+    }
+
+    pub(crate) fn set_tile(&mut self, z_layer: usize, index: usize, tile: Tile) {
+        let layer = self.sprite_layers[z_layer].as_mut().unwrap();
+        layer.inner.set_tile(index, tile);
+    }
+
+    pub(crate) fn add_entity(&mut self, z_layer: usize, entity: Entity) {
+        let layer = self.sprite_layers[z_layer].as_mut().unwrap();
         layer.entity = Some(entity);
     }
 
