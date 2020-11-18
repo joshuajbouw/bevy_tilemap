@@ -135,7 +135,6 @@ pub struct TileMap {
     current_depth: usize,
     layers: Vec<Option<LayerKind>>,
     #[cfg_attr(feature = "serde", serde(skip))]
-    // Should change to HashSet when merged into bevy
     chunks: Vec<Option<Handle<Chunk>>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     entities: HashMap<usize, Vec<Entity>>,
@@ -452,61 +451,15 @@ impl TileMap {
         Ok(())
     }
 
-    // /// Constructs a new `Chunk` and stores it at a coordinate position with
-    // /// tiles.
-    // ///
-    // /// It requires that you give it either an index or a Vec2 or Vec3
-    // /// coordinate as well as a vector of `Tile`s. It then automatically sets
-    // /// both a sized mesh and chunk for use based on the parameters set in the
-    // /// parent `TileMap`.
-    // ///
-    // /// # Panics
-    // ///
-    // /// This method will panic if you attempt to add a chunk to an out of bounds
-    // /// index location or coordinate.
-    // ///
-    // /// # Examples
-    // /// ```
-    // /// # use bevy_tilemap::TileMap;
-    // /// # use bevy::prelude::*;
-    // /// # use bevy::type_registry::TypeUuid;
-    // /// #
-    // /// # // Tile's dimensions in pixels
-    // /// # let tile_dimensions = Vec2::new(32., 32.);
-    // /// # // Chunk's dimensions in tiles
-    // /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    // /// # // Tile map's dimensions in chunks
-    // /// # let tile_map_dimensions = Vec2::new(1., 1.,);
-    // /// # // Handle from the sprite sheet you want
-    // /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
-    // /// #
-    // /// # let mut tile_map = TileMap::new(
-    // /// #    tile_map_dimensions,
-    // /// #    chunk_dimensions,
-    // /// #    tile_dimensions,
-    // /// #    atlas_handle,
-    // /// # );
-    // /// use bevy_tilemap::Tile;
-    // ///
-    // /// let tiles = vec![Tile::new(0); 32];
-    // ///
-    // /// // Add some chunks.
-    // /// tile_map.new_chunk_with_tiles(0, tiles.clone());
-    // /// tile_map.new_chunk_with_tiles(1, tiles.clone());
-    // /// tile_map.new_chunk_with_tiles(2, tiles);
-    // /// ```
-    // pub fn new_chunk_with_tiles<I: ToIndex>(
-    //     &mut self,
-    //     v: I,
-    //     tiles: Vec<Tile>,
-    // ) -> DimensionResult<()> {
-    //     let index = v.to_index(self.dimensions.width(), self.dimensions.height());
-    //     self.dimensions.check_index(index)?;
-    //
-    //     self.events.send(MapEvent::Created { index, tiles });
-    //
-    //     Ok(())
-    // }
+    #[doc(hidden)]
+    #[deprecated(since = "0.2.0", note = "please use `new_chunk` instead")]
+    pub fn new_chunk_with_tiles<I: ToIndex>(
+        &mut self,
+        v: I,
+        _tiles: Vec<Tile>,
+    ) -> MapResult<()> {
+        self.new_chunk(v)
+    }
 
     /// Destructively removes a `Chunk` at a coordinate position.
     ///
