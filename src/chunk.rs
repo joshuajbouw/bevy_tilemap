@@ -180,16 +180,17 @@ impl Chunk {
     }
 
     pub(crate) fn add_layer(&mut self, kind: LayerKind, z: usize) {
-        let tiles = vec![Tile::new(0); self.max_size()];
-
         match kind {
-            LayerKind::Dense => self.sprite_layers.insert(
-                z,
-                Some(SpriteLayer {
-                    inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
-                    entity: None,
-                }),
-            ),
+            LayerKind::Dense => {
+                let tiles = vec![Tile::new(0); self.max_size()];
+                self.sprite_layers.insert(
+                    z,
+                    Some(SpriteLayer {
+                        inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
+                        entity: None,
+                    }),
+                )
+            }
             LayerKind::Sparse => self.sprite_layers.insert(
                 z,
                 Some(SpriteLayer {
