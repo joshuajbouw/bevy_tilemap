@@ -374,6 +374,23 @@ impl TypeUuid for Tilemap {
     const TYPE_UUID: Uuid = Uuid::from_u128(109481186966523254410691740507722642628);
 }
 
+impl Default for Tilemap {
+    fn default() -> Self {
+        Tilemap {
+            dimensions: None,
+            chunk_dimensions: Dimension2::new(32, 32),
+            tile_dimensions: Dimension2::new(32, 32),
+            layers: vec![None; 20],
+            texture_atlas: Handle::default(),
+            current_depth: 0,
+            chunks: Default::default(),
+            entities: Default::default(),
+            events: Default::default(),
+            spawned_chunks: vec![]
+        }
+    }
+}
+
 impl Tilemap {
     /// Configures the builder with the default settings.
     ///
