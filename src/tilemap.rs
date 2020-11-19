@@ -1,16 +1,15 @@
 use crate::{
     chunk::{Chunk, LayerKind},
-    coord::{ToCoord2, ToCoord3, ToIndex},
     dimensions::{DimensionError, Dimensions2, Dimensions3},
     entity::ChunkComponents,
     lib::*,
     mesh::ChunkMesh,
-    tile::Tile,
-    tile_setter::TileSetter,
+    point::{Point2, Point3},
+    tile::{Tile, Tiles},
 };
 
 #[derive(Clone, PartialEq)]
-/// The kinds of errors that can occur for a `[MapError]`.
+/// The kinds of errors that can occur.
 pub enum ErrorKind {
     /// If the coordinate or index is out of bounds.
     DimensionError(DimensionError),
@@ -36,25 +35,25 @@ impl Debug for ErrorKind {
 }
 
 #[derive(Clone, PartialEq)]
-/// A MapError indicates that an error with the `[Map]` has occurred.
-pub struct MapError(Box<ErrorKind>);
+/// The error type for operations when interacting with the `TileMap`.
+pub struct TileMapError(Box<ErrorKind>);
 
-impl Debug for MapError {
+impl Debug for TileMapError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         self.0.fmt(f)
     }
 }
 
-impl From<ErrorKind> for MapError {
-    fn from(err: ErrorKind) -> MapError {
-        MapError::new(err)
+impl From<ErrorKind> for TileMapError {
+    fn from(err: ErrorKind) -> TileMapError {
+        TileMapError::new(err)
     }
 }
 
-impl MapError {
+impl TileMapError {
     /// Creates a new `MapError`.
-    pub fn new(kind: ErrorKind) -> MapError {
-        MapError(Box::new(kind))
+    pub fn new(kind: ErrorKind) -> TileMapError {
+        TileMapError(Box::new(kind))
     }
 
     /// Returns the underlying error kind `ErrorKind`.
@@ -63,14 +62,14 @@ impl MapError {
     }
 }
 
-impl From<DimensionError> for MapError {
-    fn from(err: DimensionError) -> MapError {
-        MapError::new(ErrorKind::DimensionError(err))
+impl From<DimensionError> for TileMapError {
+    fn from(err: DimensionError) -> TileMapError {
+        TileMapError::new(ErrorKind::DimensionError(err))
     }
 }
 
 /// A map result.
-pub type MapResult<T> = Result<T, MapError>;
+pub type TileMapResult<T> = Result<T, TileMapError>;
 
 /// Events that happen on a `Chunk` by index value.
 #[derive(Debug)]
@@ -84,44 +83,41 @@ pub(crate) enum MapEvent {
     },
     /// An event when a layer is created for all chunks.
     AddedLayer {
-        z: usize,
+        /// The *Z* layer to add.
+        z_layer: usize,
+        /// The `LayerKind` of the layer.
         kind: LayerKind,
     },
+    /// An event when a layer is moved.
     MovedLayer {
-        from_z: usize,
-        to_z: usize,
+        /// From which *Z* layer.
+        from_z_layer: usize,
+        /// To which *Z* layer.
+        to_z_layer: usize,
     },
     /// An event when a layer is removed for all chunks.
     RemovedLayer {
-        z: usize,
+        /// The *Z* layer to remove.
+        z_layer: usize,
     },
     /// An event when a chunk had been modified by changing tiles.
     ModifiedChunk {
         /// The map index where the chunk needs to be stored.
         handle: Handle<Chunk>,
         /// The `TileSetter` that is used to set all the tiles.
-        setter: TileSetter,
+        tiles: Tiles,
     },
     /// An event when a chunk is spawned.
-    SpawnedChunk {
-        handle: Handle<Chunk>,
-    },
+    SpawnedChunk { handle: Handle<Chunk> },
     /// If the chunk needs to be despawned, this event is used.
     DespawnedChunk {
-        /// The `Handle` of the `Chunk`.
+        /// The handle of the `Chunk` that needs to be despawned.
         handle: Handle<Chunk>,
-        // /// The `Entity` that needs to be despawned.
-        // entity: Entity,
     },
     /// If the chunk needs to be removed.
-    ///
-    /// # Warning
-    /// This is destructive action! All data will be dropped and removed.
     RemovedChunk {
-        /// The map index where the chunk needs to be removed.
+        /// The handle of the `Chunk` that needs to be removed.
         handle: Handle<Chunk>,
-        // /// The `Entity` that needs to be despawned.
-        // entity: Entity,
     },
 }
 
@@ -129,13 +125,13 @@ pub(crate) enum MapEvent {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct TileMap {
-    dimensions: Vec2,
-    chunk_dimensions: Vec3,
-    tile_dimensions: Vec2,
+    dimensions: Option<Dimensions2>,
+    chunk_dimensions: Dimensions3,
+    tile_dimensions: Dimensions2,
     current_depth: usize,
     layers: Vec<Option<LayerKind>>,
     #[cfg_attr(feature = "serde", serde(skip))]
-    chunks: HashMap<usize, Handle<Chunk>>,
+    chunks: HashMap<Point2, Handle<Chunk>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     entities: HashMap<usize, Vec<Entity>>,
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -327,8 +323,8 @@ impl TileMap {
     /// tile_map.new_chunk(1);
     /// tile_map.new_chunk(2);
     /// ```
-    pub fn new_chunk<I: ToIndex>(&mut self, v: I) -> MapResult<()> {
-        let index = v.to_index(self.dimensions.width(), self.dimensions.height());
+    pub fn new_chunk(&mut self, x: i32, y: i32, z: i32) -> TileMapResult<()> {
+        let point3 = Point3::new(x, y, z);
         self.dimensions.check_index(index)?;
 
         let handle: Handle<Chunk> = Handle::weak(HandleId::random::<Chunk>());
@@ -356,7 +352,7 @@ impl TileMap {
     /// If the tile length is not the same length as the expected tile length
     /// per chunk, then a panic is thrown. This is important as it will lead to
     /// future panics if it is not caught here.
-    pub fn add_layer(&mut self, kind: LayerKind, z_layer: usize) -> MapResult<()> {
+    pub fn add_layer(&mut self, kind: LayerKind, z_layer: usize) -> TileMapResult<()> {
         // assert_eq!(
         //     tiles.len(),
         //     self.chunk_tile_len(),
@@ -373,7 +369,7 @@ impl TileMap {
 
         self.layers[z_layer] = Some(kind);
 
-        self.events.send(MapEvent::AddedLayer { z: z_layer, kind });
+        self.events.send(MapEvent::AddedLayer { z_layer, kind });
 
         Ok(())
     }
@@ -384,7 +380,7 @@ impl TileMap {
     ///
     /// If the destination exists, it will throw an error. Likewise, if the
     /// origin does not exist, it also will throw an error.
-    pub fn move_layer(&mut self, from_z: usize, to_z: usize) -> MapResult<()> {
+    pub fn move_layer(&mut self, from_z: usize, to_z: usize) -> TileMapResult<()> {
         if self.layers[to_z].is_some() {
             return Err(ErrorKind::LayerExists(to_z).into());
         };
@@ -396,7 +392,10 @@ impl TileMap {
         self.layers[to_z] = self.layers[from_z];
         self.layers[from_z] = None;
 
-        self.events.send(MapEvent::MovedLayer { from_z, to_z });
+        self.events.send(MapEvent::MovedLayer {
+            from_z_layer: from_z,
+            to_z_layer: to_z,
+        });
 
         Ok(())
     }
@@ -416,7 +415,7 @@ impl TileMap {
 
         self.layers[z] = None;
 
-        self.events.send(MapEvent::RemovedLayer { z })
+        self.events.send(MapEvent::RemovedLayer { z_layer: z })
     }
 
     /// Spawns a stored chunk at a given index or coordinate.
@@ -427,7 +426,7 @@ impl TileMap {
     /// # Errors
     ///
     /// If the coordinate or index is out of bounds, an error will be returned.
-    pub fn spawn_chunk<I: ToIndex>(&mut self, v: I) -> MapResult<()> {
+    pub fn spawn_chunk<I: ToIndex>(&mut self, v: I) -> TileMapResult<()> {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
         self.dimensions.check_index(index)?;
 
@@ -441,7 +440,7 @@ impl TileMap {
     }
 
     /// De-spawns a spawned chunk at a given index or coordinate.
-    pub fn despawn_chunk<I: ToIndex>(&mut self, v: usize) -> MapResult<()> {
+    pub fn despawn_chunk<I: ToIndex>(&mut self, v: usize) -> TileMapResult<()> {
         let index = v.to_index(self.dimensions.width(), self.dimensions.height());
         self.dimensions.check_index(index)?;
 
@@ -459,7 +458,11 @@ impl TileMap {
         since = "0.2.0",
         note = "please use `new_chunk` instead, will be removed by v0.3.0"
     )]
-    pub fn new_chunk_with_tiles<I: ToIndex>(&mut self, v: I, _tiles: Vec<Tile>) -> MapResult<()> {
+    pub fn new_chunk_with_tiles<I: ToIndex>(
+        &mut self,
+        v: I,
+        _tiles: Vec<Tile>,
+    ) -> TileMapResult<()> {
         self.new_chunk(v)
     }
 
@@ -502,7 +505,7 @@ impl TileMap {
     /// tile_map.remove_chunk(1);
     /// tile_map.remove_chunk(2);
     /// ```
-    pub fn remove_chunk<I: ToIndex>(&mut self, v: I) -> MapResult<()> {
+    pub fn remove_chunk<I: ToIndex>(&mut self, v: I) -> TileMapResult<()> {
         let index = v.to_index(self.dimensions.width(), self.dimensions.y());
         self.dimensions.check_index(index)?;
 
@@ -551,7 +554,12 @@ impl TileMap {
     /// # Errors
     ///
     /// Returns an error if the given coordinate or index is out of bounds.
-    pub fn set_tile<I: ToIndex + ToCoord3>(&mut self, v: I, tile: Tile, z: usize) -> MapResult<()> {
+    pub fn set_tile<I: ToIndex + ToCoord3>(
+        &mut self,
+        v: I,
+        tile: Tile,
+        z: usize,
+    ) -> TileMapResult<()> {
         let coord = v.to_coord3(self.dimensions.width(), self.dimensions.height());
         self.set_tiles(TileSetter::from(vec![(coord, tile, z)]))
     }
@@ -598,7 +606,7 @@ impl TileMap {
     /// // Set multiple tiles and unwrap the result
     /// tile_map.set_tiles(new_tiles).unwrap();
     /// ```
-    pub fn set_tiles(&mut self, setter: TileSetter) -> MapResult<()> {
+    pub fn set_tiles(&mut self, setter: TileSetter) -> TileMapResult<()> {
         let mut tiles_map: HashMap<usize, TileSetter> = HashMap::default();
         for (setter_coord, setter_tile, z) in setter.iter() {
             let chunk_coord = self.tile_coord_to_chunk_coord(*setter_coord);
@@ -629,7 +637,7 @@ impl TileMap {
             let handle = self.chunks.get(&index).unwrap();
             self.events.send(MapEvent::ModifiedChunk {
                 handle: handle.clone_weak(),
-                setter,
+                tiles: setter,
             })
         }
         Ok(())
@@ -830,7 +838,23 @@ impl TileMap {
     }
 }
 
-/// The event handling system for the `TileMap` which takes the types `Tile`, `Chunk`, and `TileMap`.
+/// The event handling system for the `TileMap`.
+///
+/// There are a few things that happen in this function which are outlined in
+/// order of operation here. It was done in this order that made the most sense
+/// at the time of creation.
+///
+/// 1. Add new chunks
+/// 1. Add new layers
+/// 1. Move layers
+/// 1. Remove layers
+/// 1. Modify layers
+/// 1. Spawn chunks
+/// 1. Despawn chunks
+/// 1. Remove chunks
+///
+/// # Panics
+///
 pub fn map_system(
     mut commands: Commands,
     mut chunks: ResMut<Assets<Chunk>>,
@@ -858,21 +882,24 @@ pub fn map_system(
                 } => {
                     new_chunks.push((*index, handle.clone_weak()));
                 }
-                AddedLayer { ref z, ref kind } => {
+                AddedLayer {
+                    z_layer: ref z,
+                    ref kind,
+                } => {
                     added_layers.push((*z, *kind));
                 }
                 MovedLayer {
-                    ref from_z,
-                    ref to_z,
+                    from_z_layer: ref from_z,
+                    to_z_layer: ref to_z,
                 } => {
                     moved_layers.push((*from_z, *to_z));
                 }
-                RemovedLayer { ref z } => {
+                RemovedLayer { z_layer: ref z } => {
                     removed_layers.push(*z);
                 }
                 ModifiedChunk {
                     ref handle,
-                    ref setter,
+                    tiles: ref setter,
                 } => {
                     modified_chunks.push((handle.clone_weak(), setter.clone()));
                 }

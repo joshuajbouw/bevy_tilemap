@@ -83,7 +83,7 @@ pub mod v0_1 {
         chunk::LayerKind,
         dimensions::deprecated::{Dimensions2, Dimensions3},
         entity::TileMapComponents,
-        map::TileMap,
+        tilemap::TileMap,
         tile::Tile,
         tile_setter::TileSetter,
         ChunkTilesPlugin,
@@ -95,7 +95,7 @@ pub mod v0_2 {
     pub use crate::{
         chunk::LayerKind,
         entity::TileMapComponents,
-        map::TileMap,
+        tilemap::TileMap,
         tile::{Tile, Tiles},
         ChunkTilesPlugin,
     };
