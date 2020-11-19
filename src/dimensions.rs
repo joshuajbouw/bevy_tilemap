@@ -1,5 +1,7 @@
-use crate::lib::*;
-use crate::point::{Point2, Point3};
+use crate::{
+    lib::*,
+    point::{Point2, Point3},
+};
 
 #[derive(Clone, Copy, PartialEq)]
 /// The kinds of errors that can occur for a `[DimensionError]`.
@@ -15,7 +17,9 @@ impl Debug for ErrorKind {
         use ErrorKind::*;
         match *self {
             OutOfBounds => write!(f, "out of bounds in the chunk"),
-            MinLargerThanMax(min, max) => write!(f, "minimum constraint {} larger than maximum {}", min, max),
+            MinLargerThanMax(min, max) => {
+                write!(f, "minimum constraint {} larger than maximum {}", min, max)
+            }
         }
     }
 }
@@ -51,7 +55,6 @@ impl DimensionError {
 /// A chunk result.
 pub(crate) type DimensionResult<T> = Result<T, DimensionError>;
 
-
 pub(crate) struct Dimensions2 {
     width: u32,
     height: u32,
@@ -59,10 +62,7 @@ pub(crate) struct Dimensions2 {
 
 impl Dimensions2 {
     pub(crate) fn new(width: u32, height: u32) -> Dimensions2 {
-        Dimensions2 {
-            width,
-            height,
-        }
+        Dimensions2 { width, height }
     }
 
     /// The width of this dimension.
@@ -92,9 +92,7 @@ impl Dimensions2 {
 
     /// Checks if a coordinate is valid and inbounds.
     pub(crate) fn check_point(&self, point: &Point2) -> DimensionResult<()> {
-        if point.x() > self.x_max() as i32
-            || point.y() > self.y_max() as i32
-        {
+        if point.x() > self.x_max() as i32 || point.y() > self.y_max() as i32 {
             Err(ErrorKind::OutOfBounds.into())
         } else {
             Ok(())
@@ -122,14 +120,14 @@ impl Dimensions2 {
     }
 
     /// Decodes an index value and returns a coordinate, unchecked.
-    pub(crate)fn decode_point_unchecked(&self, index: usize) -> Point2 {
+    pub(crate) fn decode_point_unchecked(&self, index: usize) -> Point2 {
         let y = index as i32 / self.height as i32;
         let x = index as i32 % self.width as i32;
         Point2::new(x, y)
     }
 
     /// Decodes an index value and returns a coordinate.
-    pub(crate)fn decode_point(&self, index: usize) -> DimensionResult<Point2> {
+    pub(crate) fn decode_point(&self, index: usize) -> DimensionResult<Point2> {
         self.check_index(index)?;
         Ok(self.decode_point_unchecked(index))
     }
@@ -147,7 +145,7 @@ impl Dimensions3 {
         Dimensions3 {
             width,
             height,
-            depth
+            depth,
         }
     }
 
@@ -192,9 +190,9 @@ impl Dimensions3 {
 
     /// Checks if a given coordinate is within bounds of the `Chunk`.
     pub(crate) fn check_point(&self, point: Point3) -> DimensionResult<()> {
-    if point.x() > self.width as i32
-        || point.y() > self.height as i32
-        || point.z() > self.depth as i32
+        if point.x() > self.width as i32
+            || point.y() > self.height as i32
+            || point.z() > self.depth as i32
         {
             Err(ErrorKind::OutOfBounds.into())
         } else {
@@ -462,7 +460,9 @@ pub mod deprecated {
 
         /// Checks if a given index is within bounds of the `Chunk`.
         fn check_index(&self, idx: usize) -> DimensionResult<()> {
-            if idx > (self.dimensions().x() * self.dimensions().y() * self.dimensions().z()) as usize {
+            if idx
+                > (self.dimensions().x() * self.dimensions().y() * self.dimensions().z()) as usize
+            {
                 Err(ErrorKind::OutOfBounds.into())
             } else {
                 Ok(())

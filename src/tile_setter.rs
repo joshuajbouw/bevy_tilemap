@@ -1,5 +1,7 @@
-use crate::{lib::*, tile::Tile};
-use crate::tile::Tiles;
+use crate::{
+    lib::*,
+    tile::{Tile, Tiles},
+};
 
 /// A tool used to set multiple tiles at a time.
 ///
@@ -217,7 +219,10 @@ impl From<TileSetter> for Tiles {
     fn from(setter: TileSetter) -> Tiles {
         let mut tiles = Tiles::default();
         for (coord, tile) in setter.iter() {
-            tiles.insert((coord.x() as i32, coord.y() as i32, coord.z() as i32), *tile);
+            tiles.insert(
+                (coord.x() as i32, coord.y() as i32, coord.z() as i32),
+                *tile,
+            );
         }
         tiles
     }

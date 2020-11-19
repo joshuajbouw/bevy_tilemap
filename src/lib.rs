@@ -34,6 +34,7 @@ pub mod entity;
 pub mod map;
 /// Meshes for use in rendering.
 pub(crate) mod mesh;
+pub(crate) mod point;
 pub mod prelude;
 /// Files and helpers for rendering.
 pub(crate) mod render;
@@ -45,7 +46,6 @@ pub mod tile;
     note = "please use `tile::Tiles` instead, will be removed by v0.3.0"
 )]
 pub mod tile_setter;
-pub(crate) mod point;
 
 use crate::{chunk::Chunk, lib::*, map::TileMap, render::TilemapRenderGraphBuilder};
 
