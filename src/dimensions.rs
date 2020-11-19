@@ -55,6 +55,8 @@ impl DimensionError {
 /// A chunk result.
 pub(crate) type DimensionResult<T> = Result<T, DimensionError>;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Copy, Clone)]
 pub(crate) struct Dimensions2 {
     width: u32,
     height: u32,
@@ -133,6 +135,8 @@ impl Dimensions2 {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Copy, Clone)]
 pub(crate) struct Dimensions3 {
     width: u32,
     height: u32,
