@@ -1,10 +1,11 @@
 use crate::{lib::*, tile::Tile};
+use crate::tile::Tiles;
 
 /// A tool used to set multiple tiles at a time.
 ///
 /// This is the preferred and fastest way to set tiles. Optionally, you can set them individually.
 #[derive(Clone, Debug, Default)]
-pub struct TileSetter(Vec<(Vec3, Tile, usize)>);
+pub struct TileSetter(Vec<(Vec3, Tile)>);
 
 impl TileSetter {
     /// Constructs a new `TileSetter` with the type `Tile`.
@@ -15,7 +16,7 @@ impl TileSetter {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::prelude::*;
+    /// use bevy_tilemap::prelude::v0_1::*;
     ///
     /// let mut setter = TileSetter::new();
     /// ```
@@ -33,7 +34,7 @@ impl TileSetter {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::prelude::*;
+    /// use bevy_tilemap::prelude::v0_1::*;
     /// use bevy::prelude::*;
     ///
     /// let mut setter = TileSetter::with_capacity(10);
@@ -46,7 +47,7 @@ impl TileSetter {
     /// for i in 0..10 {
     ///     let coord = Vec3::new(i as f32, i as f32 + 1., 0.);
     ///     let tile = Tile::new(i);
-    ///     setter.push(coord, tile, 0);
+    ///     setter.push(coord, tile);
     /// }
     /// assert_eq!(setter.len(), 10);
     /// assert_eq!(setter.capacity(), 10);
@@ -54,7 +55,7 @@ impl TileSetter {
     /// // ...but this may make the vector reallocate
     /// let coord = Vec3::new(11., 12., 0.);
     /// let tile = Tile::new(11);
-    /// setter.push(coord, tile, 0);
+    /// setter.push(coord, tile);
     /// assert_eq!(setter.len(), 11);
     /// assert!(setter.capacity() >= 11);
     /// ```
@@ -70,16 +71,16 @@ impl TileSetter {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::prelude::*;
+    /// use bevy_tilemap::prelude::v0_1::*;
     /// use bevy::prelude::*;
     ///
     /// let mut setter = TileSetter::new();
     /// let coord = Vec3::new(1., 1., 0.);
     /// let tile = Tile::new(1);
-    /// setter.push(coord, tile, 0);
+    /// setter.push(coord, tile);
     /// ```
-    pub fn push(&mut self, coord: Vec3, tile: Tile, z_layer: usize) {
-        self.0.push((coord, tile, z_layer));
+    pub fn push(&mut self, coord: Vec3, tile: Tile) {
+        self.0.push((coord, tile));
     }
 
     // /// Pushes a stack of tiles to be rendered from background to foreground.
@@ -94,13 +95,13 @@ impl TileSetter {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::prelude::*;
+    /// use bevy_tilemap::prelude::v0_1::*;
     /// use bevy::prelude::*;
     ///
     /// let mut setter = TileSetter::with_capacity(10);
     /// let coord = Vec3::new(1., 1., 0.);
     /// let tile = Tile::new(1);
-    /// setter.push(coord, tile, 0);
+    /// setter.push(coord, tile);
     /// assert_eq!(setter.capacity(), 10);
     /// setter.shrink_to_fit();
     /// assert!(setter.capacity() >= 1);
@@ -126,7 +127,7 @@ impl TileSetter {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::prelude::*;
+    /// use bevy_tilemap::prelude::v0_1::*;
     ///
     /// let mut setter = TileSetter::new();
     /// setter.reserve_exact(10);
@@ -141,7 +142,7 @@ impl TileSetter {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::prelude::*;
+    /// use bevy_tilemap::prelude::v0_1::*;
     ///
     /// let mut setter = TileSetter::new();
     /// assert_eq!(setter.len(), 0);
@@ -155,7 +156,7 @@ impl TileSetter {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::prelude::*;
+    /// use bevy_tilemap::prelude::v0_1::*;
     ///
     /// let mut setter = TileSetter::with_capacity(10);
     /// assert_eq!(setter.capacity(), 10);
@@ -168,7 +169,7 @@ impl TileSetter {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::prelude::*;
+    /// use bevy_tilemap::prelude::v0_1::*;
     /// use bevy::prelude::*;
     ///
     /// let mut setter = TileSetter::new();
@@ -176,7 +177,7 @@ impl TileSetter {
     ///
     /// let coord = Vec3::new(1., 1., 0.);
     /// let tile = Tile::new(1);
-    /// setter.push(coord, tile, 0);
+    /// setter.push(coord, tile);
     /// assert!(!setter.is_empty());
     /// ```
     pub fn is_empty(&self) -> bool {
@@ -184,30 +185,40 @@ impl TileSetter {
     }
 
     /// Returns an iterator over all coordinates and tiles in the `TileSetter`.
-    pub fn iter(&self) -> Iter<'_, (Vec3, Tile, usize)> {
+    pub fn iter(&self) -> Iter<'_, (Vec3, Tile)> {
         self.0.iter()
     }
 
     /// Returns a mutable iterator over all coordinates and tiles in the `TileSetter`.
-    pub fn iter_mut(&mut self) -> IterMut<'_, (Vec3, Tile, usize)> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, (Vec3, Tile)> {
         self.0.iter_mut()
     }
 }
 
-impl Extend<(Vec3, Tile, usize)> for TileSetter {
-    fn extend<I: IntoIterator<Item = (Vec3, Tile, usize)>>(&mut self, iter: I) {
+impl Extend<(Vec3, Tile)> for TileSetter {
+    fn extend<I: IntoIterator<Item = (Vec3, Tile)>>(&mut self, iter: I) {
         self.0.extend(iter);
     }
 }
 
-impl From<Vec<(Vec3, Tile, usize)>> for TileSetter {
-    fn from(vec: Vec<(Vec3, Tile, usize)>) -> TileSetter {
+impl From<Vec<(Vec3, Tile)>> for TileSetter {
+    fn from(vec: Vec<(Vec3, Tile)>) -> TileSetter {
         TileSetter(vec)
     }
 }
 
-impl From<&[(Vec3, Tile, usize)]> for TileSetter {
-    fn from(slice: &[(Vec3, Tile, usize)]) -> TileSetter {
+impl From<&[(Vec3, Tile)]> for TileSetter {
+    fn from(slice: &[(Vec3, Tile)]) -> TileSetter {
         TileSetter(slice.to_vec())
+    }
+}
+
+impl From<TileSetter> for Tiles {
+    fn from(setter: TileSetter) -> Tiles {
+        let mut tiles = Tiles::default();
+        for (coord, tile) in setter.iter() {
+            tiles.insert((coord.x() as i32, coord.y() as i32, coord.z() as i32), *tile);
+        }
+        tiles
     }
 }

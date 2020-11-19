@@ -35,6 +35,10 @@ pub(crate) mod render;
 /// Tile traits to implement for a custom tile.
 pub mod tile;
 /// A growable heap used for setting multiple tiles at once.
+#[deprecated(
+    since = "0.2.0",
+    note = "please use `tile::Tiles` instead, will be removed by v0.3.0"
+)]
 pub mod tile_setter;
 pub(crate) mod point;
 
