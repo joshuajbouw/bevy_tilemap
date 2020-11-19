@@ -184,7 +184,7 @@ impl Chunk {
         }
     }
 
-    pub(crate) fn add_layer(&mut self, kind: LayerKind, z: usize, dimensions: Dimension2) {
+    pub(crate) fn add_layer(&mut self, kind: &LayerKind, z: usize, dimensions: Dimension2) {
         match kind {
             LayerKind::Dense => {
                 let tiles = vec![Tile::new(0); dimensions.area() as usize];
@@ -255,7 +255,7 @@ impl Chunk {
     pub(crate) fn tiles_to_renderer_parts(
         &self,
         z: usize,
-        dimensions: Dimension2,
+        dimensions: &Dimension2,
     ) -> Option<(Vec<f32>, Vec<[f32; 4]>)> {
         let area = dimensions.area() as usize;
         self.sprite_layers[z]

@@ -13,8 +13,12 @@
 //! design, like Bevy. There is an emphasis placed on generic traits to accomplish that. As well as
 //! work done to keep it as close to Bevy API as possible. This allows anyone to create their own tiles,
 //! chunks and maps and still retain the speed of a handcrafted multi-threaded chunk loader and tile map.
-#![allow(clippy::too_many_arguments)]
+#![doc(html_root_url = "https://bevy_tilemap/0.2.0-pre.1")]
+
 #![no_implicit_prelude]
+// clippy
+#![allow(clippy::too_many_arguments)]
+// rustc
 #![deny(dead_code, missing_docs, unused_imports)]
 
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
@@ -116,7 +120,7 @@ mod lib {
         default::Default,
         error::Error,
         fmt::{Debug, Display, Formatter, Result as FmtResult},
-        iter::{Extend, Iterator},
+        iter::{Extend, Iterator, IntoIterator},
         ops::{FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},

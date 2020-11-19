@@ -833,7 +833,7 @@ impl Tilemap {
     }
 
     /// Takes a tile coordinate and changes it into a chunk coordinate.
-    fn tile_coord_to_chunk_coord(&self, point: Point3) -> Point2 {
+    fn tile_coord_to_chunk_coord(&self, point: &Point3) -> Point2 {
         let x = point.x() / self.chunk_dimensions.width() as i32;
         let y = point.y() / self.chunk_dimensions.height() as i32;
         Point2::new(x, y)
@@ -842,7 +842,8 @@ impl Tilemap {
     /// Sets many tiles using a `Tiles` map, creating new chunks if needed.
     ///
     /// [`Tiles`] is used here to make it convenient to set many tiles at one
-    /// time and to reduce the number of internal events.
+    /// time and to reduce the number of internal events. The method drains
+    /// [`Tiles`], leaving it empty.
     ///
     /// If setting a single tile is more preferable, then use the [`set_tile`]
     /// method instead.
@@ -873,16 +874,16 @@ impl Tilemap {
     /// tiles.insert((3, 3, 0), Tile::new(3));
     ///
     /// // Set multiple tiles and unwrap the result
-    /// tilemap.set_tiles(tiles).unwrap();
+    /// tilemap.set_tiles(&mut tiles).unwrap();
     /// ```
     ///
     /// [`set_tile`]: Tilemap::set_tile
     /// [`Tiles`]: crate::tile::Tiles
-    pub fn set_tiles(&mut self, tiles: Tiles) -> TilemapResult<()> {
+    pub fn set_tiles(&mut self, tiles: &mut Tiles) -> TilemapResult<()> {
         let mut chunk_map: HashMap<Point2, TilePoints> = HashMap::default();
-        for (points, tile) in tiles.iter() {
+        for (points, tile) in tiles.drain() {
             let global_tile_point: Point3 = points.into();
-            let chunk_point = self.tile_coord_to_chunk_coord(global_tile_point);
+            let chunk_point = self.tile_coord_to_chunk_coord(&global_tile_point);
 
             if self.layers[global_tile_point.z() as usize].is_none() {
                 self.add_layer(global_tile_point.z() as usize)?;
@@ -895,10 +896,10 @@ impl Tilemap {
             );
 
             if let Some(tiles) = chunk_map.get_mut(&chunk_point) {
-                tiles.insert(tile_point, *tile);
+                tiles.insert(tile_point, tile);
             } else {
                 let mut tiles = TilePoints::default();
-                tiles.insert(tile_point, *tile);
+                tiles.insert(tile_point, tile);
                 chunk_map.insert(chunk_point, tiles);
             }
         }
@@ -950,7 +951,7 @@ impl Tilemap {
     pub fn set_tile(&mut self, x: i32, y: i32, z_layer: i32, tile: Tile) -> TilemapResult<()> {
         let mut tiles = Tiles::default();
         tiles.insert((x, y, z_layer), tile);
-        self.set_tiles(tiles)
+        self.set_tiles(&mut tiles)
     }
 
     /// Returns the center tile, if the tilemap has dimensions.
@@ -1385,48 +1386,49 @@ pub fn map_system(
             }
         }
 
-        for (point, handle) in new_chunks.iter() {
-            let chunk = Chunk::new(*point, map.layers.len());
+        for (point, handle) in new_chunks.into_iter() {
+            let chunk = Chunk::new(point, map.layers.len());
             let handle = chunks.set(handle.clone_weak(), chunk);
-            map.chunks.insert(*point, handle);
+            map.chunks.insert(point, handle);
         }
 
-        for (z, kind) in added_layers.iter() {
+        for (z, kind) in added_layers.into_iter() {
             for handle in map.chunks.values() {
                 let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-                chunk.add_layer(*kind, *z, map.chunk_dimensions);
+                chunk.add_layer(&kind, z, map.chunk_dimensions);
             }
         }
 
-        for (from_z, to_z) in moved_layers.iter() {
+        for (from_z, to_z) in moved_layers.into_iter() {
             for handle in map.chunks.values() {
                 let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-                chunk.move_layer(*from_z, *to_z);
+                chunk.move_layer(from_z, to_z);
             }
         }
 
-        for z in removed_layers.iter() {
+        for z in removed_layers.into_iter() {
             for handle in map.chunks.values() {
                 let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-                chunk.remove_layer(*z);
+                chunk.remove_layer(z);
             }
         }
 
-        for (handle, setter) in modified_chunks.iter() {
-            let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-            for (point, tile) in setter.iter() {
+        for (handle, setter) in modified_chunks.into_iter() {
+            let chunk = chunks.get_mut(&handle).expect("`Chunk` is missing.");
+            for (point, tile) in setter.into_iter() {
                 let index = map.chunk_dimensions.encode_point_unchecked(point.xy());
-                chunk.set_tile(point.z() as usize, index, *tile);
+                chunk.set_tile(point.z() as usize, index, tile);
             }
         }
 
-        for handle in spawned_chunks.iter() {
+        let capacity = spawned_chunks.len();
+        for handle in spawned_chunks.into_iter() {
             let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-            let mut entities = Vec::with_capacity(new_chunks.len());
+            let mut entities = Vec::with_capacity(capacity);
             for z in 0..map.layers.len() {
-                let mut mesh = Mesh::from(ChunkMesh::new(map.chunk_dimensions));
+                let mut mesh = Mesh::from(&ChunkMesh::new(map.chunk_dimensions));
                 let (indexes, colors) =
-                    if let Some(parts) = chunk.tiles_to_renderer_parts(z, map.chunk_dimensions) {
+                    if let Some(parts) = chunk.tiles_to_renderer_parts(z, &map.chunk_dimensions) {
                         parts
                     } else {
                         continue;
@@ -1462,14 +1464,14 @@ pub fn map_system(
             commands.push_children(map_entity, &entities);
         }
 
-        for handle in despawned_chunks.iter() {
+        for handle in despawned_chunks.into_iter() {
             let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
             for entity in chunk.get_entities() {
                 commands.despawn(entity);
             }
         }
 
-        for handle in removed_chunks.iter() {
+        for handle in removed_chunks.into_iter() {
             let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
             for entity in chunk.get_entities() {
                 commands.despawn(entity);

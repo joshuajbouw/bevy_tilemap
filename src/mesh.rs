@@ -15,8 +15,8 @@ impl ChunkMesh {
     }
 }
 
-impl From<ChunkMesh> for Mesh {
-    fn from(chunk_mesh: ChunkMesh) -> Mesh {
+impl From<&ChunkMesh> for Mesh {
+    fn from(chunk_mesh: &ChunkMesh) -> Mesh {
         let chunk_width = chunk_mesh.dimensions.width() as i32;
         let chunk_height = chunk_mesh.dimensions.height() as i32;
         let step_size_x = 1. / chunk_width as f32;
