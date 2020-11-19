@@ -19,6 +19,8 @@ pub(crate) enum ErrorKind {
     LayerDoesNotExist(usize),
     /// Texture atlas was not set
     MissingTextureAtlas,
+    /// Chunk does not exist at coordinate.
+    ChunkDoesNotExist(Point2),
 }
 
 impl Debug for ErrorKind {
@@ -36,6 +38,7 @@ impl Debug for ErrorKind {
                 f,
                 "texture atlas is missing, must use `TilemapBuilder::texture_atlas`"
             ),
+            ChunkDoesNotExist(p) => write!(f, "chunk {} does not exist, try `add_chunk` first", p),
         }
     }
 }
@@ -382,6 +385,30 @@ impl Default for Tilemap {
 }
 
 impl Tilemap {
+    /// Constructs a new Tilemap with the required texture atlas and default
+    /// configuration.
+    ///
+    /// This differs from [`default`] in that it requires the texture atlas
+    /// handle.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap::Tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = Tilemap::new(texture_atlas_handle);
+    /// ```
+    pub fn new(texture_atlas: Handle<TextureAtlas>) -> Tilemap {
+        Tilemap {
+            texture_atlas,
+            ..Default::default()
+        }
+    }
+
     /// Configures the builder with the default settings.
     ///
     /// Is equivalent to [`default`] and [`builder`] method in the
@@ -390,6 +417,7 @@ impl Tilemap {
     /// [`default`]: Builder::default
     /// [`builder`]: Tilemap::builder
     /// [`Tilemap`]: Tilemap
+    ///
     /// # Examples
     /// ```
     /// use bevy_tilemap::tilemap::{self, Tilemap};
@@ -415,31 +443,16 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::prelude::*;
-    /// # use bevy::asset::Handle;
-    /// # use bevy::math::{Vec2, Vec3};
-    /// # use bevy::sprite::TextureAtlas;
-    /// # use bevy::type_registry::TypeUuid;
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
     /// #
-    /// # // Tile's dimensions in pixels
-    /// # let tile_dimensions = Vec2::new(32., 32.);
-    /// # // Chunk's dimensions in tiles
-    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    /// # // Tile map's dimensions in chunks
-    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
-    /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
+    /// # let mut tilemap = Tilemap::default();
     /// #
-    /// # let mut tilemap = Tilemap::new(
-    /// #     tilemap_dimensions,
-    /// #     chunk_dimensions,
-    /// #     tile_dimensions,
-    /// #     atlas_handle,
-    /// # );
-    /// #
-    /// let new_atlas_handle = Handle::weak_from_u64(TextureAtlas::TYPE_UUID, 0987654321);
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// tilemap.set_texture_atlas(new_atlas_handle);
+    /// tilemap.set_texture_atlas(texture_atlas_handle);
     /// ```
     pub fn set_texture_atlas(&mut self, handle: Handle<TextureAtlas>) {
         self.texture_atlas = handle;
@@ -452,30 +465,25 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::prelude::*;
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
-    /// # use bevy::type_registry::TypeUuid;
     /// #
-    /// # // Tile's dimensions in pixels
-    /// # let tile_dimensions = Vec2::new(32., 32.);
-    /// # // Chunk's dimensions in tiles
-    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    /// # // Tile map's dimensions in chunks
-    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
-    /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     /// #
-    /// # let mut tilemap = Tilemap::new(
-    /// #     tilemap_dimensions,
-    /// #     chunk_dimensions,
-    /// #     tile_dimensions,
-    /// #     atlas_handle,
-    /// # );
-    /// #
+    /// # let tilemap = Tilemap::new(texture_atlas_handle);
     /// let texture_atlas: &Handle<TextureAtlas> = tilemap.texture_atlas();
     /// ```
     pub fn texture_atlas(&self) -> &Handle<TextureAtlas> {
         &self.texture_atlas
+    }
+
+    fn new_chunk_with_handle(&mut self, point: Point2, handle: Handle<Chunk>) {
+        self.chunks.insert(point, handle.clone_weak());
+
+        self.events
+            .send(TilemapEvent::CreatedChunk { point, handle });
     }
 
     /// Constructs a new `Chunk` and stores it at a coordinate position.
@@ -486,30 +494,19 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::prelude::*;
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
-    /// # use bevy::type_registry::TypeUuid;
     /// #
-    /// # // Tile's dimensions in pixels
-    /// # let tile_dimensions = Vec2::new(32., 32.);
-    /// # // Chunk's dimensions in tiles
-    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    /// # // Tile map's dimensions in chunks
-    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
-    /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     /// #
-    /// # let mut tilemap = Tilemap::new(
-    /// #    tilemap_dimensions,
-    /// #    chunk_dimensions,
-    /// #    tile_dimensions,
-    /// #    atlas_handle,
-    /// # );
-    ///
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
     /// // Add some chunks.
-    /// tilemap.new_chunk(0);
-    /// tilemap.new_chunk(1);
-    /// tilemap.new_chunk(2);
+    /// tilemap.new_chunk(0, 0).unwrap();
+    /// tilemap.new_chunk(1, 1).unwrap();
+    /// tilemap.new_chunk(2, 2).unwrap();
     /// ```
     pub fn new_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
         let point = Point2::new(x, y);
@@ -518,11 +515,7 @@ impl Tilemap {
         }
 
         let handle: Handle<Chunk> = Handle::weak(HandleId::random::<Chunk>());
-        self.chunks.insert(point, handle.clone_weak());
-
-        self.events
-            .send(TilemapEvent::CreatedChunk { point, handle });
-
+        self.new_chunk_with_handle(point, handle);
         Ok(())
     }
 
@@ -537,6 +530,23 @@ impl Tilemap {
     /// If a layer is set and a different layer already exists at that Z layer
     /// then an error is returned regarding that. This is done to prevent
     /// accidental overwrites of a layer.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// use bevy_tilemap::chunk::LayerKind;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    ///
+    /// let kind = LayerKind::Sparse;
+    ///
+    /// tilemap.add_layer_with_kind(kind, 1).unwrap();
+    /// ```
     ///
     /// [`LayerKind`]: crate::chunk::LayerKind
     pub fn add_layer_with_kind(&mut self, kind: LayerKind, z_layer: usize) -> TilemapResult<()> {
@@ -571,6 +581,21 @@ impl Tilemap {
     /// If a layer is set and a different layer already exists at that Z layer
     /// then an error is returned regarding that. This is done to prevent
     /// accidental overwrites of a layer.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// # use bevy_tilemap::chunk::LayerKind;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// tilemap.add_layer(1).unwrap();
+    /// ```
     pub fn add_layer(&mut self, z_layer: usize) -> TilemapResult<()> {
         self.add_layer_with_kind(LayerKind::Dense, z_layer)
     }
@@ -581,6 +606,24 @@ impl Tilemap {
     ///
     /// If the destination exists, it will throw an error. Likewise, if the
     /// origin does not exist, it also will throw an error.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// tilemap.add_layer(0).unwrap();
+    /// tilemap.add_layer(3).unwrap();
+    ///
+    /// // If we moved this to layer 3, it would instead fail.
+    /// tilemap.move_layer(0, 2).unwrap();
+    /// ```
     pub fn move_layer(&mut self, from_z: usize, to_z: usize) -> TilemapResult<()> {
         if self.layers[to_z].is_some() {
             return Err(ErrorKind::LayerExists(to_z).into());
@@ -609,6 +652,25 @@ impl Tilemap {
     ///
     /// This method takes in a Z layer which is then flagged for deletion. If
     /// the layer already does not exist, it does nothing.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// // This sends a create layer event.
+    /// tilemap.add_layer(1);
+    ///
+    /// // And this sends a removed layer event which will prevent it from
+    /// // existing between frames.
+    /// tilemap.remove_layer(1);
+    /// ```
     pub fn remove_layer(&mut self, z: usize) {
         if self.layers[z].is_none() {
             return;
@@ -621,17 +683,42 @@ impl Tilemap {
 
     /// Spawns a stored chunk at a given index or coordinate.
     ///
-    /// This **only** spawns stored chunks. If it is required to construct a new
-    /// chunk then use `new_chunk` first.
+    /// It is required to construct a new chunk with [`new_chunk`] first.
     ///
     /// # Errors
     ///
     /// If the coordinate or index is out of bounds, an error will be returned.
+    /// Also if the chunk that needs to spawn does not exist expect an error.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// tilemap.new_chunk(0, 0);
+    ///
+    /// // Ideally you should want to set some tiles here else nothing will
+    /// // display in the render...
+    ///
+    /// tilemap.spawn_chunk(0, 0);
+    /// ```
+    ///
+    /// [`new_chunk`]: Tilemap::new_chunk
     pub fn spawn_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
         let point = Point2::new(x, y);
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
+        if !self.chunks.contains_key(&point) {
+            return Err(ErrorKind::ChunkDoesNotExist(point).into());
+        }
+
         let handle = self.chunks.get(&point).unwrap();
 
         self.events.send(TilemapEvent::SpawnedChunk {
@@ -642,11 +729,45 @@ impl Tilemap {
     }
 
     /// De-spawns a spawned chunk at a given index or coordinate.
+    ///
+    /// If the chunk is not spawned this will result in nothing.
+    ///
+    /// # Errors
+    ///
+    /// If the coordinate or index is out of bounds, an error will be returned.
+    /// Also if the chunk that needs to spawn does not exist expect an error.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// tilemap.new_chunk(0, 0).unwrap();
+    ///
+    /// // Ideally you should want to set some tiles here else nothing will
+    /// // display in the render...
+    ///
+    /// tilemap.spawn_chunk(0, 0).unwrap();
+    ///
+    /// // Later a frame or more on...
+    ///
+    /// tilemap.despawn_chunk(0, 0).unwrap();
+    /// ```
     pub fn despawn_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
         let point = Point2::new(x, y);
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
+        if !self.chunks.contains_key(&point) {
+            return Err(ErrorKind::ChunkDoesNotExist(point).into());
+        }
+
         let handle = self.chunks.get(&point).unwrap();
 
         self.events.send(TilemapEvent::DespawnedChunk {
@@ -664,42 +785,36 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```no_run
-    /// # use bevy_tilemap::prelude::*;
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
-    /// # use bevy::type_registry::TypeUuid;
     /// #
-    /// # // Tile's dimensions in pixels
-    /// # let tile_dimensions = Vec2::new(32., 32.);
-    /// # // Chunk's dimensions in tiles
-    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    /// # // Tile map's dimensions in chunks
-    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
-    /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     /// #
-    /// # let mut tilemap = Tilemap::new(
-    /// #    tilemap_dimensions,
-    /// #    chunk_dimensions,
-    /// #    tile_dimensions,
-    /// #    atlas_handle,
-    /// # );
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
     /// // Add some chunks.
-    /// tilemap.new_chunk(0);
-    /// tilemap.new_chunk(1);
-    /// tilemap.new_chunk(2);
+    /// tilemap.new_chunk(0, 0).unwrap();
+    /// tilemap.new_chunk(1, 1).unwrap();
+    /// tilemap.new_chunk(2, 2).unwrap();
     ///
     /// // Remove the same chunks in the same frame. Do note that adding then
     /// // removing in the same frame will prevent the entity from spawning at
     /// // all.
-    /// tilemap.remove_chunk(0);
-    /// tilemap.remove_chunk(1);
-    /// tilemap.remove_chunk(2);
+    /// tilemap.remove_chunk(0, 0).unwrap();
+    /// tilemap.remove_chunk(1, 1).unwrap();
+    /// tilemap.remove_chunk(2, 2).unwrap();
     /// ```
     pub fn remove_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
         let point = Point2::new(x, y);
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
+        if !self.chunks.contains_key(&point) {
+            return Err(ErrorKind::ChunkDoesNotExist(point).into());
+        }
+
         let handle = self.chunks.get(&point).unwrap();
 
         self.events.send(TilemapEvent::RemovedChunk {
@@ -709,10 +824,22 @@ impl Tilemap {
         Ok(())
     }
 
-    /// Sets many tiles using a `TileSetter`.
+    /// Takes a tile coordinate and changes it into a chunk coordinate.
+    fn tile_coord_to_chunk_coord(&self, point: Point3) -> Point2 {
+        let x = point.x() / self.chunk_dimensions.width() as i32;
+        let y = point.y() / self.chunk_dimensions.height() as i32;
+        Point2::new(x, y)
+    }
+
+    /// Sets many tiles using a `Tiles` map, creating new chunks if needed.
     ///
-    /// If setting a single tile is more preferable, then use the [set_tile]
+    /// [`Tiles`] is used here to make it convenient to set many tiles at one
+    /// time and to reduce the number of internal events.
+    ///
+    /// If setting a single tile is more preferable, then use the [`set_tile`]
     /// method instead.
+    ///
+    /// If the chunk does not yet exist, it will create a new one automatically.
     ///
     /// # Errors
     ///
@@ -721,36 +848,28 @@ impl Tilemap {
     /// # Examples
     ///
     /// ```
-    /// # use bevy_tilemap::prelude::*;
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
-    /// # use bevy::type_registry::TypeUuid;
     /// #
-    /// # // Tile's dimensions in pixels
-    /// # let tile_dimensions = Vec2::new(32., 32.);
-    /// # // Chunk's dimensions in tiles
-    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    /// # // Tile map's dimensions in chunks
-    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
-    /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     /// #
-    /// # let mut tilemap = Tilemap::new(
-    /// #    tilemap_dimensions,
-    /// #    chunk_dimensions,
-    /// #    tile_dimensions,
-    /// #    atlas_handle,
-    /// # );
-    /// // Add a chunk
-    /// tilemap.new_chunk(0);
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// use bevy_tilemap::tile::{Tile, Tiles};
     ///
-    /// let mut new_tiles = TileSetter::new();
-    /// new_tiles.push(Vec3::new(1., 1., 0.), Tile::new(1), 0);
-    /// new_tiles.push(Vec3::new(2., 2., 0.), Tile::new(2), 0);
-    /// new_tiles.push(Vec3::new(3., 3., 0.), Tile::new(3), 0);
+    /// let mut tiles = Tiles::default();
+    /// tiles.insert((1, 1, 0), Tile::new(1));
+    /// tiles.insert((2, 2, 0), Tile::new(2));
+    /// tiles.insert((3, 3, 0), Tile::new(3));
     ///
     /// // Set multiple tiles and unwrap the result
-    /// tilemap.set_tiles(new_tiles).unwrap();
+    /// tilemap.set_tiles(tiles).unwrap();
     /// ```
+    ///
+    /// [`set_tile`]: Tilemap::set_tile
+    /// [`Tiles`]: crate::tile::Tiles
     pub fn set_tiles(&mut self, tiles: Tiles) -> TilemapResult<()> {
         let mut chunk_map: HashMap<Point2, TilePoints> = HashMap::default();
         for (points, tile) in tiles.iter() {
@@ -777,132 +896,87 @@ impl Tilemap {
         }
 
         for (chunk_point, tiles) in chunk_map {
-            let handle = self.chunks.get(&chunk_point).unwrap();
-            self.events.send(TilemapEvent::ModifiedChunk {
-                handle: handle.clone_weak(),
-                tiles,
-            })
+            let handle = if let Some(handle) = self.chunks.get(&chunk_point) {
+                handle.clone_weak()
+            } else {
+                let handle: Handle<Chunk> = Handle::weak(HandleId::random::<Chunk>());
+                self.new_chunk_with_handle(chunk_point, handle.clone_weak());
+                handle
+            };
+
+            self.events
+                .send(TilemapEvent::ModifiedChunk { handle, tiles })
         }
         Ok(())
     }
 
-    /// Sets a single tile at a coordinate position and checks if it the request is inbounds.
+    /// Sets a single tile at a coordinate position, creating a chunk if necessary.
     ///
     /// For convenience, this does not require to use a TileSetter which is beneficial for multiple
     /// tiles. If that is preferred, do use [set_tiles] instead.
     ///
-    /// # Examples
-    /// ```
-    /// # use bevy_tilemap::prelude::*;
-    /// # use bevy::prelude::*;
-    /// # use bevy::type_registry::TypeUuid;
-    /// #
-    /// # // Tile's dimensions in pixels
-    /// # let tile_dimensions = Vec2::new(32., 32.);
-    /// # // Chunk's dimensions in tiles
-    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    /// # // Tile map's dimensions in chunks
-    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
-    /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
-    /// #
-    /// # let mut tilemap = Tilemap::new(
-    /// #    tilemap_dimensions,
-    /// #    chunk_dimensions,
-    /// #    tile_dimensions,
-    /// #    atlas_handle,
-    /// # );
-    /// // Add a chunk
-    /// tilemap.new_chunk(0);
-    ///
-    /// // Set a single tile and unwrap the result
-    /// tilemap.set_tile(Vec3::new(15., 15., 0.), Tile::new(1), 0).unwrap();
-    /// ```
+    /// If the chunk does not yet exist, it will create a new one automatically.
     ///
     /// # Errors
     ///
     /// Returns an error if the given coordinate or index is out of bounds.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// use bevy_tilemap::tile::Tile;
+    ///
+    /// // Set a single tile and unwrap the result
+    /// tilemap.set_tile(15, 15, 0, Tile::new(1)).unwrap();
+    /// ```
+    ///
+    /// [`set_tiles`]: Tilemap::set_tiles
     pub fn set_tile(&mut self, x: i32, y: i32, z_layer: i32, tile: Tile) -> TilemapResult<()> {
         let mut tiles = Tiles::default();
         tiles.insert((x, y, z_layer), tile);
         self.set_tiles(tiles)
     }
 
-    /// Returns the center tile of the `Map` as a `Vec2` `Tile` coordinate.
+    /// Returns the center tile, if the tilemap has dimensions.
     ///
-    /// This returns the center of the map rounded down.
+    /// Returns `None` if the tilemap has no constrainted dimensions.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use bevy_tilemap::prelude::*;
-    /// # use bevy::prelude::*;
-    /// # use bevy::type_registry::TypeUuid;
-    /// #
-    /// # // Tile's dimensions in pixels
-    /// # let tile_dimensions = Vec2::new(32., 32.);
-    /// # // Chunk's dimensions in tiles
-    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    /// # // Tile map's dimensions in chunks
-    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
-    /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
-    /// #
-    /// # let mut tilemap = Tilemap::new(
-    /// #    tilemap_dimensions,
-    /// #    chunk_dimensions,
-    /// #    tile_dimensions,
-    /// #    atlas_handle,
-    /// # );
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
     ///
-    /// let center: Vec2 = tilemap.center_tile_coord();
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// assert_eq!(Vec2::new(16., 16.), center);
+    /// let mut tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let center: (i32, i32) = tilemap.center_tile_coord().unwrap();
+    ///
+    /// // 32 * 32 / 2 = 512
+    /// assert_eq!((512, 512), center);
     /// ```
-    pub fn center_tile_coord(&self) -> Option<Point2> {
+    pub fn center_tile_coord(&self) -> Option<(i32, i32)> {
         self.dimensions.map(|dimensions| {
-            Point2::new(
+            (
                 (dimensions.width() / 2 * self.chunk_dimensions.width()) as i32,
                 (dimensions.height() / 2 * self.chunk_dimensions.height()) as i32,
             )
         })
-    }
-
-    /// Takes a tile coordinate and changes it into a chunk coordinate.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use bevy_tilemap::prelude::*;
-    /// use bevy::prelude::*;
-    /// use bevy::type_registry::TypeUuid;
-    ///
-    /// // Tile's dimensions in pixels
-    /// let tile_dimensions = Vec2::new(32., 32.);
-    /// // Chunk's dimensions in tiles
-    /// let chunk_dimensions = Vec3::new(32., 32., 0.);
-    /// // Tile map's dimensions in chunks
-    /// let tilemap_dimensions = Vec2::new(3., 3.,);
-    /// // Handle from the sprite sheet you want
-    /// let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
-    ///
-    /// let mut tilemap = Tilemap::new(
-    ///    tilemap_dimensions,
-    ///    chunk_dimensions,
-    ///    tile_dimensions,
-    ///    atlas_handle,
-    /// );
-    ///
-    /// let tile_coord = Vec3::new(15., 15., 0.);
-    ///
-    /// let chunk_coord = tilemap.tile_coord_to_chunk_coord(tile_coord);
-    ///
-    /// assert_eq!(Vec2::new(0., 0.), chunk_coord);
-    /// ```
-    pub fn tile_coord_to_chunk_coord(&self, point: Point3) -> Point2 {
-        let x = point.x() / self.chunk_dimensions.width() as i32;
-        let y = point.y() / self.chunk_dimensions.height() as i32;
-        Point2::new(x, y)
     }
 
     // FIXME: These need to be changed as they will be inaccurate if the
@@ -985,55 +1059,227 @@ impl Tilemap {
     //     Vec2::new(x as f32, y as f32)
     // }
 
-    /// Returns the dimensions of the `Tilemap`.
+    /// Returns the dimensions of the tilemap, if it has dimensions.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let dimensions: (u32, u32) = tilemap.dimensions().unwrap();
+    ///
+    /// assert_eq!(dimensions, (32, 32));
+    /// ```
     pub fn dimensions(&self) -> Option<(u32, u32)> {
         self.dimensions.map(|dimensions| dimensions.into())
     }
 
-    /// The width of the tilemap in chunks.
+    /// The width of the tilemap in chunks, if it has dimensions.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let width: u32 = tilemap.width().unwrap();
+    ///
+    /// assert_eq!(width, 32);
+    /// ```
     pub fn width(&self) -> Option<u32> {
         self.dimensions.map(|dimensions| dimensions.width())
     }
 
-    /// The height of the tilemap in chunks.
+    /// The height of the tilemap in chunks, if it has dimensions.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let height: u32 = tilemap.height().unwrap();
+    ///
+    /// assert_eq!(height, 32);
+    /// ```
     pub fn height(&self) -> Option<u32> {
         self.dimensions.map(|dimensions| dimensions.height())
     }
 
     /// Returns the chunk dimensions of the `Tilemap`.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .chunk_dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let chunk_dimensions: (u32, u32) = tilemap.chunk_dimensions();
+    ///
+    /// assert_eq!(chunk_dimensions, (32, 32));
+    /// ```
     pub fn chunk_dimensions(&self) -> (u32, u32) {
         self.chunk_dimensions.into()
     }
 
     /// The width of all the chunks in tiles.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .chunk_dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let chunk_width: u32 = tilemap.chunk_width();
+    ///
+    /// assert_eq!(chunk_width, 32);
+    /// ```
     pub fn chunk_width(&self) -> u32 {
         self.chunk_dimensions.width()
     }
 
     /// The height of all the chunks in tiles.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .chunk_dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let chunk_height: u32 = tilemap.chunk_height();
+    ///
+    /// assert_eq!(chunk_height, 32);
+    /// ```
     pub fn chunk_height(&self) -> u32 {
         self.chunk_dimensions.height()
     }
 
-    /// A Chunk's size in pixels.
-    pub fn chunk_pixel_size(&self) -> (u32, u32) {
-        (
-            self.tile_dimensions.width() * self.chunk_dimensions.width(),
-            self.tile_dimensions.height() * self.chunk_dimensions.height(),
-        )
-    }
-
-    /// Returns the tile dimensions of the `Tilemap`.
+    /// Returns the tile dimensions of the tilemap.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .tile_dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let tile_dimensions: (u32, u32) = tilemap.tile_dimensions();
+    ///
+    /// assert_eq!(tile_dimensions, (32, 32));
+    /// ```
     pub fn tile_dimensions(&self) -> (u32, u32) {
         self.tile_dimensions.into()
     }
 
     /// The width of a tile in pixels.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .tile_dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let tile_width: u32 = tilemap.tile_width();
+    ///
+    /// assert_eq!(tile_width, 32);
+    /// ```
     pub fn tile_width(&self) -> u32 {
         self.tile_dimensions.width()
     }
 
     /// The height of a tile in pixels.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = tilemap::Builder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .tile_dimensions(32, 32)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let tile_height: u32 = tilemap.tile_height();
+    ///
+    /// assert_eq!(tile_height, 32);
+    /// ```
     pub fn tile_height(&self) -> u32 {
         self.tile_dimensions.height()
     }
@@ -1070,9 +1316,6 @@ impl Tilemap {
 /// 1. Spawn chunks
 /// 1. Despawn chunks
 /// 1. Remove chunks
-///
-/// # Panics
-///
 pub fn map_system(
     mut commands: Commands,
     mut chunks: ResMut<Assets<Chunk>>,
