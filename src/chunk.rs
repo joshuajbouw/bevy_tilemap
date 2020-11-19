@@ -55,7 +55,7 @@ impl Layer for DenseLayer {
     }
 
     fn tiles_to_renderer_parts(&self, z: usize, layer_size: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
-        crate::tile::dense_tiles_to_renderer_parts(z, layer_size, &self.tiles)
+        crate::tile::dense_tiles_to_attributes(z, layer_size, &self.tiles)
     }
 }
 
@@ -93,7 +93,7 @@ impl Layer for SparseLayer {
     }
 
     fn tiles_to_renderer_parts(&self, z: usize, layer_size: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
-        crate::tile::sparse_tiles_to_renderer_parts(z, layer_size, &self.tiles)
+        crate::tile::sparse_tiles_to_attributes(z, layer_size, &self.tiles)
     }
 }
 
