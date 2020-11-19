@@ -24,11 +24,12 @@ mod dimension;
 /// Bundles of components for spawning entities.
 pub mod entity;
 /// Meshes for use in rendering.
-pub(crate) mod mesh;
-pub(crate) mod point;
+mod mesh;
+/// Points used for helping with coordinates.
+mod point;
 pub mod prelude;
 /// Files and helpers for rendering.
-pub(crate) mod render;
+mod render;
 /// Tile traits to implement for a custom tile.
 pub mod tile;
 /// Map traits to implement for a custom map and a basic struct for use.
@@ -111,7 +112,7 @@ mod lib {
         cmp::Ord,
         convert::{AsMut, AsRef, From, Into},
         default::Default,
-        fmt::{Debug, Formatter, Result as FmtResult},
+        fmt::{Debug, Display, Formatter, Result as FmtResult},
         iter::{Extend, Iterator},
         ops::{FnMut, FnOnce},
         option::Option::{self, *},

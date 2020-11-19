@@ -2,10 +2,7 @@
 // Why? Because these all likely will end up in their own crate and it would
 // not make sense to get rid of that code.
 
-use crate::{
-    lib::*,
-    point::Point2,
-};
+use crate::{lib::*, point::Point2};
 
 #[derive(Clone, Copy, PartialEq)]
 /// The kinds of errors that can occur for a `[DimensionError]`.
