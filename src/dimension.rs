@@ -4,7 +4,7 @@
 
 use crate::{lib::*, point::Point2};
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 /// The kinds of errors that can occur for a `[DimensionError]`.
 pub(crate) enum ErrorKind {
     /// If the coordinate or index is out of bounds.
@@ -20,7 +20,7 @@ impl Debug for ErrorKind {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 /// A MapError indicates that an error with the `[Chunk]` has occurred.
 pub struct DimensionError(Box<ErrorKind>);
 
@@ -40,7 +40,7 @@ impl From<ErrorKind> for DimensionError {
 pub type DimensionResult<T> = Result<T, DimensionError>;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct Dimension2 {
     width: u32,
     height: u32,

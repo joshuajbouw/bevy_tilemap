@@ -1,6 +1,7 @@
 use crate::{dimension::Dimension2, lib::*};
 use bevy::render::pipeline::PrimitiveTopology;
 
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub(crate) struct ChunkMesh {
     dimensions: Dimension2,
 }

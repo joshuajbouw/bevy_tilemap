@@ -8,7 +8,7 @@ use crate::{
     tile::{Tile, TilePoints, Tiles},
 };
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 /// The kinds of errors that can occur.
 pub(crate) enum ErrorKind {
     /// If the coordinate or index is out of bounds.
@@ -43,7 +43,7 @@ impl Debug for ErrorKind {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 /// The error type for operations when interacting with the `Tilemap`.
 pub struct TilemapError(Box<ErrorKind>);
 
@@ -69,7 +69,7 @@ impl From<DimensionError> for TilemapError {
 pub type TilemapResult<T> = Result<T, TilemapError>;
 
 /// Events that happen on a `Chunk` by index value.
-#[derive(Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub(crate) enum TilemapEvent {
     /// To be used when a chunk is created.
     CreatedChunk {
@@ -192,7 +192,7 @@ pub struct Tilemap {
 /// [`Tilemap`]: Tilemap
 /// [`TilemapError`]: TilemapError
 /// [`TilemapResult`]: TilemapResult
-#[derive(Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct Builder {
     dimensions: Option<Dimension2>,
     chunk_dimensions: Dimension2,

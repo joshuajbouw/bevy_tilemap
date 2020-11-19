@@ -1,7 +1,7 @@
 use crate::{dimension::Dimension2, lib::*, point::Point2, tile::Tile};
 
 /// A component that stores the dimensions of the Chunk for the renderer.
-#[derive(Debug, Default, RenderResources, RenderResource)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, RenderResources, RenderResource)]
 #[render_resources(from_self)]
 pub struct ChunkDimensions {
     /// The chunk dimensions.
@@ -39,7 +39,7 @@ pub(crate) trait Layer: 'static {
 /// The difference between a dense layer and a sparse layer is simply the
 /// storage types.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, TypeUuid)]
+#[derive(Clone, Debug, PartialEq, TypeUuid)]
 #[uuid = "beea20b4-8d36-49cd-9410-ec1fb7696605"]
 pub(crate) struct DenseLayer {
     /// A mesh handle.
@@ -78,7 +78,7 @@ impl DenseLayer {
 
 /// A layer with sparse sprite tiles.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub(crate) struct SparseLayer {
     /// A mesh handle.
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -125,7 +125,7 @@ impl SparseLayer {
 /// It is highly recommended to adhere to the above principles to get the lowest
 /// amount of byte usage.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum LayerKind {
     /// Specifies to construct a dense sprite layer.
     Dense,
@@ -133,7 +133,7 @@ pub enum LayerKind {
     Sparse,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 enum LayerKindInner {
     Dense(DenseLayer),
     Sparse(SparseLayer),
@@ -157,13 +157,13 @@ impl AsMut<dyn Layer> for LayerKindInner {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub(crate) struct SpriteLayer {
     inner: LayerKindInner,
     entity: Option<Entity>,
 }
 
-#[derive(Debug, TypeUuid)]
+#[derive(Clone, PartialEq, Debug, TypeUuid)]
 #[uuid = "47691827-0b89-4474-a14e-f2ea3c88320f"]
 #[doc(hidden)]
 pub struct Chunk {

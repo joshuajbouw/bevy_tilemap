@@ -39,7 +39,7 @@ pub(crate) fn sparse_tiles_to_attributes(
 
 /// A tile with an index value and color.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Tile {
     index: usize,
     color: Color,

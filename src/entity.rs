@@ -60,7 +60,7 @@ impl Default for ChunkComponents {
 }
 
 /// A component bundle for `Tilemap` entities.
-#[derive(Bundle, Debug)]
+#[derive(Debug, Bundle)]
 pub struct TilemapComponents {
     /// A `Tilemap` which maintains chunks and its tiles.
     pub tilemap: Tilemap,
