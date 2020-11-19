@@ -20,15 +20,17 @@ impl Debug for ErrorKind {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 /// A MapError indicates that an error with the `[Chunk]` has occurred.
 pub struct DimensionError(Box<ErrorKind>);
 
-impl Debug for DimensionError {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+impl Display for DimensionError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         self.0.fmt(f)
     }
 }
+
+impl Error for DimensionError {}
 
 impl From<ErrorKind> for DimensionError {
     fn from(err: ErrorKind) -> DimensionError {

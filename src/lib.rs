@@ -114,6 +114,7 @@ mod lib {
         cmp::Ord,
         convert::{AsMut, AsRef, From, Into},
         default::Default,
+        error::Error,
         fmt::{Debug, Display, Formatter, Result as FmtResult},
         iter::{Extend, Iterator},
         ops::{FnMut, FnOnce},

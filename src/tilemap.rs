@@ -27,7 +27,7 @@ impl Debug for ErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         use ErrorKind::*;
         match self {
-            DimensionError(err) => err.fmt(f),
+            DimensionError(err) => ::std::fmt::Debug::fmt(&err, f),
             LayerExists(n) => write!(
                 f,
                 "layer {} already exists, try `remove_layer` or `move_layer` first",
@@ -43,15 +43,17 @@ impl Debug for ErrorKind {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 /// The error type for operations when interacting with the `Tilemap`.
 pub struct TilemapError(Box<ErrorKind>);
 
-impl Debug for TilemapError {
+impl Display for TilemapError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         self.0.fmt(f)
     }
 }
+
+impl Error for TilemapError {}
 
 impl From<ErrorKind> for TilemapError {
     fn from(kind: ErrorKind) -> TilemapError {

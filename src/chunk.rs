@@ -1,7 +1,7 @@
 use crate::{dimension::Dimension2, lib::*, point::Point2, tile::Tile};
 
 /// A component that stores the dimensions of the Chunk for the renderer.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, RenderResources, RenderResource)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, RenderResources, RenderResource)]
 #[render_resources(from_self)]
 pub struct ChunkDimensions {
     /// The chunk dimensions.
