@@ -786,6 +786,11 @@ impl Tilemap {
     /// chunks must be removed by index and entity. A chunk is not recoverable
     /// if this action is done.
     ///
+    /// # Errors
+    ///
+    /// If the coordinate or index is out of bounds, an error will be returned.
+    /// Also if the chunk that needs to spawn does not exist expect an error.
+    ///
     /// # Examples
     /// ```no_run
     /// # use bevy_tilemap::tilemap::Tilemap;
