@@ -1,5 +1,6 @@
 use crate::lib::*;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub(crate) struct Point2(i32, i32);
 
@@ -29,6 +30,7 @@ impl From<(i32, i32)> for Point2 {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub(crate) struct Point3(i32, i32, i32);
 

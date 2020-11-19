@@ -133,6 +133,7 @@ pub enum LayerKind {
     Sparse,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Debug)]
 enum LayerKindInner {
     Dense(DenseLayer),
@@ -157,12 +158,15 @@ impl AsMut<dyn Layer> for LayerKindInner {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) struct SpriteLayer {
     inner: LayerKindInner,
+    #[cfg_attr(feature = "serde", serde(skip))]
     entity: Option<Entity>,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Debug, TypeUuid)]
 #[uuid = "47691827-0b89-4474-a14e-f2ea3c88320f"]
 #[doc(hidden)]
