@@ -101,4 +101,8 @@ pub mod v0_2 {
     };
 }
 
+#[cfg(v0_1)]
+pub use v0_1::*;
+
+#[cfg(not(v0_1))]
 pub use v0_2::*;
