@@ -48,7 +48,9 @@ impl Plugin for ChunkTilesPlugin {
             .add_system_to_stage("post_update", crate::tilemap::map_system.system());
 
         let resources = app.resources_mut();
-        let mut render_graph = resources.get_mut::<RenderGraph>().unwrap();
+        let mut render_graph = resources
+            .get_mut::<RenderGraph>()
+            .expect("`RenderGraph` is missing.");
         render_graph.add_tilemap_graph(resources);
     }
 }

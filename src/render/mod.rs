@@ -65,8 +65,12 @@ impl TilemapRenderGraphBuilder for RenderGraph {
             node::CHUNK_DIMENSIONS,
             RenderResourcesNode::<ChunkDimensions>::new(true),
         );
-        let mut pipelines = resources.get_mut::<Assets<PipelineDescriptor>>().unwrap();
-        let mut shaders = resources.get_mut::<Assets<Shader>>().unwrap();
+        let mut pipelines = resources
+            .get_mut::<Assets<PipelineDescriptor>>()
+            .expect("`PipelineDescriptor` is missing.");
+        let mut shaders = resources
+            .get_mut::<Assets<Shader>>()
+            .expect("`Shader` is missing.");
         pipelines.set_untracked(CHUNK_PIPELINE_HANDLE, build_chunk_pipeline(&mut shaders));
         self
     }

@@ -216,17 +216,23 @@ impl Chunk {
     }
 
     pub(crate) fn set_mesh(&mut self, z_layer: usize, mesh: Handle<Mesh>) {
-        let layer = self.sprite_layers[z_layer].as_mut().unwrap();
+        let layer = self.sprite_layers[z_layer]
+            .as_mut()
+            .expect("`SpriteLayer` is missing.");
         layer.inner.as_mut().set_mesh(mesh);
     }
 
     pub(crate) fn set_tile(&mut self, z_layer: usize, index: usize, tile: Tile) {
-        let layer = self.sprite_layers[z_layer].as_mut().unwrap();
+        let layer = self.sprite_layers[z_layer]
+            .as_mut()
+            .expect("`SpriteLayer` is missing.");
         layer.inner.as_mut().set_tile(index, tile);
     }
 
     pub(crate) fn add_entity(&mut self, z_layer: usize, entity: Entity) {
-        let layer = self.sprite_layers[z_layer].as_mut().unwrap();
+        let layer = self.sprite_layers[z_layer]
+            .as_mut()
+            .expect("`SpriteLayer` is missing.");
         layer.entity = Some(entity);
     }
 

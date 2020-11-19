@@ -720,7 +720,7 @@ impl Tilemap {
             return Err(ErrorKind::ChunkDoesNotExist(point).into());
         }
 
-        let handle = self.chunks.get(&point).unwrap();
+        let handle = self.chunks.get(&point).expect("`Chunk` is missing.");
 
         self.events.send(TilemapEvent::SpawnedChunk {
             handle: handle.clone_weak(),
@@ -769,7 +769,7 @@ impl Tilemap {
             return Err(ErrorKind::ChunkDoesNotExist(point).into());
         }
 
-        let handle = self.chunks.get(&point).unwrap();
+        let handle = self.chunks.get(&point).expect("`Chunk` is missing.");
 
         self.events.send(TilemapEvent::DespawnedChunk {
             handle: handle.clone_weak(),
@@ -816,7 +816,7 @@ impl Tilemap {
             return Err(ErrorKind::ChunkDoesNotExist(point).into());
         }
 
-        let handle = self.chunks.get(&point).unwrap();
+        let handle = self.chunks.get(&point).expect("`Chunk` is missing.");
 
         self.events.send(TilemapEvent::RemovedChunk {
             handle: handle.clone_weak(),
@@ -1386,27 +1386,27 @@ pub fn map_system(
 
         for (z, kind) in added_layers.iter() {
             for handle in map.chunks.values() {
-                let chunk = chunks.get_mut(handle).unwrap();
+                let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
                 chunk.add_layer(*kind, *z, map.chunk_dimensions);
             }
         }
 
         for (from_z, to_z) in moved_layers.iter() {
             for handle in map.chunks.values() {
-                let chunk = chunks.get_mut(handle).unwrap();
+                let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
                 chunk.move_layer(*from_z, *to_z);
             }
         }
 
         for z in removed_layers.iter() {
             for handle in map.chunks.values() {
-                let chunk = chunks.get_mut(handle).unwrap();
+                let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
                 chunk.remove_layer(*z);
             }
         }
 
         for (handle, setter) in modified_chunks.iter() {
-            let chunk = chunks.get_mut(handle).unwrap();
+            let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
             for (point, tile) in setter.iter() {
                 let index = map.chunk_dimensions.encode_point_unchecked(point.xy());
                 chunk.set_tile(point.z() as usize, index, *tile);
@@ -1414,7 +1414,7 @@ pub fn map_system(
         }
 
         for handle in spawned_chunks.iter() {
-            let chunk = chunks.get_mut(handle).unwrap();
+            let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
             let mut entities = Vec::with_capacity(new_chunks.len());
             for z in 0..map.layers.len() {
                 let mut mesh = Mesh::from(ChunkMesh::new(map.chunk_dimensions));
@@ -1456,14 +1456,14 @@ pub fn map_system(
         }
 
         for handle in despawned_chunks.iter() {
-            let chunk = chunks.get_mut(handle).unwrap();
+            let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
             for entity in chunk.get_entities() {
                 commands.despawn(entity);
             }
         }
 
         for handle in removed_chunks.iter() {
-            let chunk = chunks.get_mut(handle).unwrap();
+            let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
             for entity in chunk.get_entities() {
                 commands.despawn(entity);
             }
