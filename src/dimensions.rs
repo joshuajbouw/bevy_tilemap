@@ -93,7 +93,7 @@ impl Dimensions2 {
     }
 
     /// Checks if a coordinate is valid and inbounds.
-    pub(crate) fn check_point(&self, point: &Point2) -> DimensionResult<()> {
+    pub(crate) fn check_point(&self, point: Point2) -> DimensionResult<()> {
         if point.x() > self.x_max() as i32 || point.y() > self.y_max() as i32 {
             Err(ErrorKind::OutOfBounds.into())
         } else {
@@ -111,12 +111,12 @@ impl Dimensions2 {
     }
 
     /// Encodes a coordinate and returns an index value, unchecked.
-    pub(crate) fn encode_point_unchecked(&self, point: &Point2) -> usize {
+    pub(crate) fn encode_point_unchecked(&self, point: Point2) -> usize {
         ((point.y() * self.width as i32) + point.x()) as usize
     }
 
     /// Encodes a coordinate and returns an index value.
-    pub(crate) fn encode_point(&self, point: &Point2) -> DimensionResult<usize> {
+    pub(crate) fn encode_point(&self, point: Point2) -> DimensionResult<usize> {
         self.check_point(point)?;
         Ok(self.encode_point_unchecked(point))
     }
