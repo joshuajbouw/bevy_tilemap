@@ -125,18 +125,12 @@ pub struct Tilemap {
     layers: Vec<Option<LayerKind>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     texture_atlas: Handle<TextureAtlas>,
-    current_depth: usize, // FIXME: remove
     #[cfg_attr(feature = "serde", serde(skip))]
     chunks: HashMap<Point2, Handle<Chunk>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     entities: HashMap<usize, Vec<Entity>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     events: Events<TilemapEvent>,
-    // NOTE: If there is a better way to keep track of spawned chunks, that
-    // be swell. Perhaps spawning the chunks themselves with the layers as
-    // children?
-    #[cfg_attr(feature = "serde", serde(skip))]
-    spawned_chunks: Vec<usize>, // FIXME: remove
 }
 
 /// Tilemap factory, which can be used to construct and configure new tilemaps.
@@ -359,13 +353,11 @@ impl Builder {
             dimensions: self.dimensions,
             chunk_dimensions: self.chunk_dimensions,
             tile_dimensions: self.tile_dimensions,
-            current_depth: 0,
             layers: vec![None; self.z_layers as usize],
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
             events: Default::default(),
-            spawned_chunks: vec![],
         })
     }
 }
@@ -382,11 +374,9 @@ impl Default for Tilemap {
             tile_dimensions: Dimension2::new(32, 32),
             layers: vec![None; 20],
             texture_atlas: Handle::default(),
-            current_depth: 0,
             chunks: Default::default(),
             entities: Default::default(),
             events: Default::default(),
-            spawned_chunks: vec![]
         }
     }
 }
