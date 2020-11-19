@@ -14,7 +14,6 @@
 //! work done to keep it as close to Bevy API as possible. This allows anyone to create their own tiles,
 //! chunks and maps and still retain the speed of a handcrafted multi-threaded chunk loader and tile map.
 #![doc(html_root_url = "https://bevy_tilemap/0.2.0-pre.1")]
-
 #![no_implicit_prelude]
 // clippy
 #![allow(clippy::too_many_arguments)]
@@ -30,7 +29,7 @@ pub mod entity;
 /// Meshes for use in rendering.
 mod mesh;
 /// Points used for helping with coordinates.
-mod point;
+pub mod point;
 pub mod prelude;
 /// Files and helpers for rendering.
 mod render;
@@ -120,7 +119,7 @@ mod lib {
         default::Default,
         error::Error,
         fmt::{Debug, Display, Formatter, Result as FmtResult},
-        iter::{Extend, Iterator, IntoIterator},
+        iter::{Extend, IntoIterator, Iterator},
         ops::{FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},

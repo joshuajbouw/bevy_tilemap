@@ -507,12 +507,12 @@ impl Tilemap {
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
     /// // Add some chunks.
-    /// tilemap.new_chunk(0, 0).unwrap();
-    /// tilemap.new_chunk(1, 1).unwrap();
-    /// tilemap.new_chunk(2, 2).unwrap();
+    /// tilemap.new_chunk((0, 0)).unwrap();
+    /// tilemap.new_chunk((1, 1)).unwrap();
+    /// tilemap.new_chunk((2, 2)).unwrap();
     /// ```
-    pub fn new_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
-        let point = Point2::new(x, y);
+    pub fn new_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
+        let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
@@ -704,17 +704,17 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// tilemap.new_chunk(0, 0);
+    /// tilemap.new_chunk((0, 0));
     ///
     /// // Ideally you should want to set some tiles here else nothing will
     /// // display in the render...
     ///
-    /// tilemap.spawn_chunk(0, 0);
+    /// tilemap.spawn_chunk((0, 0));
     /// ```
     ///
     /// [`new_chunk`]: Tilemap::new_chunk
-    pub fn spawn_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
-        let point = Point2::new(x, y);
+    pub fn spawn_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
+        let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
@@ -751,19 +751,19 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// tilemap.new_chunk(0, 0).unwrap();
+    /// tilemap.new_chunk((0, 0)).unwrap();
     ///
     /// // Ideally you should want to set some tiles here else nothing will
     /// // display in the render...
     ///
-    /// tilemap.spawn_chunk(0, 0).unwrap();
+    /// tilemap.spawn_chunk((0, 0)).unwrap();
     ///
     /// // Later a frame or more on...
     ///
-    /// tilemap.despawn_chunk(0, 0).unwrap();
+    /// tilemap.despawn_chunk((0, 0)).unwrap();
     /// ```
-    pub fn despawn_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
-        let point = Point2::new(x, y);
+    pub fn despawn_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
+        let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
@@ -803,19 +803,19 @@ impl Tilemap {
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
     /// // Add some chunks.
-    /// tilemap.new_chunk(0, 0).unwrap();
-    /// tilemap.new_chunk(1, 1).unwrap();
-    /// tilemap.new_chunk(2, 2).unwrap();
+    /// tilemap.new_chunk((0, 0)).unwrap();
+    /// tilemap.new_chunk((1, 1)).unwrap();
+    /// tilemap.new_chunk((2, 2)).unwrap();
     ///
     /// // Remove the same chunks in the same frame. Do note that adding then
     /// // removing in the same frame will prevent the entity from spawning at
     /// // all.
-    /// tilemap.remove_chunk(0, 0).unwrap();
-    /// tilemap.remove_chunk(1, 1).unwrap();
-    /// tilemap.remove_chunk(2, 2).unwrap();
+    /// tilemap.remove_chunk((0, 0)).unwrap();
+    /// tilemap.remove_chunk((1, 1)).unwrap();
+    /// tilemap.remove_chunk((2, 2)).unwrap();
     /// ```
-    pub fn remove_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
-        let point = Point2::new(x, y);
+    pub fn remove_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
+        let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
@@ -944,13 +944,14 @@ impl Tilemap {
     /// use bevy_tilemap::tile::Tile;
     ///
     /// // Set a single tile and unwrap the result
-    /// tilemap.set_tile(15, 15, 0, Tile::new(1)).unwrap();
+    /// tilemap.set_tile((15, 15, 0), Tile::new(1)).unwrap();
     /// ```
     ///
     /// [`set_tiles`]: Tilemap::set_tiles
-    pub fn set_tile(&mut self, x: i32, y: i32, z_layer: i32, tile: Tile) -> TilemapResult<()> {
+    pub fn set_tile<P: Into<Point3>>(&mut self, point: P, tile: Tile) -> TilemapResult<()> {
         let mut tiles = Tiles::default();
-        tiles.insert((x, y, z_layer), tile);
+        let point: Point3 = point.into();
+        tiles.insert((point.x(), point.y(), point.z()), tile);
         self.set_tiles(&mut tiles)
     }
 

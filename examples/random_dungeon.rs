@@ -85,7 +85,7 @@ fn build_random_dungeon(
     for mut map in query.iter_mut() {
         for y in 0..map.height().unwrap() as i32 {
             for x in 0..map.height().unwrap() as i32 {
-                map.new_chunk(x, y).unwrap();
+                map.new_chunk((x, y)).unwrap();
             }
         }
 
@@ -150,11 +150,11 @@ fn build_random_dungeon(
         );
 
         // Now we pass all the tiles to our map.
-        map.set_tiles(tiles).unwrap();
+        map.set_tiles(&mut tiles).unwrap();
 
         // Finally we spawn the chunk! In actual use this should be done in a
         // spawn system.
-        map.spawn_chunk(0, 0).unwrap();
+        map.spawn_chunk((0, 0)).unwrap();
 
         map_state.map_loaded = true;
     }
