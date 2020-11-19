@@ -20,6 +20,11 @@
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
 pub mod chunk;
 /// Various coordinate traits used for converting indexes and coordinates.
+#[deprecated(
+    since = "0.2.0",
+    note = "please use `point::Point2` and `point::Point3` instead, will be removed by v0.3.0"
+)]
+#[doc(hidden)]
 pub mod coord;
 /// Various dimension based traits.
 mod dimensions;
