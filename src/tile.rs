@@ -1,5 +1,8 @@
 use crate::lib::*;
 
+/// A hash map type to use for setting tiles.
+pub type Tiles = HashMap<(i32, i32, i32), Tile>;
+
 // TODO: Fix both these renderer parts below to only include the current depth.
 /// A utility function that takes an array of `Tile`s and splits the indexes and
 /// colors and returns them as separate vectors for use in the renderer.
