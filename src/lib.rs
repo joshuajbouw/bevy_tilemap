@@ -30,8 +30,6 @@ pub mod coord;
 mod dimensions;
 /// Bundles of components for spawning entities.
 pub mod entity;
-/// Map traits to implement for a custom map and a basic struct for use.
-pub mod tilemap;
 /// Meshes for use in rendering.
 pub(crate) mod mesh;
 pub(crate) mod point;
@@ -46,8 +44,10 @@ pub mod tile;
     note = "please use `tile::Tiles` instead, will be removed by v0.3.0"
 )]
 pub mod tile_setter;
+/// Map traits to implement for a custom map and a basic struct for use.
+pub mod tilemap;
 
-use crate::{chunk::Chunk, lib::*, tilemap::TileMap, render::TilemapRenderGraphBuilder};
+use crate::{chunk::Chunk, lib::*, render::TilemapRenderGraphBuilder, tilemap::Tilemap};
 
 /// The Bevy Tilemap main plugin.
 #[derive(Default)]
@@ -55,7 +55,7 @@ pub struct ChunkTilesPlugin;
 
 impl Plugin for ChunkTilesPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_asset::<TileMap>()
+        app.add_asset::<Tilemap>()
             .add_asset::<Chunk>()
             .add_system_to_stage("post_update", crate::tilemap::map_system.system());
 

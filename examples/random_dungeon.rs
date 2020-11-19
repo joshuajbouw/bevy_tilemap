@@ -51,7 +51,7 @@ fn load(
         let tile_dimensions = Vec2::new(32., 32.);
         let chunk_dimensions = Vec3::new(32., 32., 1.);
         let tile_map_dimensions = Vec2::new(1., 1.);
-        let tile_map = TileMap::new(
+        let tile_map = Tilemap::new(
             tile_map_dimensions,
             chunk_dimensions,
             tile_dimensions,
@@ -74,7 +74,7 @@ fn build_random_dungeon(
     mut map_state: ResMut<MapState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
-    mut query: Query<&mut TileMap>,
+    mut query: Query<&mut Tilemap>,
 ) {
     if map_state.map_loaded {
         return;

@@ -124,7 +124,7 @@ pub(crate) enum MapEvent {
 /// A TileMap which maintains chunks and its tiles within.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
-pub struct TileMap {
+pub struct Tilemap {
     dimensions: Option<Dimensions2>,
     chunk_dimensions: Dimensions3,
     tile_dimensions: Dimensions2,
@@ -145,11 +145,11 @@ pub struct TileMap {
     spawned_chunks: Vec<usize>,
 }
 
-impl TypeUuid for TileMap {
+impl TypeUuid for Tilemap {
     const TYPE_UUID: Uuid = Uuid::from_u128(109481186966523254410691740507722642628);
 }
 
-impl TileMap {
+impl Tilemap {
     /// Returns a new WorldMap with the types `Tile` and `Chunk`.
     ///
     /// It takes in dimensions for itself, the chunk, and the tile. These must
@@ -172,7 +172,7 @@ impl TileMap {
     /// // Handle from the sprite sheet you want
     /// let atlas_handle = Handle::weak_from_u64(TextureAtlas::TYPE_UUID, 1234567890);
     ///
-    /// let tile_map = TileMap::new(
+    /// let tile_map = Tilemap::new(
     ///     tile_map_dimensions,
     ///     chunk_dimensions,
     ///     tile_dimensions,
@@ -184,9 +184,9 @@ impl TileMap {
         chunk_dimensions: Vec3,
         tile_dimensions: Vec2,
         texture_atlas: Handle<TextureAtlas>,
-    ) -> TileMap {
+    ) -> Tilemap {
         let capacity = (dimensions.x() * dimensions.y()) as usize;
-        TileMap {
+        Tilemap {
             dimensions,
             chunk_dimensions,
             tile_dimensions,
@@ -240,9 +240,9 @@ impl TileMap {
     /// # // Tile map's dimensions in chunks
     /// # let tile_map_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = TileMap::new(
+    /// # let mut tile_map = Tilemap::new(
     /// #     tile_map_dimensions,
     /// #     chunk_dimensions,
     /// #     tile_dimensions,
@@ -275,9 +275,9 @@ impl TileMap {
     /// # // Tile map's dimensions in chunks
     /// # let tile_map_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = TileMap::new(
+    /// # let mut tile_map = Tilemap::new(
     /// #     tile_map_dimensions,
     /// #     chunk_dimensions,
     /// #     tile_dimensions,
@@ -309,9 +309,9 @@ impl TileMap {
     /// # // Tile map's dimensions in chunks
     /// # let tile_map_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = TileMap::new(
+    /// # let mut tile_map = Tilemap::new(
     /// #    tile_map_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
@@ -485,9 +485,9 @@ impl TileMap {
     /// # // Tile map's dimensions in chunks
     /// # let tile_map_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = TileMap::new(
+    /// # let mut tile_map = Tilemap::new(
     /// #    tile_map_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
@@ -536,9 +536,9 @@ impl TileMap {
     /// # // Tile map's dimensions in chunks
     /// # let tile_map_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = TileMap::new(
+    /// # let mut tile_map = Tilemap::new(
     /// #    tile_map_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
@@ -587,9 +587,9 @@ impl TileMap {
     /// # // Tile map's dimensions in chunks
     /// # let tile_map_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = TileMap::new(
+    /// # let mut tile_map = Tilemap::new(
     /// #    tile_map_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
@@ -661,9 +661,9 @@ impl TileMap {
     /// # // Tile map's dimensions in chunks
     /// # let tile_map_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = TileMap::new(
+    /// # let mut tile_map = Tilemap::new(
     /// #    tile_map_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
@@ -696,9 +696,9 @@ impl TileMap {
     /// // Tile map's dimensions in chunks
     /// let tile_map_dimensions = Vec2::new(3., 3.,);
     /// // Handle from the sprite sheet you want
-    /// let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    /// let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     ///
-    /// let mut tile_map = TileMap::new(
+    /// let mut tile_map = Tilemap::new(
     ///    tile_map_dimensions,
     ///    chunk_dimensions,
     ///    tile_dimensions,
@@ -859,7 +859,7 @@ pub fn map_system(
     mut commands: Commands,
     mut chunks: ResMut<Assets<Chunk>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut query: Query<(Entity, &mut TileMap)>,
+    mut query: Query<(Entity, &mut Tilemap)>,
 ) {
     for (map_entity, mut map) in query.iter_mut() {
         map.events.update();

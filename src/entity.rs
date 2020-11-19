@@ -1,4 +1,4 @@
-use crate::{chunk::ChunkDimensions, lib::*, render::CHUNK_PIPELINE_HANDLE, TileMap};
+use crate::{chunk::ChunkDimensions, lib::*, render::CHUNK_PIPELINE_HANDLE, Tilemap};
 use bevy::render::pipeline::PipelineSpecialization;
 
 /// A component bundle for `Chunk` entities.
@@ -63,7 +63,7 @@ impl Default for ChunkComponents {
 #[derive(Bundle, Debug)]
 pub struct TileMapComponents {
     /// A `TileMap` which maintains chunks and its tiles.
-    pub tile_map: TileMap,
+    pub tile_map: Tilemap,
     /// The transform location in a space for a component.
     pub transform: Transform,
     /// The global transform location in a space for a component.
