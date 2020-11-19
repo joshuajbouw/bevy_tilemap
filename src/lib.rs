@@ -22,7 +22,7 @@ pub mod chunk;
 /// Various coordinate traits used for converting indexes and coordinates.
 pub mod coord;
 /// Various dimension based traits.
-pub mod dimensions;
+mod dimensions;
 /// Bundles of components for spawning entities.
 pub mod entity;
 /// Map traits to implement for a custom map and a basic struct for use.
@@ -36,6 +36,7 @@ pub(crate) mod render;
 pub mod tile;
 /// A growable heap used for setting multiple tiles at once.
 pub mod tile_setter;
+pub(crate) mod point;
 
 use crate::{chunk::Chunk, lib::*, map::TileMap, render::TilemapRenderGraphBuilder};
 
