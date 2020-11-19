@@ -314,6 +314,7 @@ impl Builder {
     ///
     /// let builder = tilemap::Builder::new().texture_atlas(texture_atlas_handle);
     /// ```
+    #[must_use]
     pub fn texture_atlas(mut self, handle: Handle<TextureAtlas>) -> Builder {
         self.texture_atlas = Some(handle);
         self
@@ -1316,6 +1317,7 @@ impl Tilemap {
 /// 1. Spawn chunks
 /// 1. Despawn chunks
 /// 1. Remove chunks
+#[inline(always)]
 pub fn map_system(
     mut commands: Commands,
     mut chunks: ResMut<Assets<Chunk>>,
