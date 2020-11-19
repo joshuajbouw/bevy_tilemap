@@ -1,19 +1,25 @@
 use crate::lib::*;
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Point2(i32, i32);
+pub(crate) struct Point2(i32, i32);
 
 impl Point2 {
-    pub fn new(x: i32, y: i32) -> Point2 {
+    pub(crate) fn new(x: i32, y: i32) -> Point2 {
         Point2(x, y)
     }
 
-    pub fn x(&self) -> i32 {
+    pub(crate) fn x(&self) -> i32 {
         self.0
     }
 
-    pub fn y(&self) -> i32 {
+    pub(crate) fn y(&self) -> i32 {
         self.1
+    }
+}
+
+impl Display for Point2 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        write!(f, "({}, {})", self.0, self.1)
     }
 }
 
@@ -24,27 +30,33 @@ impl From<(i32, i32)> for Point2 {
 }
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Point3(i32, i32, i32);
+pub(crate) struct Point3(i32, i32, i32);
 
 impl Point3 {
-    pub fn new(x: i32, y: i32, z: i32) -> Point3 {
+    pub(crate) fn new(x: i32, y: i32, z: i32) -> Point3 {
         Point3(x, y, z)
     }
 
-    pub fn x(&self) -> i32 {
+    pub(crate) fn x(&self) -> i32 {
         self.0
     }
 
-    pub fn y(&self) -> i32 {
+    pub(crate) fn y(&self) -> i32 {
         self.1
     }
 
-    pub fn z(&self) -> i32 {
+    pub(crate) fn z(&self) -> i32 {
         self.2
     }
 
-    pub fn xy(&self) -> Point2 {
+    pub(crate) fn xy(&self) -> Point2 {
         Point2::new(self.0, self.1)
+    }
+}
+
+impl Display for Point3 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        write!(f, "({}, {}, {})", self.0, self.1, self.2)
     }
 }
 
