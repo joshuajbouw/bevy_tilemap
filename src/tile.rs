@@ -1,22 +1,17 @@
-use crate::lib::*;
+use crate::{lib::*, point::Point3};
 
 /// A hash map type to use for setting tiles.
 pub type Tiles = HashMap<(i32, i32, i32), Tile>;
 
+pub(crate) type TilePoints = HashMap<Point3, Tile>;
+
 // TODO: Fix both these renderer parts below to only include the current depth.
 /// A utility function that takes an array of `Tile`s and splits the indexes and
 /// colors and returns them as separate vectors for use in the renderer.
-pub(crate) fn dense_tiles_to_attributes(
-    z: usize,
-    layer_size: usize,
-    tiles: &[Tile],
-) -> (Vec<f32>, Vec<[f32; 4]>) {
-    let start = z * layer_size;
-    let end = start + layer_size;
-    let tiles = Vec::from(&tiles[start..end]);
-
-    let mut tile_indexes: Vec<f32> = Vec::with_capacity(layer_size * 4);
-    let mut tile_colors: Vec<[f32; 4]> = Vec::with_capacity(tile_indexes.len());
+pub(crate) fn dense_tiles_to_attributes(tiles: &[Tile]) -> (Vec<f32>, Vec<[f32; 4]>) {
+    let capacity = tiles.len() * 4;
+    let mut tile_indexes: Vec<f32> = Vec::with_capacity(capacity);
+    let mut tile_colors: Vec<[f32; 4]> = Vec::with_capacity(capacity);
     for tile in tiles.iter() {
         tile_indexes.extend([tile.index() as f32; 4].iter());
         tile_colors.extend([tile.color().into(); 4].iter());
@@ -27,22 +22,16 @@ pub(crate) fn dense_tiles_to_attributes(
 /// A utility function that takes a sparse map of `Tile`s and splits the indexes
 /// and colors and returns them as separate vectors for use in the renderer.
 pub(crate) fn sparse_tiles_to_attributes(
-    z: usize,
-    layer_size: usize,
+    area: usize,
     tiles: &HashMap<usize, Tile>,
 ) -> (Vec<f32>, Vec<[f32; 4]>) {
-    let start = z * layer_size;
-    let end = start + layer_size;
-
-    let mut tile_indexes = vec![0.; layer_size * 4];
+    let mut tile_indexes = vec![0.; area * 4];
     // If tiles are set with an alpha of 0, they are discarded.
-    let mut tile_colors = vec![[0.0, 0.0, 0.0, 0.0]; layer_size * 4];
+    let mut tile_colors = vec![[0.0, 0.0, 0.0, 0.0]; area * 4];
     for (index, tile) in tiles.iter() {
-        if *index >= start || *index <= end {
-            for i in 0..4 {
-                tile_indexes[index * 4 + i] = tile.index as f32;
-                tile_colors[index * 4 + i] = tile.color.into();
-            }
+        for i in 0..4 {
+            tile_indexes[index * 4 + i] = tile.index as f32;
+            tile_colors[index * 4 + i] = tile.color.into();
         }
     }
     (tile_indexes, tile_colors)

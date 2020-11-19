@@ -36,7 +36,7 @@
 pub mod v0_2 {
     pub use crate::{
         chunk::LayerKind,
-        entity::TileMapComponents,
+        entity::TilemapComponents,
         tile::{Tile, Tiles},
         tilemap::Tilemap,
         ChunkTilesPlugin,

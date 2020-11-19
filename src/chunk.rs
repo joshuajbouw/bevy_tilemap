@@ -1,17 +1,25 @@
-use crate::{lib::*, tile::Tile};
+use crate::{dimension::Dimension2, lib::*, point::Point2, tile::Tile};
 
 /// A component that stores the dimensions of the Chunk for the renderer.
 #[derive(Debug, Default, RenderResources, RenderResource)]
 #[render_resources(from_self)]
 pub struct ChunkDimensions {
     /// The chunk dimensions.
-    pub dimensions: Vec3,
+    pub dimensions: Vec2,
 }
 
 unsafe impl Byteable for ChunkDimensions {}
 
-impl From<Vec3> for ChunkDimensions {
-    fn from(vec: Vec3) -> Self {
+impl From<Dimension2> for ChunkDimensions {
+    fn from(dimensions: Dimension2) -> ChunkDimensions {
+        ChunkDimensions {
+            dimensions: dimensions.into(),
+        }
+    }
+}
+
+impl From<Vec2> for ChunkDimensions {
+    fn from(vec: Vec2) -> ChunkDimensions {
         ChunkDimensions { dimensions: vec }
     }
 }
@@ -23,7 +31,7 @@ pub(crate) trait Layer: 'static {
 
     fn set_tile(&mut self, index: usize, tile: Tile);
 
-    fn tiles_to_renderer_parts(&self, z: usize, layer_size: usize) -> (Vec<f32>, Vec<[f32; 4]>);
+    fn tiles_to_renderer_parts(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>);
 }
 
 /// A layer with dense sprite tiles.
@@ -54,8 +62,8 @@ impl Layer for DenseLayer {
         self.tiles[index] = tile;
     }
 
-    fn tiles_to_renderer_parts(&self, z: usize, layer_size: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
-        crate::tile::dense_tiles_to_attributes(z, layer_size, &self.tiles)
+    fn tiles_to_renderer_parts(&self, _area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
+        crate::tile::dense_tiles_to_attributes(&self.tiles)
     }
 }
 
@@ -92,8 +100,8 @@ impl Layer for SparseLayer {
         self.tiles.insert(index, tile);
     }
 
-    fn tiles_to_renderer_parts(&self, z: usize, layer_size: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
-        crate::tile::sparse_tiles_to_attributes(z, layer_size, &self.tiles)
+    fn tiles_to_renderer_parts(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
+        crate::tile::sparse_tiles_to_attributes(area, &self.tiles)
     }
 }
 
@@ -159,53 +167,39 @@ pub(crate) struct SpriteLayer {
 #[uuid = "47691827-0b89-4474-a14e-f2ea3c88320f"]
 #[doc(hidden)]
 pub struct Chunk {
-    coord: Vec2,
+    point: Point2,
     sprite_layers: Vec<Option<SpriteLayer>>,
     // flags: Vec<u32>, // TODO
-    dimensions: Vec3,
 }
 
 impl Chunk {
-    pub(crate) fn new(coord: Vec2, dimensions: Vec3, max_layers: usize) -> Chunk {
+    pub(crate) fn new(point: Point2, max_layers: usize) -> Chunk {
         Chunk {
-            coord,
+            point,
             sprite_layers: vec![None; max_layers],
-            dimensions,
         }
     }
 
-    pub(crate) fn coord(&self) -> Vec2 {
-        self.coord
-    }
-
-    pub(crate) fn max_size(&self) -> usize {
-        (self.dimensions.x() * self.dimensions.y() * self.dimensions.z()) as usize
-    }
-
-    pub(crate) fn layer_size(&self) -> usize {
-        (self.dimensions.x() * self.dimensions.y()) as usize
-    }
-
-    pub(crate) fn add_layer(&mut self, kind: LayerKind, z: usize) {
+    pub(crate) fn add_layer(&mut self, kind: LayerKind, z: usize, dimensions: Dimension2) {
         match kind {
             LayerKind::Dense => {
-                let tiles = vec![Tile::new(0); self.max_size()];
-                self.sprite_layers.insert(
-                    z,
-                    Some(SpriteLayer {
-                        inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
-                        entity: None,
-                    }),
-                )
+                let tiles = vec![Tile::new(0); dimensions.area() as usize];
+                self.sprite_layers[z] = Some(SpriteLayer {
+                    inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
+                    entity: None,
+                });
             }
-            LayerKind::Sparse => self.sprite_layers.insert(
-                z,
-                Some(SpriteLayer {
+            LayerKind::Sparse => {
+                self.sprite_layers[z] = Some(SpriteLayer {
                     inner: LayerKindInner::Sparse(SparseLayer::new(HashMap::default())),
                     entity: None,
-                }),
-            ),
+                })
+            }
         }
+    }
+
+    pub(crate) fn point(&self) -> Point2 {
+        self.point
     }
 
     pub(crate) fn move_layer(&mut self, from_z: usize, to_z: usize) {
@@ -248,12 +242,14 @@ impl Chunk {
         entities
     }
 
-    pub(crate) fn tiles_to_renderer_parts(&self, z: usize) -> Option<(Vec<f32>, Vec<[f32; 4]>)> {
-        self.sprite_layers[z].as_ref().map(|sprite_layer| {
-            sprite_layer
-                .inner
-                .as_ref()
-                .tiles_to_renderer_parts(z, self.layer_size())
-        })
+    pub(crate) fn tiles_to_renderer_parts(
+        &self,
+        z: usize,
+        dimensions: Dimension2,
+    ) -> Option<(Vec<f32>, Vec<[f32; 4]>)> {
+        let area = dimensions.area() as usize;
+        self.sprite_layers[z]
+            .as_ref()
+            .map(|sprite_layer| sprite_layer.inner.as_ref().tiles_to_renderer_parts(area))
     }
 }

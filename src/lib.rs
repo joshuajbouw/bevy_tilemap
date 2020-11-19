@@ -20,7 +20,7 @@
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
 pub mod chunk;
 /// Various dimension based traits.
-mod dimensions;
+mod dimension;
 /// Bundles of components for spawning entities.
 pub mod entity;
 /// Meshes for use in rendering.
@@ -92,7 +92,7 @@ mod lib {
             hierarchy::BuildChildren,
         },
         bevy_type_registry::{TypeUuid, Uuid},
-        bevy_utils::{HashMap, HashMapExt},
+        bevy_utils::HashMap,
     };
 
     // Need to add this here as there is a Rust issue surrounding the fact that
@@ -116,7 +116,6 @@ mod lib {
         ops::{FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},
-        slice::{Iter, IterMut},
         vec::Vec,
     };
 

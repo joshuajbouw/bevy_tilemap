@@ -1,11 +1,11 @@
 use crate::{
     chunk::{Chunk, LayerKind},
-    dimensions::{DimensionError, Dimensions2},
+    dimension::{Dimension2, DimensionError},
     entity::ChunkComponents,
     lib::*,
     mesh::ChunkMesh,
-    point::Point2,
-    tile::{Tile, Tiles},
+    point::{Point2, Point3},
+    tile::{Tile, TilePoints, Tiles},
 };
 
 #[derive(Clone, PartialEq)]
@@ -99,7 +99,7 @@ pub(crate) enum TilemapEvent {
         /// The map index where the chunk needs to be stored.
         handle: Handle<Chunk>,
         /// The `TileSetter` that is used to set all the tiles.
-        tiles: Tiles,
+        tiles: TilePoints,
     },
     /// An event when a chunk is spawned.
     SpawnedChunk { handle: Handle<Chunk> },
@@ -119,9 +119,9 @@ pub(crate) enum TilemapEvent {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct Tilemap {
-    dimensions: Option<Dimensions2>,
-    chunk_dimensions: Dimensions2,
-    tile_dimensions: Dimensions2,
+    dimensions: Option<Dimension2>,
+    chunk_dimensions: Dimension2,
+    tile_dimensions: Dimension2,
     layers: Vec<Option<LayerKind>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     texture_atlas: Handle<TextureAtlas>,
@@ -139,53 +139,215 @@ pub struct Tilemap {
     spawned_chunks: Vec<usize>, // FIXME: remove
 }
 
+/// Tilemap factory, which can be used to construct and configure new tilemaps.
+///
+/// Methods can be chained in order to configure it. The [`texture_atlas`]
+/// method is **required** in order to have a successful factory creation.
+///
+/// The configuration options available are:
+///
+/// - [`dimensions`]: specifies the dimensions of the tilemap. If this
+/// is not set, then the tilemap will have no dimensions.
+/// - [`chunk_dimensions`]: specifies the chunk's dimensions in tiles.
+/// Default is 32x, 32y.
+/// - [`tile_dimensions`]: specifies the tile's dimensions in pixels.
+/// Default is 32px, 32px.
+/// - [`z_layers`]: specifies the maximum number of layers that sprites
+/// can exist on. Default is 20.
+/// - [`texture_atlas`]: specifies the texture atlas handle
+/// to use for the tilemap.
+///
+/// The [`build`] method will take ownership and consume the builder returning
+/// a [`TilemapResult`] with either an [`TilemapError`] or the [`Tilemap`].
+///
+/// # Examples
+/// ```
+/// use bevy_tilemap::tilemap;
+/// use bevy::asset::HandleId;
+/// use bevy::prelude::*;
+///
+/// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+///
+/// let builder = tilemap::Builder::new().texture_atlas(texture_atlas_handle);
+///
+/// let tilemap = builder.build().unwrap();
+/// ```
+///
+/// Can also get a builder like this:
+/// ```
+/// use bevy_tilemap::tilemap::Tilemap;
+/// use bevy::asset::HandleId;
+/// use bevy::prelude::*;
+///
+/// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+///
+/// let builder = Tilemap::builder().texture_atlas(texture_atlas_handle);
+///
+/// let tilemap = builder.build().unwrap();
+/// ```
+///
+/// [`build`]: Builder::build
+/// [`chunk_dimensions`]: Builder::chunk_dimensions
+/// [`dimensions`]: Builder::dimensions
+/// [`texture_atlas`]: Builder::texture_atlas
+/// [`tile_dimensions`]: Builder::tile_dimensions
+/// [`z_layers`]: Builder::z_layers
+/// [`Tilemap`]: Tilemap
+/// [`TilemapError`]: TilemapError
+/// [`TilemapResult`]: TilemapResult
 #[derive(Debug)]
-pub struct TilemapBuilder {
-    dimensions: Option<Dimensions2>,
-    chunk_dimensions: Dimensions2,
-    tile_dimensions: Dimensions2,
+pub struct Builder {
+    dimensions: Option<Dimension2>,
+    chunk_dimensions: Dimension2,
+    tile_dimensions: Dimension2,
     z_layers: usize,
     texture_atlas: Option<Handle<TextureAtlas>>,
 }
 
-impl Default for TilemapBuilder {
+impl Default for Builder {
     fn default() -> Self {
-        TilemapBuilder {
+        Builder {
             dimensions: None,
-            chunk_dimensions: Dimensions2::new(32, 32),
-            tile_dimensions: Dimensions2::new(32, 32),
+            chunk_dimensions: Dimension2::new(32, 32),
+            tile_dimensions: Dimension2::new(32, 32),
             z_layers: 20,
             texture_atlas: None,
         }
     }
 }
 
-impl TilemapBuilder {
-    pub fn dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
-        self.dimensions = Some(Dimensions2::new(width, height));
+impl Builder {
+    /// Configures the builder with the default settings.
+    ///
+    /// Is equivalent to [`default`] and [`builder`] method in the
+    /// [`Tilemap`]. Start with this then you are able to method chain.
+    ///
+    /// [`default`]: Builder::default
+    /// [`builder`]: Tilemap::builder
+    /// [`Tilemap`]: Tilemap
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap::{self, Tilemap};
+    ///
+    /// let builder = tilemap::Builder::new();
+    ///
+    /// // Equivalent to...
+    ///
+    /// let builder = tilemap::Builder::default();
+    ///
+    /// // Or...
+    ///
+    /// let builder = Tilemap::builder();
+    /// ```
+    pub fn new() -> Builder {
+        Builder::default()
+    }
+
+    /// Sets the dimensions of the tilemap.
+    ///
+    /// If this is not set then the tilemap will be boundless entirely.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    ///
+    /// let builder = tilemap::Builder::new().dimensions(5, 5);
+    /// ```
+    pub fn dimensions(mut self, width: u32, height: u32) -> Builder {
+        self.dimensions = Some(Dimension2::new(width, height));
         self
     }
 
-    pub fn chunk_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
-        self.chunk_dimensions = Dimensions2::new(width, height);
+    /// Sets the chunk dimensions.
+    ///
+    /// Chunk dimensions are in tiles. If this is not set then the default of
+    /// 32x, 32y is used.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    ///
+    /// let builder = tilemap::Builder::new().chunk_dimensions(32, 32);
+    /// ```
+    pub fn chunk_dimensions(mut self, width: u32, height: u32) -> Builder {
+        self.chunk_dimensions = Dimension2::new(width, height);
         self
     }
 
-    pub fn tile_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
-        self.tile_dimensions = Dimensions2::new(width, height);
+    /// Sets the tile dimensions.
+    ///
+    /// Tile dimensions are in pixels. If this is not set then the default of
+    /// 32px, 32px is used.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    ///
+    /// let builder = tilemap::Builder::new().tile_dimensions(32, 32);
+    /// ```
+    pub fn tile_dimensions(mut self, width: u32, height: u32) -> Builder {
+        self.tile_dimensions = Dimension2::new(width, height);
         self
     }
 
-    pub fn z_layers(mut self, layers: usize) -> TilemapBuilder {
+    /// Sets the amount of render layers that sprites can exist on.
+    ///
+    /// By default there are 20 if this is not set.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    ///
+    /// let builder = tilemap::Builder::new().z_layers(5);
+    /// ```
+    pub fn z_layers(mut self, layers: usize) -> Builder {
         self.z_layers = layers;
         self
     }
 
-    pub fn texture_atlas(mut self, handle: Handle<TextureAtlas>) -> TilemapBuilder {
+    /// Sets the texture atlas, this is **required** to be set.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let builder = tilemap::Builder::new().texture_atlas(texture_atlas_handle);
+    /// ```
+    pub fn texture_atlas(mut self, handle: Handle<TextureAtlas>) -> Builder {
         self.texture_atlas = Some(handle);
         self
     }
 
+    /// Consumes the builder and returns a result.
+    ///
+    /// If successful a [`TilemapResult`] is return with [`Tilemap`] on
+    /// succes or a [`TilemapError`] if there is an issue.
+    ///
+    /// # Errors
+    /// If a texture atlas is not set this is the only way that an error can
+    /// occur. If this happens, be sure to use [`texture_atlas`].
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::asset::HandleId;
+    /// use bevy::prelude::*;
+    ///
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let builder = tilemap::Builder::new().texture_atlas(texture_atlas_handle);
+    ///
+    /// let tilemap = builder.build();
+    /// ```
+    ///
+    /// [`texture_atlas`]: Builder::texture_atlas
+    /// [`Tilemap`]: Tilemap
+    /// [`TilemapError`]: TilemapError
+    /// [`TilemapResult`]: TilemapResult
     pub fn build(self) -> TilemapResult<Tilemap> {
         let texture_atlas = if let Some(atlas) = self.texture_atlas {
             atlas
@@ -213,8 +375,30 @@ impl TypeUuid for Tilemap {
 }
 
 impl Tilemap {
-    pub fn builder() -> TilemapBuilder {
-        TilemapBuilder::default()
+    /// Configures the builder with the default settings.
+    ///
+    /// Is equivalent to [`default`] and [`builder`] method in the
+    /// [`Tilemap`]. Start with this then you are able to method chain.
+    ///
+    /// [`default`]: Builder::default
+    /// [`builder`]: Tilemap::builder
+    /// [`Tilemap`]: Tilemap
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap::{self, Tilemap};
+    ///
+    /// let builder = tilemap::Builder::new();
+    ///
+    /// // Equivalent to...
+    ///
+    /// let builder = tilemap::Builder::default();
+    ///
+    /// // Or...
+    ///
+    /// let builder = Tilemap::builder();
+    /// ```
+    pub fn builder() -> Builder {
+        Builder::default()
     }
 
     /// Sets the sprite sheet, or `TextureAtlas` for use in the `TileMap`.
@@ -320,7 +504,7 @@ impl Tilemap {
     /// tile_map.new_chunk(1);
     /// tile_map.new_chunk(2);
     /// ```
-    fn new_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
+    pub fn new_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
         let point = Point2::new(x, y);
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
@@ -335,30 +519,20 @@ impl Tilemap {
         Ok(())
     }
 
-    /// Adds a layer to the `TileMap` and inner chunks.
+    /// Adds a layer to the `Tilemap` with a specified layer kind.
     ///
-    /// This method takes in a `LayerKind`, coordinate as either an index or
-    /// Vec2, as well as a specified Z layer that the layer needs to be set to.
-    /// If the layer is already the specified layer's kind, then nothing
-    /// happens.
+    /// This method takes in a [`LayerKind`] as well as a specified Z layer
+    /// that the layer needs to be set to. If the layer is already the specified
+    /// layer's kind, then nothing happens.
     ///
     /// # Errors
     ///
     /// If a layer is set and a different layer already exists at that Z layer
-    /// then an error is returned regarding that.
+    /// then an error is returned regarding that. This is done to prevent
+    /// accidental overwrites of a layer.
     ///
-    /// # Panics
-    ///
-    /// If the tile length is not the same length as the expected tile length
-    /// per chunk, then a panic is thrown. This is important as it will lead to
-    /// future panics if it is not caught here.
-    pub fn add_layer(&mut self, kind: LayerKind, z_layer: usize) -> TilemapResult<()> {
-        // assert_eq!(
-        //     tiles.len(),
-        //     self.chunk_tile_len(),
-        //     "The tiles length must be equal to the expected tile length per chunk."
-        // );
-
+    /// [`LayerKind`]: crate::chunk::LayerKind
+    pub fn add_layer_with_kind(&mut self, kind: LayerKind, z_layer: usize) -> TilemapResult<()> {
         if let Some(some_kind) = self.layers[z_layer] {
             return if some_kind == kind {
                 Ok(())
@@ -370,8 +544,28 @@ impl Tilemap {
         self.layers[z_layer] = Some(kind);
 
         self.events.send(TilemapEvent::AddedLayer { z_layer, kind });
-
         Ok(())
+    }
+
+    /// Adds a layer to the `Tilemap`.
+    ///
+    /// This method creates a layer across all chunks at the specified Z layer.
+    /// For ease of use, it by default makes a layer with a dense
+    /// [`LayerKind`] which is ideal for layers full of sprites.
+    ///
+    /// If you want to use a layer that is more performant and less data heavy,
+    /// use `add_layer_with_kind` with [`LayerKind::Sparse`].
+    ///
+    /// If the layer is already the specified layer's kind, then nothing
+    /// happens.
+    ///
+    /// # Errors
+    ///
+    /// If a layer is set and a different layer already exists at that Z layer
+    /// then an error is returned regarding that. This is done to prevent
+    /// accidental overwrites of a layer.
+    pub fn add_layer(&mut self, z_layer: usize) -> TilemapResult<()> {
+        self.add_layer_with_kind(LayerKind::Dense, z_layer)
     }
 
     /// Moves a layer from one Z level to another.
@@ -426,11 +620,12 @@ impl Tilemap {
     /// # Errors
     ///
     /// If the coordinate or index is out of bounds, an error will be returned.
-    pub fn spawn_chunk(&mut self, v: I) -> TilemapResult<()> {
-        let index = v.to_index(self.dimensions.width(), self.dimensions.height());
-        self.dimensions.check_index(index)?;
-
-        let handle = self.chunks.get(&index).unwrap();
+    pub fn spawn_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
+        let point = Point2::new(x, y);
+        if let Some(dimensions) = &self.dimensions {
+            dimensions.check_point(point)?;
+        }
+        let handle = self.chunks.get(&point).unwrap();
 
         self.events.send(TilemapEvent::SpawnedChunk {
             handle: handle.clone_weak(),
@@ -440,11 +635,12 @@ impl Tilemap {
     }
 
     /// De-spawns a spawned chunk at a given index or coordinate.
-    pub fn despawn_chunk<I: ToIndex>(&mut self, v: usize) -> TilemapResult<()> {
-        let index = v.to_index(self.dimensions.width(), self.dimensions.height());
-        self.dimensions.check_index(index)?;
-
-        let handle = self.chunks.get(&index).unwrap();
+    pub fn despawn_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
+        let point = Point2::new(x, y);
+        if let Some(dimensions) = &self.dimensions {
+            dimensions.check_point(point)?;
+        }
+        let handle = self.chunks.get(&point).unwrap();
 
         self.events.send(TilemapEvent::DespawnedChunk {
             handle: handle.clone_weak(),
@@ -492,63 +688,18 @@ impl Tilemap {
     /// tile_map.remove_chunk(1);
     /// tile_map.remove_chunk(2);
     /// ```
-    pub fn remove_chunk<I: ToIndex>(&mut self, v: I) -> TilemapResult<()> {
-        let index = v.to_index(self.dimensions.width(), self.dimensions.y());
-        self.dimensions.check_index(index)?;
-
-        let handle = self.chunks.get(&index).unwrap();
+    pub fn remove_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
+        let point = Point2::new(x, y);
+        if let Some(dimensions) = &self.dimensions {
+            dimensions.check_point(point)?;
+        }
+        let handle = self.chunks.get(&point).unwrap();
 
         self.events.send(TilemapEvent::RemovedChunk {
             handle: handle.clone_weak(),
         });
 
         Ok(())
-    }
-
-    /// Sets a single tile at a coordinate position and checks if it the request is inbounds.
-    ///
-    /// For convenience, this does not require to use a TileSetter which is beneficial for multiple
-    /// tiles. If that is preferred, do use [set_tiles] instead.
-    ///
-    /// # Examples
-    /// ```
-    /// # use bevy_tilemap::prelude::*;
-    /// # use bevy::prelude::*;
-    /// # use bevy::type_registry::TypeUuid;
-    /// #
-    /// # // Tile's dimensions in pixels
-    /// # let tile_dimensions = Vec2::new(32., 32.);
-    /// # // Chunk's dimensions in tiles
-    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    /// # // Tile map's dimensions in chunks
-    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
-    /// # // Handle from the sprite sheet you want
-    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
-    /// #
-    /// # let mut tile_map = Tilemap::new(
-    /// #    tile_map_dimensions,
-    /// #    chunk_dimensions,
-    /// #    tile_dimensions,
-    /// #    atlas_handle,
-    /// # );
-    /// // Add a chunk
-    /// tile_map.new_chunk(0);
-    ///
-    /// // Set a single tile and unwrap the result
-    /// tile_map.set_tile(Vec3::new(15., 15., 0.), Tile::new(1), 0).unwrap();
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the given coordinate or index is out of bounds.
-    pub fn set_tile<I: ToIndex + ToCoord3>(
-        &mut self,
-        v: I,
-        tile: Tile,
-        z: usize,
-    ) -> TilemapResult<()> {
-        let coord = v.to_coord3(self.dimensions.width(), self.dimensions.height());
-        self.set_tiles(TileSetter::from(vec![(coord, tile, z)]))
     }
 
     /// Sets many tiles using a `TileSetter`.
@@ -593,41 +744,81 @@ impl Tilemap {
     /// // Set multiple tiles and unwrap the result
     /// tile_map.set_tiles(new_tiles).unwrap();
     /// ```
-    pub fn set_tiles(&mut self, setter: TileSetter) -> TilemapResult<()> {
-        let mut tiles_map: HashMap<usize, TileSetter> = HashMap::default();
-        for (setter_coord, setter_tile, z) in setter.iter() {
-            let chunk_coord = self.tile_coord_to_chunk_coord(*setter_coord);
-            let chunk_index =
-                chunk_coord.to_index(self.dimensions.width(), self.dimensions.height());
-            self.dimensions.check_index(chunk_index)?;
+    pub fn set_tiles(&mut self, tiles: Tiles) -> TilemapResult<()> {
+        let mut chunk_map: HashMap<Point2, TilePoints> = HashMap::default();
+        for (points, tile) in tiles.iter() {
+            let global_tile_point: Point3 = points.into();
+            let chunk_point = self.tile_coord_to_chunk_coord(global_tile_point);
 
-            let tile_y = setter_coord.y() / self.chunk_dimensions.height();
-            let map_coord = Vec2::new(
-                (setter_coord.x() / self.chunk_dimensions.width()).floor(),
-                self.dimensions.max_y() - (self.dimensions.max_y() as f32 - tile_y),
+            if self.layers[global_tile_point.z() as usize].is_none() {
+                self.add_layer(global_tile_point.z() as usize)?;
+            }
+
+            let tile_point = Point3::new(
+                global_tile_point.x() - chunk_point.x() * self.chunk_dimensions.width() as i32,
+                global_tile_point.y() - chunk_point.y() * self.chunk_dimensions.height() as i32,
+                global_tile_point.z(),
             );
-            let x = setter_coord.x() - (map_coord.x() * self.chunk_dimensions.width());
-            let y = setter_coord.y() - chunk_coord.y() * self.chunk_dimensions.height();
-            let coord = Vec3::new(x, y, setter_coord.z());
-            self.chunk_dimensions.check_coord(&coord)?;
 
-            if let Some(setters) = tiles_map.get_mut(&chunk_index) {
-                setters.push(coord, *setter_tile, *z);
+            if let Some(tiles) = chunk_map.get_mut(&chunk_point) {
+                tiles.insert(tile_point, *tile);
             } else {
-                let mut setter = TileSetter::new();
-                setter.push(coord, *setter_tile, *z);
-                tiles_map.insert(chunk_index, setter);
+                let mut tiles = TilePoints::default();
+                tiles.insert(tile_point, *tile);
+                chunk_map.insert(chunk_point, tiles);
             }
         }
 
-        for (index, setter) in tiles_map {
-            let handle = self.chunks.get(&index).unwrap();
+        for (chunk_point, tiles) in chunk_map {
+            let handle = self.chunks.get(&chunk_point).unwrap();
             self.events.send(TilemapEvent::ModifiedChunk {
                 handle: handle.clone_weak(),
-                tiles: setter,
+                tiles,
             })
         }
         Ok(())
+    }
+
+    /// Sets a single tile at a coordinate position and checks if it the request is inbounds.
+    ///
+    /// For convenience, this does not require to use a TileSetter which is beneficial for multiple
+    /// tiles. If that is preferred, do use [set_tiles] instead.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::prelude::*;
+    /// # use bevy::prelude::*;
+    /// # use bevy::type_registry::TypeUuid;
+    /// #
+    /// # // Tile's dimensions in pixels
+    /// # let tile_dimensions = Vec2::new(32., 32.);
+    /// # // Chunk's dimensions in tiles
+    /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
+    /// # // Tile map's dimensions in chunks
+    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    /// # // Handle from the sprite sheet you want
+    /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
+    /// #
+    /// # let mut tile_map = Tilemap::new(
+    /// #    tile_map_dimensions,
+    /// #    chunk_dimensions,
+    /// #    tile_dimensions,
+    /// #    atlas_handle,
+    /// # );
+    /// // Add a chunk
+    /// tile_map.new_chunk(0);
+    ///
+    /// // Set a single tile and unwrap the result
+    /// tile_map.set_tile(Vec3::new(15., 15., 0.), Tile::new(1), 0).unwrap();
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the given coordinate or index is out of bounds.
+    pub fn set_tile(&mut self, x: i32, y: i32, z_layer: i32, tile: Tile) -> TilemapResult<()> {
+        let mut tiles = Tiles::default();
+        tiles.insert((x, y, z_layer), tile);
+        self.set_tiles(tiles)
     }
 
     /// Returns the center tile of the `Map` as a `Vec2` `Tile` coordinate.
@@ -661,10 +852,13 @@ impl Tilemap {
     ///
     /// assert_eq!(Vec2::new(16., 16.), center);
     /// ```
-    pub fn center_tile_coord(&self) -> Vec2 {
-        let x = self.dimensions.width() / 2. * self.chunk_dimensions.width();
-        let y = self.dimensions.height() / 2. * self.chunk_dimensions.height();
-        Vec2::new(x.floor(), y.floor())
+    pub fn center_tile_coord(&self) -> Option<Point2> {
+        self.dimensions.map(|dimensions| {
+            Point2::new(
+                (dimensions.width() / 2 * self.chunk_dimensions.width()) as i32,
+                (dimensions.height() / 2 * self.chunk_dimensions.height()) as i32,
+            )
+        })
     }
 
     /// Takes a tile coordinate and changes it into a chunk coordinate.
@@ -698,10 +892,10 @@ impl Tilemap {
     ///
     /// assert_eq!(Vec2::new(0., 0.), chunk_coord);
     /// ```
-    pub fn tile_coord_to_chunk_coord(&self, coord: Vec3) -> Vec2 {
-        let x = (coord.x() / self.chunk_dimensions.y()).floor();
-        let y = (coord.y() / self.chunk_dimensions.x()).floor();
-        Vec2::new(x, y)
+    pub fn tile_coord_to_chunk_coord(&self, point: Point3) -> Point2 {
+        let x = point.x() / self.chunk_dimensions.width() as i32;
+        let y = point.y() / self.chunk_dimensions.height() as i32;
+        Point2::new(x, y)
     }
 
     // FIXME: These need to be changed as they will be inaccurate if the
@@ -785,44 +979,74 @@ impl Tilemap {
     // }
 
     /// Returns the dimensions of the `TileMap`.
-    pub fn dimensions(&self) -> Vec2 {
-        self.dimensions
+    pub fn dimensions(&self) -> Option<(u32, u32)> {
+        self.dimensions.map(|dimensions| dimensions.into())
+    }
+
+    /// The width of the tilemap in chunks.
+    pub fn width(&self) -> Option<u32> {
+        self.dimensions.map(|dimensions| dimensions.width())
+    }
+
+    /// The height of the tilemap in chunks.
+    pub fn height(&self) -> Option<u32> {
+        self.dimensions.map(|dimensions| dimensions.height())
     }
 
     /// Returns the chunk dimensions of the `TileMap`.
-    pub fn chunk_dimensions(&self) -> Vec3 {
-        self.chunk_dimensions
+    pub fn chunk_dimensions(&self) -> (u32, u32) {
+        self.chunk_dimensions.into()
+    }
+
+    /// The width of all the chunks in tiles.
+    pub fn chunk_width(&self) -> u32 {
+        self.chunk_dimensions.width()
+    }
+
+    /// The height of all the chunks in tiles.
+    pub fn chunk_height(&self) -> u32 {
+        self.chunk_dimensions.height()
     }
 
     /// A Chunk's size in pixels.
-    pub fn chunk_pixel_size(&self) -> Vec2 {
-        Vec2::new(
+    pub fn chunk_pixel_size(&self) -> (u32, u32) {
+        (
             self.tile_dimensions.width() * self.chunk_dimensions.width(),
             self.tile_dimensions.height() * self.chunk_dimensions.height(),
         )
     }
 
     /// Returns the tile dimensions of the `TileMap`.
-    pub fn tile_dimensions(&self) -> Vec2 {
-        self.tile_dimensions
+    pub fn tile_dimensions(&self) -> (u32, u32) {
+        self.tile_dimensions.into()
     }
 
-    /// Takes a `Tile` coordinate and returns its location in the `Map`.
-    pub fn chunk_to_world_coord(&self, coord: &Vec3, translation: Vec2) -> Option<Vec3> {
-        // takes in translation of tile
-        let chunk_x = (translation.x() / self.tile_dimensions.width() / self.dimensions.width())
-            + self.dimensions.max_x()
-            - 1.;
-        let chunk_y = 2.
-            - (translation.y() / self.tile_dimensions.height() / self.dimensions.height()
-                + self.dimensions.max_y()
-                - 1.);
-        let x = self.dimensions.width() * chunk_x + coord.x();
-        let y = (self.dimensions.height() * self.dimensions.max_y())
-            - (self.dimensions.height() * chunk_y)
-            + coord.y();
-        Some(Vec3::new(x, y, coord.z()))
+    /// The width of a tile in pixels.
+    pub fn tile_width(&self) -> u32 {
+        self.tile_dimensions.width()
     }
+
+    /// The height of a tile in pixels.
+    pub fn tile_height(&self) -> u32 {
+        self.tile_dimensions.height()
+    }
+
+    // /// Takes a `Tile` coordinate and returns its location in the `Map`.
+    // pub fn chunk_to_world_coord(&self, coord: &Vec3, translation: Vec2) -> Option<Vec3> {
+    //     // takes in translation of tile
+    //     let chunk_x = (translation.x() / self.tile_dimensions.width() / self.dimensions.width())
+    //         + self.dimensions.max_x()
+    //         - 1.;
+    //     let chunk_y = 2.
+    //         - (translation.y() / self.tile_dimensions.height() / self.dimensions.height()
+    //             + self.dimensions.max_y()
+    //             - 1.);
+    //     let x = self.dimensions.width() * chunk_x + coord.x();
+    //     let y = (self.dimensions.height() * self.dimensions.max_y())
+    //         - (self.dimensions.height() * chunk_y)
+    //         + coord.y();
+    //     Some(Vec3::new(x, y, coord.z()))
+    // }
 }
 
 /// The event handling system for the `TileMap`.
@@ -864,10 +1088,10 @@ pub fn map_system(
             use TilemapEvent::*;
             match event {
                 CreatedChunk {
-                    ref index,
+                    ref point,
                     ref handle,
                 } => {
-                    new_chunks.push((*index, handle.clone_weak()));
+                    new_chunks.push((*point, handle.clone_weak()));
                 }
                 AddedLayer {
                     z_layer: ref z,
@@ -902,18 +1126,16 @@ pub fn map_system(
             }
         }
 
-        for (index, handle) in new_chunks.iter() {
-            let coord = index.to_coord2(map.dimensions.width(), map.dimensions.height());
-            let mut chunk = Chunk::new(coord, map.chunk_dimensions, map.layers.len());
-            chunk.add_layer(LayerKind::Dense, 0);
+        for (point, handle) in new_chunks.iter() {
+            let chunk = Chunk::new(*point, map.layers.len());
             let handle = chunks.set(handle.clone_weak(), chunk);
-            map.chunks.insert(*index, handle);
+            map.chunks.insert(*point, handle);
         }
 
         for (z, kind) in added_layers.iter() {
             for handle in map.chunks.values() {
                 let chunk = chunks.get_mut(handle).unwrap();
-                chunk.add_layer(*kind, *z);
+                chunk.add_layer(*kind, *z, map.chunk_dimensions);
             }
         }
 
@@ -933,48 +1155,41 @@ pub fn map_system(
 
         for (handle, setter) in modified_chunks.iter() {
             let chunk = chunks.get_mut(handle).unwrap();
-            for (coord, tile, z_layer) in setter.iter() {
-                let index =
-                    coord.to_index(map.chunk_dimensions.width(), map.chunk_dimensions.height());
-                chunk.set_tile(*z_layer, index, *tile);
+            for (point, tile) in setter.iter() {
+                let index = map.chunk_dimensions.encode_point_unchecked(point.xy());
+                chunk.set_tile(point.z() as usize, index, *tile);
             }
         }
 
         for handle in spawned_chunks.iter() {
             let chunk = chunks.get_mut(handle).unwrap();
             let mut entities = Vec::with_capacity(new_chunks.len());
-            for z in 0..map.layers.len() - 1 {
+            for z in 0..map.layers.len() {
                 let mut mesh = Mesh::from(ChunkMesh::new(map.chunk_dimensions));
-                let (indexes, colors) = if let Some(parts) = chunk.tiles_to_renderer_parts(z) {
-                    parts
-                } else {
-                    continue;
-                };
+                let (indexes, colors) =
+                    if let Some(parts) = chunk.tiles_to_renderer_parts(z, map.chunk_dimensions) {
+                        parts
+                    } else {
+                        continue;
+                    };
                 mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes.into());
                 mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors.into());
                 let mesh_handle = meshes.add(mesh);
                 chunk.set_mesh(z, mesh_handle.clone());
 
-                let idx = chunk
-                    .coord()
-                    .to_index(map.dimensions.width(), map.dimensions.height());
-
-                let map_coord = map.dimensions().decode_coord_unchecked(idx);
-                let map_center = map.dimensions().center();
-
                 let translation = Vec3::new(
-                    (map_coord.x() - map_center.x() + 0.5)
-                        * map.tile_dimensions().width()
-                        * map.chunk_dimensions().width(),
-                    (map_coord.y() - map_center.y() + 0.5)
-                        * map.tile_dimensions().height()
-                        * map.chunk_dimensions().height(),
+                    (chunk.point().x()
+                        * map.tile_dimensions.width() as i32
+                        * map.chunk_dimensions.width() as i32) as f32,
+                    (chunk.point().y()
+                        * map.tile_dimensions.height() as i32
+                        * map.chunk_dimensions.height() as i32) as f32,
                     z as f32,
                 );
                 let entity = commands
                     .spawn(ChunkComponents {
                         texture_atlas: map.texture_atlas().clone_weak(),
-                        chunk_dimensions: map.chunk_dimensions().into(),
+                        chunk_dimensions: map.chunk_dimensions.into(),
                         mesh: mesh_handle.clone_weak(),
                         transform: Transform::from_translation(translation),
                         ..Default::default()
@@ -982,7 +1197,6 @@ pub fn map_system(
                     .current_entity()
                     .expect("Chunk entity unexpected does not exist.");
 
-                map.spawned_chunks.push(idx);
                 chunk.add_entity(z, entity);
                 entities.push(entity);
             }
@@ -991,15 +1205,9 @@ pub fn map_system(
 
         for handle in despawned_chunks.iter() {
             let chunk = chunks.get_mut(handle).unwrap();
-            let index = chunk
-                .coord()
-                .to_index(map.dimensions.width(), map.dimensions.height());
             for entity in chunk.get_entities() {
                 commands.despawn(entity);
             }
-
-            let spawned_index = map.spawned_chunks.iter().position(|x| *x == index).unwrap();
-            map.spawned_chunks.remove(spawned_index);
         }
 
         for handle in removed_chunks.iter() {
@@ -1007,13 +1215,7 @@ pub fn map_system(
             for entity in chunk.get_entities() {
                 commands.despawn(entity);
             }
-            let index = chunk
-                .coord()
-                .to_index(map.dimensions.width(), map.dimensions.height());
-            map.chunks.remove(&index);
-
-            let spawned_index = map.spawned_chunks.iter().position(|x| *x == index).unwrap();
-            map.spawned_chunks.remove(spawned_index);
+            map.chunks.remove(&chunk.point());
         }
     }
 }
