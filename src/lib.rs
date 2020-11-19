@@ -19,13 +19,6 @@
 
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
 pub mod chunk;
-/// Various coordinate traits used for converting indexes and coordinates.
-#[deprecated(
-    since = "0.2.0",
-    note = "please use `point::Point2` and `point::Point3` instead, will be removed by v0.3.0"
-)]
-#[doc(hidden)]
-pub mod coord;
 /// Various dimension based traits.
 mod dimensions;
 /// Bundles of components for spawning entities.
@@ -38,12 +31,6 @@ pub mod prelude;
 pub(crate) mod render;
 /// Tile traits to implement for a custom tile.
 pub mod tile;
-/// A growable heap used for setting multiple tiles at once.
-#[deprecated(
-    since = "0.2.0",
-    note = "please use `tile::Tiles` instead, will be removed by v0.3.0"
-)]
-pub mod tile_setter;
 /// Map traits to implement for a custom map and a basic struct for use.
 pub mod tilemap;
 
@@ -125,7 +112,7 @@ mod lib {
         convert::{AsMut, AsRef, From, Into},
         default::Default,
         fmt::{Debug, Formatter, Result as FmtResult},
-        iter::{Extend, IntoIterator, Iterator},
+        iter::{Extend, Iterator},
         ops::{FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},

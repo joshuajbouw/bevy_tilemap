@@ -15,9 +15,6 @@ exclude = ["assets/**/*", ".github/**/*"]
 [features]
 default = ["serde"]
 
-# Prelude version to use.
-v0_1 = []
-
 [dependencies]
 bevy = { version = "0.3", features = ["default"] }
 serde = { version = "1.0", optional = true, features = ["derive"] }
