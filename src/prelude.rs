@@ -15,12 +15,12 @@
 //!
 //! * [`bevy_tilemap::chunk`]::[`LayerKind`], the only public part
 //! of `chunk` module is the kind of layer you need to specify to create.
-//! * [`bevy_tilemap::entity`]::[`TileMapComponents`], the components
-//! for spawning with a TileMap.
-//! * [`bevy_tilemap::map`]::[`TileMap`], the core object that is
+//! * [`bevy_tilemap::entity`]::[`TilemapComponents`], the components
+//! for spawning with a Tilemap.
+//! * [`bevy_tilemap::map`]::[`Tilemap`], the core object that is
 //! used for virtually everything in this library.
 //! * [`bevy_tilemap::tile`]::{[`Tile`], [`Tiles`]}, a sprite tile which
-//! holds minimal amount of data for small data sizes. Used in the `TileMap`.
+//! holds minimal amount of data for small data sizes. Used in the `Tilemap`.
 //! Tiles helps set tiles.
 //! * [`bevy_tilemap`]::[`ChunkTilesPlugin`], the main plugin with
 //! a collection of systems, components and assets to be used in a Bevy app.

@@ -41,11 +41,11 @@ pub fn build_chunk_pipeline(shaders: &mut Assets<Shader>) -> PipelineDescriptor 
         ..PipelineDescriptor::new(ShaderStages {
             vertex: shaders.add(Shader::from_glsl(
                 ShaderStage::Vertex,
-                include_str!("tile_map.vert"),
+                include_str!("tilemap.vert"),
             )),
             fragment: Some(shaders.add(Shader::from_glsl(
                 ShaderStage::Fragment,
-                include_str!("tile_map.frag"),
+                include_str!("tilemap.frag"),
             ))),
         })
     }

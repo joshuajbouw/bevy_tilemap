@@ -59,10 +59,10 @@ impl Default for ChunkComponents {
     }
 }
 
-/// A component bundle for `TileMap` entities.
+/// A component bundle for `Tilemap` entities.
 #[derive(Bundle, Debug)]
 pub struct TilemapComponents {
-    /// A `TileMap` which maintains chunks and its tiles.
+    /// A `Tilemap` which maintains chunks and its tiles.
     pub tilemap: Tilemap,
     /// The transform location in a space for a component.
     pub transform: Transform,

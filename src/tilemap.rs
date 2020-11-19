@@ -41,7 +41,7 @@ impl Debug for ErrorKind {
 }
 
 #[derive(Clone, PartialEq)]
-/// The error type for operations when interacting with the `TileMap`.
+/// The error type for operations when interacting with the `Tilemap`.
 pub struct TilemapError(Box<ErrorKind>);
 
 impl Debug for TilemapError {
@@ -115,7 +115,7 @@ pub(crate) enum TilemapEvent {
     },
 }
 
-/// A TileMap which maintains chunks and its tiles within.
+/// A Tilemap which maintains chunks and its tiles within.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct Tilemap {
@@ -408,7 +408,7 @@ impl Tilemap {
         Builder::default()
     }
 
-    /// Sets the sprite sheet, or `TextureAtlas` for use in the `TileMap`.
+    /// Sets the sprite sheet, or `TextureAtlas` for use in the `Tilemap`.
     ///
     /// This can be used if the need to swap the sprite sheet for another is
     /// wanted.
@@ -426,12 +426,12 @@ impl Tilemap {
     /// # // Chunk's dimensions in tiles
     /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
     /// # // Tile map's dimensions in chunks
-    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
     /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = Tilemap::new(
-    /// #     tile_map_dimensions,
+    /// # let mut tilemap = Tilemap::new(
+    /// #     tilemap_dimensions,
     /// #     chunk_dimensions,
     /// #     tile_dimensions,
     /// #     atlas_handle,
@@ -439,7 +439,7 @@ impl Tilemap {
     /// #
     /// let new_atlas_handle = Handle::weak_from_u64(TextureAtlas::TYPE_UUID, 0987654321);
     ///
-    /// tile_map.set_texture_atlas(new_atlas_handle);
+    /// tilemap.set_texture_atlas(new_atlas_handle);
     /// ```
     pub fn set_texture_atlas(&mut self, handle: Handle<TextureAtlas>) {
         self.texture_atlas = handle;
@@ -461,18 +461,18 @@ impl Tilemap {
     /// # // Chunk's dimensions in tiles
     /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
     /// # // Tile map's dimensions in chunks
-    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
     /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = Tilemap::new(
-    /// #     tile_map_dimensions,
+    /// # let mut tilemap = Tilemap::new(
+    /// #     tilemap_dimensions,
     /// #     chunk_dimensions,
     /// #     tile_dimensions,
     /// #     atlas_handle,
     /// # );
     /// #
-    /// let texture_atlas: &Handle<TextureAtlas> = tile_map.texture_atlas();
+    /// let texture_atlas: &Handle<TextureAtlas> = tilemap.texture_atlas();
     /// ```
     pub fn texture_atlas(&self) -> &Handle<TextureAtlas> {
         &self.texture_atlas
@@ -482,7 +482,7 @@ impl Tilemap {
     ///
     /// It requires that you give it either an index or a Vec2 or Vec3
     /// coordinate. It then automatically sets both a sized mesh and chunk for
-    /// use based on the parameters set in the parent `TileMap`.
+    /// use based on the parameters set in the parent `Tilemap`.
     ///
     /// # Examples
     /// ```
@@ -495,21 +495,21 @@ impl Tilemap {
     /// # // Chunk's dimensions in tiles
     /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
     /// # // Tile map's dimensions in chunks
-    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
     /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = Tilemap::new(
-    /// #    tile_map_dimensions,
+    /// # let mut tilemap = Tilemap::new(
+    /// #    tilemap_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
     /// #    atlas_handle,
     /// # );
     ///
     /// // Add some chunks.
-    /// tile_map.new_chunk(0);
-    /// tile_map.new_chunk(1);
-    /// tile_map.new_chunk(2);
+    /// tilemap.new_chunk(0);
+    /// tilemap.new_chunk(1);
+    /// tilemap.new_chunk(2);
     /// ```
     pub fn new_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
         let point = Point2::new(x, y);
@@ -601,7 +601,7 @@ impl Tilemap {
         Ok(())
     }
 
-    /// Removes a layer from the `TileMap` and inner chunks.
+    /// Removes a layer from the `Tilemap` and inner chunks.
     ///
     /// **Warning**: This is destructive if you have tiles that exist on that
     /// layer. If you want to add them back in, better to use the `move_layer`
@@ -658,7 +658,7 @@ impl Tilemap {
 
     /// Destructively removes a `Chunk` at a coordinate position.
     ///
-    /// Internally, this sends an event to the `TileMap`'s system flagging which
+    /// Internally, this sends an event to the `Tilemap`'s system flagging which
     /// chunks must be removed by index and entity. A chunk is not recoverable
     /// if this action is done.
     ///
@@ -673,27 +673,27 @@ impl Tilemap {
     /// # // Chunk's dimensions in tiles
     /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
     /// # // Tile map's dimensions in chunks
-    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
     /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = Tilemap::new(
-    /// #    tile_map_dimensions,
+    /// # let mut tilemap = Tilemap::new(
+    /// #    tilemap_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
     /// #    atlas_handle,
     /// # );
     /// // Add some chunks.
-    /// tile_map.new_chunk(0);
-    /// tile_map.new_chunk(1);
-    /// tile_map.new_chunk(2);
+    /// tilemap.new_chunk(0);
+    /// tilemap.new_chunk(1);
+    /// tilemap.new_chunk(2);
     ///
     /// // Remove the same chunks in the same frame. Do note that adding then
     /// // removing in the same frame will prevent the entity from spawning at
     /// // all.
-    /// tile_map.remove_chunk(0);
-    /// tile_map.remove_chunk(1);
-    /// tile_map.remove_chunk(2);
+    /// tilemap.remove_chunk(0);
+    /// tilemap.remove_chunk(1);
+    /// tilemap.remove_chunk(2);
     /// ```
     pub fn remove_chunk(&mut self, x: i32, y: i32) -> TilemapResult<()> {
         let point = Point2::new(x, y);
@@ -730,18 +730,18 @@ impl Tilemap {
     /// # // Chunk's dimensions in tiles
     /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
     /// # // Tile map's dimensions in chunks
-    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
     /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = Tilemap::new(
-    /// #    tile_map_dimensions,
+    /// # let mut tilemap = Tilemap::new(
+    /// #    tilemap_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
     /// #    atlas_handle,
     /// # );
     /// // Add a chunk
-    /// tile_map.new_chunk(0);
+    /// tilemap.new_chunk(0);
     ///
     /// let mut new_tiles = TileSetter::new();
     /// new_tiles.push(Vec3::new(1., 1., 0.), Tile::new(1), 0);
@@ -749,7 +749,7 @@ impl Tilemap {
     /// new_tiles.push(Vec3::new(3., 3., 0.), Tile::new(3), 0);
     ///
     /// // Set multiple tiles and unwrap the result
-    /// tile_map.set_tiles(new_tiles).unwrap();
+    /// tilemap.set_tiles(new_tiles).unwrap();
     /// ```
     pub fn set_tiles(&mut self, tiles: Tiles) -> TilemapResult<()> {
         let mut chunk_map: HashMap<Point2, TilePoints> = HashMap::default();
@@ -802,21 +802,21 @@ impl Tilemap {
     /// # // Chunk's dimensions in tiles
     /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
     /// # // Tile map's dimensions in chunks
-    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
     /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = Tilemap::new(
-    /// #    tile_map_dimensions,
+    /// # let mut tilemap = Tilemap::new(
+    /// #    tilemap_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
     /// #    atlas_handle,
     /// # );
     /// // Add a chunk
-    /// tile_map.new_chunk(0);
+    /// tilemap.new_chunk(0);
     ///
     /// // Set a single tile and unwrap the result
-    /// tile_map.set_tile(Vec3::new(15., 15., 0.), Tile::new(1), 0).unwrap();
+    /// tilemap.set_tile(Vec3::new(15., 15., 0.), Tile::new(1), 0).unwrap();
     /// ```
     ///
     /// # Errors
@@ -844,18 +844,18 @@ impl Tilemap {
     /// # // Chunk's dimensions in tiles
     /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
     /// # // Tile map's dimensions in chunks
-    /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    /// # let tilemap_dimensions = Vec2::new(1., 1.,);
     /// # // Handle from the sprite sheet you want
     /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     /// #
-    /// # let mut tile_map = Tilemap::new(
-    /// #    tile_map_dimensions,
+    /// # let mut tilemap = Tilemap::new(
+    /// #    tilemap_dimensions,
     /// #    chunk_dimensions,
     /// #    tile_dimensions,
     /// #    atlas_handle,
     /// # );
     ///
-    /// let center: Vec2 = tile_map.center_tile_coord();
+    /// let center: Vec2 = tilemap.center_tile_coord();
     ///
     /// assert_eq!(Vec2::new(16., 16.), center);
     /// ```
@@ -882,12 +882,12 @@ impl Tilemap {
     /// // Chunk's dimensions in tiles
     /// let chunk_dimensions = Vec3::new(32., 32., 0.);
     /// // Tile map's dimensions in chunks
-    /// let tile_map_dimensions = Vec2::new(3., 3.,);
+    /// let tilemap_dimensions = Vec2::new(3., 3.,);
     /// // Handle from the sprite sheet you want
     /// let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     ///
-    /// let mut tile_map = Tilemap::new(
-    ///    tile_map_dimensions,
+    /// let mut tilemap = Tilemap::new(
+    ///    tilemap_dimensions,
     ///    chunk_dimensions,
     ///    tile_dimensions,
     ///    atlas_handle,
@@ -895,7 +895,7 @@ impl Tilemap {
     ///
     /// let tile_coord = Vec3::new(15., 15., 0.);
     ///
-    /// let chunk_coord = tile_map.tile_coord_to_chunk_coord(tile_coord);
+    /// let chunk_coord = tilemap.tile_coord_to_chunk_coord(tile_coord);
     ///
     /// assert_eq!(Vec2::new(0., 0.), chunk_coord);
     /// ```
@@ -906,12 +906,12 @@ impl Tilemap {
     }
 
     // FIXME: These need to be changed as they will be inaccurate if the
-    // Transform of the TileMap is changed from 0,0.
+    // Transform of the Tilemap is changed from 0,0.
     // /// Takes a translation and calculates the `Tile` coordinate.
     // ///
     // /// # Examples
     // /// ```
-    // /// # use bevy_tilemap::TileMap;
+    // /// # use bevy_tilemap::Tilemap;
     // /// # use bevy::prelude::*;
     // /// # use bevy::type_registry::TypeUuid;
     // /// #
@@ -920,19 +920,19 @@ impl Tilemap {
     // /// # // Chunk's dimensions in tiles
     // /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
     // /// # // Tile map's dimensions in chunks
-    // /// # let tile_map_dimensions = Vec2::new(1., 1.,);
+    // /// # let tilemap_dimensions = Vec2::new(1., 1.,);
     // /// # // Handle from the sprite sheet you want
-    // /// # let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    // /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     // /// #
-    // /// # let mut tile_map = TileMap::new(
-    // /// #    tile_map_dimensions,
+    // /// # let mut tilemap = Tilemap::new(
+    // /// #    tilemap_dimensions,
     // /// #    chunk_dimensions,
     // /// #    tile_dimensions,
     // /// #    atlas_handle,
     // /// # );
     // ///
     // /// let translation = Vec3::new(0., 0., 0.);
-    // /// let tile_coord = tile_map.translation_to_tile_coord(translation);
+    // /// let tile_coord = tilemap.translation_to_tile_coord(translation);
     // ///
     // /// assert_eq!(Vec2::new(16., 16.), tile_coord);
     // /// ```
@@ -944,12 +944,12 @@ impl Tilemap {
     // }
 
     // FIXME: These need to be changed as they will be inaccurate if the
-    // Transform of the TileMap is changed from 0,0.
+    // Transform of the Tilemap is changed from 0,0.
     // /// Takes a translation and calculates the `Chunk` coordinate.
     // ///
     // /// # Examples
     // /// ```
-    // /// use bevy_tilemap::TileMap;
+    // /// use bevy_tilemap::Tilemap;
     // /// use bevy::prelude::*;
     // /// use bevy::type_registry::TypeUuid;
     // ///
@@ -958,19 +958,19 @@ impl Tilemap {
     // /// // Chunk's dimensions in tiles
     // /// let chunk_dimensions = Vec3::new(32., 32., 0.);
     // /// // Tile map's dimensions in chunks
-    // /// let tile_map_dimensions = Vec2::new(3., 3.,);
+    // /// let tilemap_dimensions = Vec2::new(3., 3.,);
     // /// // Handle from the sprite sheet you want
-    // /// let atlas_handle = Handle::weak_from_u64(TileMap::TYPE_UUID, 1234567890);
+    // /// let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
     // ///
-    // /// let mut tile_map = TileMap::new(
-    // ///    tile_map_dimensions,
+    // /// let mut tilemap = Tilemap::new(
+    // ///    tilemap_dimensions,
     // ///    chunk_dimensions,
     // ///    tile_dimensions,
     // ///    atlas_handle,
     // /// );
     // ///
     // /// let translation = Vec3::new(0., 0., 0.);
-    // /// let chunk_coord = tile_map.translation_to_chunk_coord(translation);
+    // /// let chunk_coord = tilemap.translation_to_chunk_coord(translation);
     // ///
     // /// assert_eq!(Vec2::new(1., 1.), chunk_coord);
     // /// ```
@@ -985,7 +985,7 @@ impl Tilemap {
     //     Vec2::new(x as f32, y as f32)
     // }
 
-    /// Returns the dimensions of the `TileMap`.
+    /// Returns the dimensions of the `Tilemap`.
     pub fn dimensions(&self) -> Option<(u32, u32)> {
         self.dimensions.map(|dimensions| dimensions.into())
     }
@@ -1000,7 +1000,7 @@ impl Tilemap {
         self.dimensions.map(|dimensions| dimensions.height())
     }
 
-    /// Returns the chunk dimensions of the `TileMap`.
+    /// Returns the chunk dimensions of the `Tilemap`.
     pub fn chunk_dimensions(&self) -> (u32, u32) {
         self.chunk_dimensions.into()
     }
@@ -1023,7 +1023,7 @@ impl Tilemap {
         )
     }
 
-    /// Returns the tile dimensions of the `TileMap`.
+    /// Returns the tile dimensions of the `Tilemap`.
     pub fn tile_dimensions(&self) -> (u32, u32) {
         self.tile_dimensions.into()
     }
@@ -1056,7 +1056,7 @@ impl Tilemap {
     // }
 }
 
-/// The event handling system for the `TileMap`.
+/// The event handling system for the `Tilemap`.
 ///
 /// There are a few things that happen in this function which are outlined in
 /// order of operation here. It was done in this order that made the most sense
