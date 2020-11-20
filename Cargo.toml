@@ -10,13 +10,10 @@ keywords = ["game", "engine", "bevy", "tiles", "tilemap"]
 categories = ["game-engines", "graphics", "gui"]
 readme = "README.md"
 documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap/"
-exclude = ["assets/**/*", ".github/**/*"]
-
-[features]
-default = ["serde"]
+exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 
 [dependencies]
-bevy = { version = "0.3", features = ["default"] }
+bevy = { version = "0.3" }
 serde = { version = "1.0", optional = true, features = ["derive"] }
 
 [dev-dependencies]
