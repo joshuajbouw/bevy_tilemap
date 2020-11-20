@@ -8,7 +8,7 @@
     - [ ] Double check changed function documentation.
     - [ ] Update [README.md] if needed.
     - [ ] Update [CHANGELOG.md] only significant changes. Follow this 
-    [example by diesel-rs]
+    [example by diesel-rs] and use the [compare function on Github] to help.
 - **Publish**
     - [ ] [Publish on Github] following the template below.
     - [ ] Ensure that the release body and [CHANGELOG.md] are the same.
@@ -23,6 +23,7 @@
 [API guidelines]: https://rust-lang.github.io/api-guidelines/checklist.html
 [example by diesel-rs]: https://github.com/diesel-rs/diesel/blob/master/CHANGELOG.md
 [Publish on Github]: https://github.com/joshuajbouw/bevy_tilemap/releases/new
+[compare function on Github]: https://github.com/joshuajbouw/bevy_tilemap/compare
 
 # Release Template
 
