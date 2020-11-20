@@ -998,7 +998,12 @@ impl Tilemap {
     /// ```
     ///
     /// [`set_tiles`]: Tilemap::set_tiles
-    pub fn set_tile<P: Into<Point3>>(&mut self, point: P, tile: Tile) -> TilemapResult<()> {
+    pub fn set_tile<P, T>(&mut self, point: P, tile: T) -> TilemapResult<()>
+    where
+        P: Into<Point3>,
+        T: Into<Tile>,
+    {
+        let tile: Tile = tile.into();
         let mut tiles = Tiles::default();
         let point: Point3 = point.into();
         tiles.insert((point.x(), point.y(), point.z()), tile);

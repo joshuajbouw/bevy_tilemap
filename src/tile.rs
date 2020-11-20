@@ -123,3 +123,24 @@ impl Tile {
         self.color
     }
 }
+
+macro_rules! into_tile_impl {
+    ($i: ty) => {
+        impl Into<Tile> for $i {
+            fn into(self) -> Tile {
+                Tile::new(self as usize)
+            }
+        }
+    };
+}
+
+into_tile_impl!(usize);
+into_tile_impl!(u64);
+into_tile_impl!(u32);
+into_tile_impl!(u16);
+into_tile_impl!(u8);
+into_tile_impl!(isize);
+into_tile_impl!(i64);
+into_tile_impl!(i32);
+into_tile_impl!(i16);
+into_tile_impl!(i8);
