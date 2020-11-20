@@ -194,12 +194,13 @@ pub struct Tilemap {
 /// [`Tilemap`]: Tilemap
 /// [`TilemapError`]: TilemapError
 /// [`TilemapResult`]: TilemapResult
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Builder {
     dimensions: Option<Dimension2>,
     chunk_dimensions: Dimension2,
     tile_dimensions: Dimension2,
     z_layers: usize,
+    layers: Option<HashMap<usize, LayerKind>>,
     texture_atlas: Option<Handle<TextureAtlas>>,
 }
 
@@ -210,6 +211,7 @@ impl Default for Builder {
             chunk_dimensions: Dimension2::new(32, 32),
             tile_dimensions: Dimension2::new(32, 32),
             z_layers: 20,
+            layers: None,
             texture_atlas: None,
         }
     }
@@ -304,6 +306,35 @@ impl Builder {
         self
     }
 
+    /// Adds a sprite layer that sprites can exist on.
+    ///
+    /// If there are more layers than z_layers is set, builder will construct
+    /// a tilemap with that many layers instead.
+    ///
+    /// In the case that a layer is added twice to the same z_layer, the first
+    /// layer will be overwritten by the later.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::chunk::LayerKind;
+    ///
+    /// let builder = tilemap::Builder::new()
+    ///     .add_layer(LayerKind::Dense, 0)
+    ///     .add_layer(LayerKind::Sparse, 1)
+    ///     .add_layer(LayerKind::Sparse, 2);
+    /// ```
+    pub fn add_layer(mut self, kind: LayerKind, z_layer: usize) -> Builder {
+        if let Some(layers) = &mut self.layers {
+            layers.insert(z_layer, kind);
+        } else {
+            let mut layers = HashMap::default();
+            layers.insert(z_layer, kind);
+            self.layers = Some(layers);
+        }
+        self
+    }
+
     /// Sets the texture atlas, this is **required** to be set.
     ///
     /// # Examples
@@ -316,7 +347,6 @@ impl Builder {
     ///
     /// let builder = tilemap::Builder::new().texture_atlas(texture_atlas_handle);
     /// ```
-    #[must_use]
     pub fn texture_atlas(mut self, handle: Handle<TextureAtlas>) -> Builder {
         self.texture_atlas = Some(handle);
         self
@@ -355,16 +385,36 @@ impl Builder {
             return Err(ErrorKind::MissingTextureAtlas.into());
         };
 
-        Ok(Tilemap {
+        let z_layers = if let Some(layers) = &self.layers {
+            if self.z_layers > layers.len() {
+                self.z_layers
+            } else {
+                layers.len()
+            }
+        } else {
+            self.z_layers
+        };
+
+        let mut tilemap = Tilemap {
             dimensions: self.dimensions,
             chunk_dimensions: self.chunk_dimensions,
             tile_dimensions: self.tile_dimensions,
-            layers: vec![None; self.z_layers as usize],
+            layers: vec![None; z_layers],
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
             events: Default::default(),
-        })
+        };
+
+        if let Some(mut layers) = self.layers {
+            for (z_layer, kind) in layers.drain() {
+                tilemap
+                    .add_layer_with_kind(kind, z_layer)
+                    .expect("A layer already exists here.");
+            }
+        }
+
+        Ok(tilemap)
     }
 }
 
