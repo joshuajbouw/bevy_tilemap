@@ -1,7 +1,3 @@
-// NOTE: There is a lot of code in here commented out. This was intentional.
-// Why? Because these all likely will end up in their own crate and it would
-// not make sense to get rid of that code.
-
 use crate::{lib::*, point::Point2};
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -22,7 +18,7 @@ impl Debug for ErrorKind {
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 /// A MapError indicates that an error with the `[Chunk]` has occurred.
-pub struct DimensionError(Box<ErrorKind>);
+pub(crate) struct DimensionError(Box<ErrorKind>);
 
 impl Display for DimensionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
@@ -39,11 +35,11 @@ impl From<ErrorKind> for DimensionError {
 }
 
 /// A chunk result.
-pub type DimensionResult<T> = Result<T, DimensionError>;
+pub(crate) type DimensionResult<T> = Result<T, DimensionError>;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub struct Dimension2 {
+pub(crate) struct Dimension2 {
     width: u32,
     height: u32,
 }
@@ -125,35 +121,26 @@ impl Dimension2 {
     // }
 }
 
-impl From<(u32, u32)> for Dimension2 {
-    fn from(tuple: (u32, u32)) -> Self {
-        Dimension2 {
-            width: tuple.0,
-            height: tuple.1,
-        }
-    }
-}
-
-impl From<Dimension2> for (u32, u32) {
-    fn from(dimensions: Dimension2) -> (u32, u32) {
-        (dimensions.width(), dimensions.height())
+impl Display for Dimension2 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        write!(f, "{}x{}", self.width(), self.height())
     }
 }
 
 impl From<Dimension2> for Vec2 {
-    fn from(point: Dimension2) -> Vec2 {
-        Vec2::new(point.width() as f32, point.height() as f32)
+    fn from(dimension: Dimension2) -> Vec2 {
+        Vec2::new(dimension.width() as f32, dimension.height() as f32)
     }
 }
 
-// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-// #[derive(Debug, Copy, Clone)]
-// pub struct Dimension3 {
-//     width: u32,
-//     height: u32,
-//     depth: u32,
-// }
-//
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct Dimension3 {
+    width: u32,
+    height: u32,
+    depth: u32,
+}
+
 // /// Trait methods that have to do with the 3rd dimension.
 // impl Dimension3 {
 //     pub(crate) fn new(width: u32, height: u32, depth: u32) -> Dimension3 {
@@ -253,8 +240,14 @@ impl From<Dimension2> for Vec2 {
 //     }
 // }
 //
-// impl From<Dimension3> for (u32, u32, u32) {
-//     fn from(dimensions: Dimension3) -> (u32, u32, u32) {
-//         (dimensions.width(), dimensions.height(), dimensions.depth())
+// impl Display for Dimension3 {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+//         write!(f, "{}x{}x{}", self.width(), self.height(), self.depth())
+//     }
+// }
+//
+// impl From<Dimension3> for Vec3 {
+//     fn from(dimension: Dimension3) -> Vec3 {
+//         Vec3::new(dimension.width() as f32, dimension.height() as f32, dimension.depth() as f32)
 //     }
 // }

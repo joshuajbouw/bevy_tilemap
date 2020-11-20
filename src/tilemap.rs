@@ -1069,31 +1069,6 @@ impl Tilemap {
     //     Vec2::new(x as f32, y as f32)
     // }
 
-    /// Returns the dimensions of the tilemap, if it has dimensions.
-    ///
-    /// # Examples
-    /// ```
-    /// use bevy_tilemap::tilemap;
-    /// use bevy::asset::HandleId;
-    /// use bevy::prelude::*;
-    ///
-    /// // In production use a strong handle from an actual source.
-    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    ///
-    /// let tilemap = tilemap::Builder::new()
-    ///     .texture_atlas(texture_atlas_handle)
-    ///     .dimensions(32, 32)
-    ///     .build()
-    ///     .unwrap();
-    ///
-    /// let dimensions: (u32, u32) = tilemap.dimensions().unwrap();
-    ///
-    /// assert_eq!(dimensions, (32, 32));
-    /// ```
-    pub fn dimensions(&self) -> Option<(u32, u32)> {
-        self.dimensions.map(|dimensions| dimensions.into())
-    }
-
     /// The width of the tilemap in chunks, if it has dimensions.
     ///
     /// # Examples
@@ -1144,31 +1119,6 @@ impl Tilemap {
         self.dimensions.map(|dimensions| dimensions.height())
     }
 
-    /// Returns the chunk dimensions of the `Tilemap`.
-    ///
-    /// # Examples
-    /// ```
-    /// use bevy_tilemap::tilemap;
-    /// use bevy::asset::HandleId;
-    /// use bevy::prelude::*;
-    ///
-    /// // In production use a strong handle from an actual source.
-    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    ///
-    /// let tilemap = tilemap::Builder::new()
-    ///     .texture_atlas(texture_atlas_handle)
-    ///     .chunk_dimensions(32, 32)
-    ///     .build()
-    ///     .unwrap();
-    ///
-    /// let chunk_dimensions: (u32, u32) = tilemap.chunk_dimensions();
-    ///
-    /// assert_eq!(chunk_dimensions, (32, 32));
-    /// ```
-    pub fn chunk_dimensions(&self) -> (u32, u32) {
-        self.chunk_dimensions.into()
-    }
-
     /// The width of all the chunks in tiles.
     ///
     /// # Examples
@@ -1217,31 +1167,6 @@ impl Tilemap {
     /// ```
     pub fn chunk_height(&self) -> u32 {
         self.chunk_dimensions.height()
-    }
-
-    /// Returns the tile dimensions of the tilemap.
-    ///
-    /// # Examples
-    /// ```
-    /// use bevy_tilemap::tilemap;
-    /// use bevy::asset::HandleId;
-    /// use bevy::prelude::*;
-    ///
-    /// // In production use a strong handle from an actual source.
-    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    ///
-    /// let tilemap = tilemap::Builder::new()
-    ///     .texture_atlas(texture_atlas_handle)
-    ///     .tile_dimensions(32, 32)
-    ///     .build()
-    ///     .unwrap();
-    ///
-    /// let tile_dimensions: (u32, u32) = tilemap.tile_dimensions();
-    ///
-    /// assert_eq!(tile_dimensions, (32, 32));
-    /// ```
-    pub fn tile_dimensions(&self) -> (u32, u32) {
-        self.tile_dimensions.into()
     }
 
     /// The width of a tile in pixels.
