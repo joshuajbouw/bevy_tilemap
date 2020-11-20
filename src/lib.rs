@@ -1,3 +1,4 @@
+//! [![](https://github.com/joshuajbouw/bevy_tilemap/blob/master/assets/img/logo.gif)]
 //! # Bevy Tilemap
 //!
 //! Bevy Tilemap allows for Bevy native batch-rendered tiles in maps to be
