@@ -120,7 +120,7 @@ mod lib {
         error::Error,
         fmt::{Debug, Display, Formatter, Result as FmtResult},
         iter::{Extend, IntoIterator, Iterator},
-        ops::{FnMut, FnOnce},
+        ops::{Add, AddAssign, Div, DivAssign, FnMut, FnOnce, Mul, MulAssign, Neg, Sub, SubAssign},
         option::Option::{self, *},
         result::Result::{self, *},
         vec::Vec,
