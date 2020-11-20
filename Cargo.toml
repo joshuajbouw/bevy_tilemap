@@ -11,6 +11,7 @@ categories = ["game-engines", "graphics", "gui"]
 readme = "README.md"
 documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap/"
 exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
+rust = "1.43"
 
 [dependencies]
 bevy = { version = "0.3" }
