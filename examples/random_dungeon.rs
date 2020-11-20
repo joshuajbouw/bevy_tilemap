@@ -1,10 +1,8 @@
-use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode};
-use bevy_tilemap::{
-    dimensions::{Dimensions2, Dimensions3},
-    map::{TileMap, TileMapComponents},
-    tile::{Tile, TileSetter},
-    ChunkTilesPlugin,
+use bevy::{
+    asset::LoadState, ecs::bevy_utils::HashMapExt, prelude::*, sprite::TextureAtlasBuilder,
+    window::WindowMode,
 };
+use bevy_tilemap::prelude::*;
 use rand::Rng;
 
 #[derive(Default, Clone)]
@@ -16,6 +14,7 @@ pub struct TileSpriteHandles {
 #[derive(Default, Clone)]
 pub struct MapState {
     map_loaded: bool,
+    spawned: bool,
 }
 
 fn setup(
@@ -52,23 +51,22 @@ fn load(
         let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
         let atlas_handle = texture_atlases.add(texture_atlas);
 
-        let tile_dimensions = Vec2::new(32., 32.);
-        let chunk_dimensions = Vec3::new(32., 32., 0.);
-        let tile_map_dimensions = Vec2::new(1., 1.);
-        let tile_map = TileMap::new(
-            tile_map_dimensions,
-            chunk_dimensions,
-            tile_dimensions,
-            atlas_handle,
-        );
+        let tilemap = Tilemap::builder()
+            .dimensions(1, 1)
+            .chunk_dimensions(32, 32)
+            .tile_dimensions(32, 32)
+            .z_layers(2)
+            .texture_atlas(atlas_handle)
+            .build()
+            .unwrap();
 
-        let tile_map_components = TileMapComponents {
-            tile_map,
+        let tilemap_components = TilemapComponents {
+            tilemap,
             transform: Default::default(),
             global_transform: Default::default(),
         };
 
-        commands.spawn(tile_map_components);
+        commands.spawn(tilemap_components);
 
         sprite_handles.atlas_loaded = true;
     }
@@ -76,54 +74,49 @@ fn load(
 
 fn build_random_dungeon(
     mut map_state: ResMut<MapState>,
-    mut textures: ResMut<Assets<Texture>>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
-    mut query: Query<&mut TileMap>,
+    mut query: Query<&mut Tilemap>,
 ) {
     if map_state.map_loaded {
         return;
     }
 
     for mut map in query.iter_mut() {
-        for y in 0..map.dimensions().x() as i32 {
-            for x in 0..map.dimensions().y() as i32 {
-                let coord = Vec2::new(x as f32, y as f32);
-                map.new_chunk(coord).unwrap();
+        for y in 0..map.height().unwrap() as i32 {
+            for x in 0..map.height().unwrap() as i32 {
+                map.new_chunk((x, y)).unwrap();
             }
         }
 
-        let width = map.dimensions().width() * map.chunk_dimensions().width();
-        let height = map.dimensions().height() * map.chunk_dimensions().height();
+        let width = (map.width().unwrap() * map.chunk_width()) as i32;
+        let height = (map.height().unwrap() * map.chunk_height()) as i32;
 
         // Then we need to find out what the handles were to our textures we are going to use.
-        let mut floor_sprite: Handle<Texture> = asset_server.get_handle("textures/tile_floor.png");
-        let mut wall_sprite: Handle<Texture> = asset_server.get_handle("textures/tile_wall.png");
-        floor_sprite.make_strong(&mut textures);
-        wall_sprite.make_strong(&mut textures);
-
+        let floor_sprite: Handle<Texture> = asset_server.get_handle("textures/tile_floor.png");
+        let wall_sprite: Handle<Texture> = asset_server.get_handle("textures/tile_wall.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let floor_idx = texture_atlas.get_texture_index(&floor_sprite).unwrap();
         let wall_idx = texture_atlas.get_texture_index(&wall_sprite).unwrap();
         let floor_tile = Tile::new(floor_idx);
         let wall_tile = Tile::new(wall_idx);
 
-        // We must use the new handy `TileSetter` tool which is a wrapped `Vec`
-        let mut setter = TileSetter::with_capacity((height * width) as usize);
-        for y in 0..(height as i32) {
-            for x in 0..(width as i32) {
-                setter.push(Vec3::new(x as f32, y as f32, 0.), floor_tile);
+        // We must use the new handy `Tiles` tool which is a wrapped `Vec`
+        let mut tiles = Tiles::with_capacity((height * width) as usize);
+        for y in 0..height {
+            for x in 0..width {
+                tiles.insert((x, y, 0), floor_tile);
             }
         }
         // Then we push in all wall tiles on the X axis.
-        for x in 0..(width as i32) {
-            setter.push(Vec3::new(x as f32, 0., 0.), wall_tile);
-            setter.push(Vec3::new(x as f32, height - 1., 0.), wall_tile);
+        for x in 0..width {
+            tiles.insert((x, 0, 0), wall_tile);
+            tiles.insert((x, height - 1, 0), wall_tile);
         }
         // Then the wall tiles on the Y axis.
-        for y in 0..(height as i32) {
-            setter.push(Vec3::new(0., y as f32, 0.), wall_tile);
-            setter.push(Vec3::new(width - 1., y as f32, 0.), wall_tile);
+        for y in 0..height {
+            tiles.insert((0, y, 0), wall_tile);
+            tiles.insert((width - 1, y, 0), wall_tile);
         }
         // Lets just generate some random walls to sparsely place around the dungeon!
         let range = (width * height) as usize / 5;
@@ -131,24 +124,37 @@ fn build_random_dungeon(
         for _ in 0..range {
             let x = rng.gen_range(1, width as i32);
             let y = rng.gen_range(1, height as i32);
-            let coord = Vec3::new(x as f32, y as f32, 0.);
-            if coord != Vec3::new(width as f32 / 2., height as f32 / 2., 0.) {
-                setter.push(Vec3::new(x as f32, y as f32, 0.), wall_tile);
+            let coord = (x, y, 0i32);
+            if coord != (width / 2, height / 2, 0) {
+                tiles.insert((x, y, 0), wall_tile);
             }
         }
 
-        // Lets do the same as the above, but lets add in a dwarf friend!
-        let mut dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf.png");
-        dwarf_sprite.make_strong(&mut textures);
+        // The above should give us a neat little randomized dungeon! However,
+        // we are missing a hero! First, we need to add a layer. We must make
+        // this layer `Sparse` else we will lose efficiency with our data!
+        //
+        // You might've noticed that we didn't create a layer for z_layer 0 but
+        // yet it still works and exists. By default if a layer doesn't exist
+        // and tiles need to be written there then a Dense layer is created
+        // automatically.
+        map.add_layer_with_kind(LayerKind::Sparse, 1).unwrap();
 
+        // Now lets add in a dwarf friend!
+        let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf.png");
         let dwarf_idx = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         let dwarf_tile = Tile::new(dwarf_idx);
-        setter.push(
-            Vec3::new(width as f32 / 2., height as f32 / 2., 0.),
+        tiles.insert(
+            (width / 2, height / 2, 1), // Do note that we are pushing him onto z_layer 1 now!
             dwarf_tile,
         );
 
-        map.set_tiles(setter).unwrap();
+        // Now we pass all the tiles to our map.
+        map.set_tiles(&mut tiles).unwrap();
+
+        // Finally we spawn the chunk! In actual use this should be done in a
+        // spawn system.
+        map.spawn_chunk((0, 0)).unwrap();
 
         map_state.map_loaded = true;
     }

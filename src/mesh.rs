@@ -1,35 +1,24 @@
-use crate::{dimensions::Dimensions3, lib::*};
+use crate::{dimension::Dimension2, lib::*};
 use bevy::render::pipeline::PrimitiveTopology;
 
-pub struct ChunkMesh {
-    width: u32,
-    height: u32,
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub(crate) struct ChunkMesh {
+    dimensions: Dimension2,
 }
 
 impl ChunkMesh {
-    pub const ATTRIBUTE_TILE_INDEX: &'static str = "Vertex_Tile_Index";
-    pub const ATTRIBUTE_TILE_COLOR: &'static str = "Vertex_Tile_Color";
+    pub(crate) const ATTRIBUTE_TILE_INDEX: &'static str = "Vertex_Tile_Index";
+    pub(crate) const ATTRIBUTE_TILE_COLOR: &'static str = "Vertex_Tile_Color";
 
-    pub fn new(dimensions: Vec3) -> ChunkMesh {
-        ChunkMesh {
-            width: dimensions.width() as u32,
-            height: dimensions.height() as u32,
-        }
-    }
-
-    pub fn width(&self) -> u32 {
-        self.width
-    }
-
-    pub fn height(&self) -> u32 {
-        self.height
+    pub(crate) fn new(dimensions: Dimension2) -> ChunkMesh {
+        ChunkMesh { dimensions }
     }
 }
 
-impl From<ChunkMesh> for Mesh {
-    fn from(chunk_mesh: ChunkMesh) -> Mesh {
-        let chunk_width = chunk_mesh.width() as i32;
-        let chunk_height = chunk_mesh.height() as i32;
+impl From<&ChunkMesh> for Mesh {
+    fn from(chunk_mesh: &ChunkMesh) -> Mesh {
+        let chunk_width = chunk_mesh.dimensions.width() as i32;
+        let chunk_height = chunk_mesh.dimensions.height() as i32;
         let step_size_x = 1. / chunk_width as f32;
         let step_size_y = 1. / chunk_height as f32;
         let start_x = chunk_width as f32 * -0.5;

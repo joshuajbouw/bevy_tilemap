@@ -41,11 +41,11 @@ pub fn build_chunk_pipeline(shaders: &mut Assets<Shader>) -> PipelineDescriptor 
         ..PipelineDescriptor::new(ShaderStages {
             vertex: shaders.add(Shader::from_glsl(
                 ShaderStage::Vertex,
-                include_str!("tile_map.vert"),
+                include_str!("tilemap.vert"),
             )),
             fragment: Some(shaders.add(Shader::from_glsl(
                 ShaderStage::Fragment,
-                include_str!("tile_map.frag"),
+                include_str!("tilemap.frag"),
             ))),
         })
     }
@@ -65,8 +65,12 @@ impl TilemapRenderGraphBuilder for RenderGraph {
             node::CHUNK_DIMENSIONS,
             RenderResourcesNode::<ChunkDimensions>::new(true),
         );
-        let mut pipelines = resources.get_mut::<Assets<PipelineDescriptor>>().unwrap();
-        let mut shaders = resources.get_mut::<Assets<Shader>>().unwrap();
+        let mut pipelines = resources
+            .get_mut::<Assets<PipelineDescriptor>>()
+            .expect("`PipelineDescriptor` is missing.");
+        let mut shaders = resources
+            .get_mut::<Assets<Shader>>()
+            .expect("`Shader` is missing.");
         pipelines.set_untracked(CHUNK_PIPELINE_HANDLE, build_chunk_pipeline(&mut shaders));
         self
     }
