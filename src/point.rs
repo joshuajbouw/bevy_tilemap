@@ -103,6 +103,17 @@ point2_arr_impl!([u32; 2]);
 point2_arr_impl!([u16; 2]);
 point2_arr_impl!([u8; 2]);
 
+point2_arr_impl!([isize; 3]);
+point2_arr_impl!([i64; 3]);
+point2_arr_impl!([i32; 3]);
+point2_arr_impl!([i16; 3]);
+point2_arr_impl!([i8; 3]);
+point2_arr_impl!([usize; 3]);
+point2_arr_impl!([u64; 3]);
+point2_arr_impl!([u32; 3]);
+point2_arr_impl!([u16; 3]);
+point2_arr_impl!([u8; 3]);
+
 macro_rules! point2_tuple_impl {
     ($t: ty) => {
         impl From<$t> for Point2 {
@@ -129,6 +140,17 @@ point2_tuple_impl!((u64, u64));
 point2_tuple_impl!((u32, u32));
 point2_tuple_impl!((u16, u16));
 point2_tuple_impl!((u8, u8));
+
+point2_tuple_impl!((isize, isize, isize));
+point2_tuple_impl!((i64, i64, i64));
+point2_tuple_impl!((i32, i32, i32));
+point2_tuple_impl!((i16, i16, i16));
+point2_tuple_impl!((i8, i8, i8));
+point2_tuple_impl!((usize, usize, usize));
+point2_tuple_impl!((u64, u64, u64));
+point2_tuple_impl!((u32, u32, u32));
+point2_tuple_impl!((u16, u16, u16));
+point2_tuple_impl!((u8, u8, u8));
 
 impl Add for Point2 {
     type Output = Point2;
