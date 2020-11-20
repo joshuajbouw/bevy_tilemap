@@ -1039,86 +1039,6 @@ impl Tilemap {
         })
     }
 
-    // FIXME: These need to be changed as they will be inaccurate if the
-    // Transform of the Tilemap is changed from 0,0.
-    // /// Takes a translation and calculates the `Tile` coordinate.
-    // ///
-    // /// # Examples
-    // /// ```
-    // /// # use bevy_tilemap::Tilemap;
-    // /// # use bevy::prelude::*;
-    // /// # use bevy::type_registry::TypeUuid;
-    // /// #
-    // /// # // Tile's dimensions in pixels
-    // /// # let tile_dimensions = Vec2::new(32., 32.);
-    // /// # // Chunk's dimensions in tiles
-    // /// # let chunk_dimensions = Vec3::new(32., 32., 0.);
-    // /// # // Tile map's dimensions in chunks
-    // /// # let tilemap_dimensions = Vec2::new(1., 1.,);
-    // /// # // Handle from the sprite sheet you want
-    // /// # let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
-    // /// #
-    // /// # let mut tilemap = Tilemap::new(
-    // /// #    tilemap_dimensions,
-    // /// #    chunk_dimensions,
-    // /// #    tile_dimensions,
-    // /// #    atlas_handle,
-    // /// # );
-    // ///
-    // /// let translation = Vec3::new(0., 0., 0.);
-    // /// let tile_coord = tilemap.translation_to_tile_coord(translation);
-    // ///
-    // /// assert_eq!(Vec2::new(16., 16.), tile_coord);
-    // /// ```
-    // pub fn translation_to_tile_coord(&self, translation: Vec3) -> Vec2 {
-    //     let center = self.center_tile_coord();
-    //     let x = translation.x() / self.tile_dimensions.width() as f32 + center.x();
-    //     let y = translation.y() / self.tile_dimensions.height() as f32 + center.y();
-    //     Vec2::new(x, y)
-    // }
-
-    // FIXME: These need to be changed as they will be inaccurate if the
-    // Transform of the Tilemap is changed from 0,0.
-    // /// Takes a translation and calculates the `Chunk` coordinate.
-    // ///
-    // /// # Examples
-    // /// ```
-    // /// use bevy_tilemap::Tilemap;
-    // /// use bevy::prelude::*;
-    // /// use bevy::type_registry::TypeUuid;
-    // ///
-    // /// // Tile's dimensions in pixels
-    // /// let tile_dimensions = Vec2::new(32., 32.);
-    // /// // Chunk's dimensions in tiles
-    // /// let chunk_dimensions = Vec3::new(32., 32., 0.);
-    // /// // Tile map's dimensions in chunks
-    // /// let tilemap_dimensions = Vec2::new(3., 3.,);
-    // /// // Handle from the sprite sheet you want
-    // /// let atlas_handle = Handle::weak_from_u64(Tilemap::TYPE_UUID, 1234567890);
-    // ///
-    // /// let mut tilemap = Tilemap::new(
-    // ///    tilemap_dimensions,
-    // ///    chunk_dimensions,
-    // ///    tile_dimensions,
-    // ///    atlas_handle,
-    // /// );
-    // ///
-    // /// let translation = Vec3::new(0., 0., 0.);
-    // /// let chunk_coord = tilemap.translation_to_chunk_coord(translation);
-    // ///
-    // /// assert_eq!(Vec2::new(1., 1.), chunk_coord);
-    // /// ```
-    // pub fn translation_to_chunk_coord(&self, translation: Vec3) -> Vec2 {
-    //     let center = self.dimensions.center();
-    //     let x = translation.x() as i32
-    //         / (self.tile_dimensions.width() as i32 * self.chunk_dimensions.width() as i32)
-    //         + center.x() as i32;
-    //     let y = translation.y() as i32
-    //         / (self.tile_dimensions.height() as i32 * self.chunk_dimensions.height() as i32)
-    //         + center.y() as i32;
-    //     Vec2::new(x as f32, y as f32)
-    // }
-
     /// The width of the tilemap in chunks, if it has dimensions.
     ///
     /// # Examples
@@ -1268,23 +1188,6 @@ impl Tilemap {
     pub fn tile_height(&self) -> u32 {
         self.tile_dimensions.height()
     }
-
-    // /// Takes a `Tile` coordinate and returns its location in the `Map`.
-    // pub fn chunk_to_world_coord(&self, coord: &Vec3, translation: Vec2) -> Option<Vec3> {
-    //     // takes in translation of tile
-    //     let chunk_x = (translation.x() / self.tile_dimensions.width() / self.dimensions.width())
-    //         + self.dimensions.max_x()
-    //         - 1.;
-    //     let chunk_y = 2.
-    //         - (translation.y() / self.tile_dimensions.height() / self.dimensions.height()
-    //             + self.dimensions.max_y()
-    //             - 1.);
-    //     let x = self.dimensions.width() * chunk_x + coord.x();
-    //     let y = (self.dimensions.height() * self.dimensions.max_y())
-    //         - (self.dimensions.height() * chunk_y)
-    //         + coord.y();
-    //     Some(Vec3::new(x, y, coord.z()))
-    // }
 }
 
 /// The event handling system for the `Tilemap`.
