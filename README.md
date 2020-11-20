@@ -6,7 +6,7 @@
 
 Chunk based tilemap for Bevy game engine.
 
-![](assets/img/example.png)
+![](assets/img/logo.gif)
 
 Bevy Tilemap allows for Bevy native batch-rendered tiles in maps to be 
 constructed with chunk based loading, efficiently.
