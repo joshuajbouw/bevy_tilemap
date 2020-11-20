@@ -44,7 +44,7 @@ impl Debug for ErrorKind {
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-/// The error type for operations when interacting with the `Tilemap`.
+/// The error type for operations when interacting with the tilemap.
 pub struct TilemapError(Box<ErrorKind>);
 
 impl Display for TilemapError {
@@ -70,7 +70,7 @@ impl From<DimensionError> for TilemapError {
 /// A map result.
 pub type TilemapResult<T> = Result<T, TilemapError>;
 
-/// Events that happen on a `Chunk` by index value.
+/// Events that happen on a chunk by index value.
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) enum TilemapEvent {
     /// To be used when a chunk is created.
@@ -110,12 +110,12 @@ pub(crate) enum TilemapEvent {
     SpawnedChunk { handle: Handle<Chunk> },
     /// If the chunk needs to be despawned, this event is used.
     DespawnedChunk {
-        /// The handle of the `Chunk` that needs to be despawned.
+        /// The handle of the chunk that needs to be despawned.
         handle: Handle<Chunk>,
     },
     /// If the chunk needs to be removed.
     RemovedChunk {
-        /// The handle of the `Chunk` that needs to be removed.
+        /// The handle of the chunk that needs to be removed.
         handle: Handle<Chunk>,
     },
 }
@@ -157,7 +157,7 @@ pub struct Tilemap {
 /// to use for the tilemap.
 ///
 /// The [`build`] method will take ownership and consume the builder returning
-/// a [`TilemapResult`] with either an [`TilemapError`] or the [`Tilemap`].
+/// a [`TilemapResult`] with either an [`TilemapError`] or the [tilemap].
 ///
 /// # Examples
 /// ```
@@ -191,7 +191,7 @@ pub struct Tilemap {
 /// [`texture_atlas`]: Builder::texture_atlas
 /// [`tile_dimensions`]: Builder::tile_dimensions
 /// [`z_layers`]: Builder::z_layers
-/// [`Tilemap`]: Tilemap
+/// [tilemap]: Tilemap
 /// [`TilemapError`]: TilemapError
 /// [`TilemapResult`]: TilemapResult
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -221,11 +221,11 @@ impl Builder {
     /// Configures the builder with the default settings.
     ///
     /// Is equivalent to [`default`] and [`builder`] method in the
-    /// [`Tilemap`]. Start with this then you are able to method chain.
+    /// [tilemap]. Start with this then you are able to method chain.
     ///
     /// [`default`]: Builder::default
     /// [`builder`]: Tilemap::builder
-    /// [`Tilemap`]: Tilemap
+    /// [tilemap]: Tilemap
     /// # Examples
     /// ```
     /// use bevy_tilemap::tilemap::{self, Tilemap};
@@ -308,11 +308,12 @@ impl Builder {
 
     /// Adds a sprite layer that sprites can exist on.
     ///
-    /// If there are more layers than z_layers is set, builder will construct
-    /// a tilemap with that many layers instead.
+    /// Takes in a [`LayerKind`] and a Z layer and adds it to the builder.
     ///
-    /// In the case that a layer is added twice to the same z_layer, the first
-    /// layer will be overwritten by the later.
+    /// If there are more layers than Z layers is set, builder will construct
+    /// a tilemap with that many layers instead. In the case that a layer is
+    /// added twice to the same Z layer, the first layer will be overwritten by
+    /// the later.
     ///
     /// # Examples
     /// ```
@@ -324,6 +325,8 @@ impl Builder {
     ///     .add_layer(LayerKind::Sparse, 1)
     ///     .add_layer(LayerKind::Sparse, 2);
     /// ```
+    ///
+    /// [`LayerKind`]: crate::chunk::LayerKind
     pub fn add_layer(mut self, kind: LayerKind, z_layer: usize) -> Builder {
         if let Some(layers) = &mut self.layers {
             layers.insert(z_layer, kind);
@@ -354,7 +357,7 @@ impl Builder {
 
     /// Consumes the builder and returns a result.
     ///
-    /// If successful a [`TilemapResult`] is return with [`Tilemap`] on
+    /// If successful a [`TilemapResult`] is return with [tilemap] on
     /// succes or a [`TilemapError`] if there is an issue.
     ///
     /// # Errors
@@ -375,7 +378,7 @@ impl Builder {
     /// ```
     ///
     /// [`texture_atlas`]: Builder::texture_atlas
-    /// [`Tilemap`]: Tilemap
+    /// [tilemap]: Tilemap
     /// [`TilemapError`]: TilemapError
     /// [`TilemapResult`]: TilemapResult
     pub fn build(self) -> TilemapResult<Tilemap> {
@@ -455,6 +458,8 @@ impl Tilemap {
     ///
     /// let tilemap = Tilemap::new(texture_atlas_handle);
     /// ```
+    ///
+    /// [`default`]: Tilemap::default
     pub fn new(texture_atlas: Handle<TextureAtlas>) -> Tilemap {
         Tilemap {
             texture_atlas,
@@ -465,11 +470,11 @@ impl Tilemap {
     /// Configures the builder with the default settings.
     ///
     /// Is equivalent to [`default`] and [`builder`] method in the
-    /// [`Tilemap`]. Start with this then you are able to method chain.
+    /// [tilemap]. Start with this then you are able to method chain.
     ///
     /// [`default`]: Builder::default
     /// [`builder`]: Tilemap::builder
-    /// [`Tilemap`]: Tilemap
+    /// [tilemap]: Tilemap
     ///
     /// # Examples
     /// ```
@@ -489,7 +494,7 @@ impl Tilemap {
         Builder::default()
     }
 
-    /// Sets the sprite sheet, or `TextureAtlas` for use in the `Tilemap`.
+    /// Sets the sprite sheet, or `TextureAtlas` for use in the tilemap.
     ///
     /// This can be used if the need to swap the sprite sheet for another is
     /// wanted.
@@ -539,11 +544,11 @@ impl Tilemap {
             .send(TilemapEvent::CreatedChunk { point, handle });
     }
 
-    /// Constructs a new `Chunk` and stores it at a coordinate position.
+    /// Constructs a new chunk and stores it at a coordinate position.
     ///
-    /// It requires that you give it either an index or a Vec2 or Vec3
-    /// coordinate. It then automatically sets both a sized mesh and chunk for
-    /// use based on the parameters set in the parent `Tilemap`.
+    /// It requires that you give it either a point. It then automatically sets
+    /// both a sized mesh and chunk for use based on the parameters set in the
+    /// parent tilemap.
     ///
     /// # Examples
     /// ```
@@ -572,7 +577,7 @@ impl Tilemap {
         Ok(())
     }
 
-    /// Adds a layer to the `Tilemap` with a specified layer kind.
+    /// Adds a layer to the tilemap with a specified layer kind.
     ///
     /// This method takes in a [`LayerKind`] as well as a specified Z layer
     /// that the layer needs to be set to. If the layer is already the specified
@@ -617,14 +622,14 @@ impl Tilemap {
         Ok(())
     }
 
-    /// Adds a layer to the `Tilemap`.
+    /// Adds a layer to the tilemap.
     ///
     /// This method creates a layer across all chunks at the specified Z layer.
     /// For ease of use, it by default makes a layer with a dense
     /// [`LayerKind`] which is ideal for layers full of sprites.
     ///
     /// If you want to use a layer that is more performant and less data heavy,
-    /// use `add_layer_with_kind` with [`LayerKind::Sparse`].
+    /// use [`add_layer_with_kind`] with [`LayerKind::Sparse`].
     ///
     /// If the layer is already the specified layer's kind, then nothing
     /// happens.
@@ -649,6 +654,10 @@ impl Tilemap {
     /// #
     /// tilemap.add_layer(1).unwrap();
     /// ```
+    ///
+    /// [`add_layer_with_kind`]: Tilemap::add_layer_with_kind
+    /// [`LayerKind`]: crate::chunk::LayerKind;
+    /// [`LayerKind::Sparse`]: crate::chunk::LayerKind::Sparse;
     pub fn add_layer(&mut self, z_layer: usize) -> TilemapResult<()> {
         self.add_layer_with_kind(LayerKind::Dense, z_layer)
     }
@@ -697,10 +706,10 @@ impl Tilemap {
         Ok(())
     }
 
-    /// Removes a layer from the `Tilemap` and inner chunks.
+    /// Removes a layer from the tilemap and inner chunks.
     ///
     /// **Warning**: This is destructive if you have tiles that exist on that
-    /// layer. If you want to add them back in, better to use the `move_layer`
+    /// layer. If you want to add them back in, better to use the [`move_layer`]
     /// method instead.
     ///
     /// This method takes in a Z layer which is then flagged for deletion. If
@@ -724,6 +733,8 @@ impl Tilemap {
     /// // existing between frames.
     /// tilemap.remove_layer(1);
     /// ```
+    ///
+    /// [`move_layer`]: TIlemap::move_layer
     pub fn remove_layer(&mut self, z: usize) {
         if self.layers[z].is_none() {
             return;
@@ -734,14 +745,12 @@ impl Tilemap {
         self.events.send(TilemapEvent::RemovedLayer { z_layer: z })
     }
 
-    /// Spawns a stored chunk at a given index or coordinate.
-    ///
-    /// It is required to construct a new chunk with [`new_chunk`] first.
+    /// Spawns a chunk at a given index or coordinate.
     ///
     /// # Errors
     ///
-    /// If the coordinate or index is out of bounds, an error will be returned.
-    /// Also if the chunk that needs to spawn does not exist expect an error.
+    /// If the coordinate or index is out of bounds or if the chunk does not
+    /// exist, an error will be returned.
     ///
     /// # Examples
     /// ```
@@ -779,6 +788,35 @@ impl Tilemap {
         });
 
         Ok(())
+    }
+
+    /// Spawns a chunk at a given tile point.
+    ///
+    /// # Errors
+    ///
+    /// If the coordinate or index is out of bounds or if the chunk does not
+    /// exist, an error will be returned.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// let tile_point = (16, 16, 0);
+    /// let tile_index = 0;
+    /// tilemap.set_tile(tile_point, tile_index);
+    ///
+    /// tilemap.spawn_chunk_containing_point(tile_point);
+    /// ```
+    pub fn spawn_chunk_containing_point<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
+        let point = self.tile_to_chunk_point(point);
+        self.spawn_chunk(point)
     }
 
     /// De-spawns a spawned chunk at a given index or coordinate.
@@ -830,9 +868,9 @@ impl Tilemap {
         Ok(())
     }
 
-    /// Destructively removes a `Chunk` at a coordinate position.
+    /// Destructively removes a chunk at a coordinate position.
     ///
-    /// Internally, this sends an event to the `Tilemap`'s system flagging which
+    /// Internally, this sends an event to the tilemap's system flagging which
     /// chunks must be removed by index and entity. A chunk is not recoverable
     /// if this action is done.
     ///
@@ -842,7 +880,7 @@ impl Tilemap {
     /// Also if the chunk that needs to spawn does not exist expect an error.
     ///
     /// # Examples
-    /// ```no_run
+    /// ```
     /// # use bevy_tilemap::tilemap::Tilemap;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
@@ -882,18 +920,46 @@ impl Tilemap {
         Ok(())
     }
 
-    /// Takes a tile coordinate and changes it into a chunk coordinate.
-    fn tile_coord_to_chunk_coord(&self, point: &Point3) -> Point2 {
+    /// Takes a tile point and changes it into a chunk point.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// let tile_point = (16, 16);
+    /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
+    ///
+    /// assert_eq!((0, 0), chunk_point);
+    ///
+    /// let tile_point = (33, 33);
+    /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
+    ///
+    /// assert_eq!((1, 1), chunk_point);
+    ///
+    /// let tile_point = (-33, -33);
+    /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
+    ///
+    /// assert_eq!((-1, -1), chunk_point);
+    /// ```
+    pub fn tile_to_chunk_point<P: Into<Point2>>(&self, point: P) -> (i32, i32) {
+        let point: Point2 = point.into();
         let x = point.x() / self.chunk_dimensions.width() as i32;
         let y = point.y() / self.chunk_dimensions.height() as i32;
-        Point2::new(x, y)
+        (x, y)
     }
 
     /// Sets many tiles using a `Tiles` map, creating new chunks if needed.
     ///
     /// [`Tiles`] is used here to make it convenient to set many tiles at one
     /// time and to reduce the number of internal events. The method drains
-    /// [`Tiles`], leaving it empty.
+    /// [`Tiles`], leaving it empty for potential future use.
     ///
     /// If setting a single tile is more preferable, then use the [`set_tile`]
     /// method instead.
@@ -923,8 +989,12 @@ impl Tilemap {
     /// tiles.insert((2, 2, 0), Tile::new(2));
     /// tiles.insert((3, 3, 0), Tile::new(3));
     ///
+    /// assert_eq!(tiles.len(), 3);
+    ///
     /// // Set multiple tiles and unwrap the result
     /// tilemap.set_tiles(&mut tiles).unwrap();
+    ///
+    /// assert_eq!(tiles.len(), 0);
     /// ```
     ///
     /// [`set_tile`]: Tilemap::set_tile
@@ -933,7 +1003,7 @@ impl Tilemap {
         let mut chunk_map: HashMap<Point2, TilePoints> = HashMap::default();
         for (points, tile) in tiles.drain() {
             let global_tile_point: Point3 = points.into();
-            let chunk_point = self.tile_coord_to_chunk_coord(&global_tile_point);
+            let chunk_point: Point2 = self.tile_to_chunk_point(&global_tile_point).into();
 
             if self.layers[global_tile_point.z() as usize].is_none() {
                 self.add_layer(global_tile_point.z() as usize)?;
@@ -972,7 +1042,7 @@ impl Tilemap {
     /// Sets a single tile at a coordinate position, creating a chunk if necessary.
     ///
     /// For convenience, this does not require to use a TileSetter which is beneficial for multiple
-    /// tiles. If that is preferred, do use [set_tiles] instead.
+    /// tiles. If that is preferred, do use [`set_tiles`] instead.
     ///
     /// If the chunk does not yet exist, it will create a new one automatically.
     ///
@@ -1195,7 +1265,7 @@ impl Tilemap {
     }
 }
 
-/// The event handling system for the `Tilemap`.
+/// The event handling system for the tilemap.
 ///
 /// There are a few things that happen in this function which are outlined in
 /// order of operation here. It was done in this order that made the most sense
