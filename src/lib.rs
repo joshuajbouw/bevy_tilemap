@@ -1,18 +1,127 @@
 //! # Bevy Tilemap
 //!
-//! Bevy Tilemap allows for Bevy native tile maps to be created with chunk based loading
-//! efficiently and generically.
+//! Bevy Tilemap allows for Bevy native batch-rendered tiles in maps to be
+//! constructed with chunk based loading, efficiently.
 //!
-//! Through the use of the power of traits, it is possible to define your own tiles, chunks, and
-//! maps exclusive from each other. This allows this to be used as a framework to expand upon it
-//! further.
+//! Simple yet refined in its implementation, it is meant to attach to other
+//! extensible plugins that can enhance its functionality further. Hand-crafted
+//! tilemaps with an attentive focus on performance, and low data usage.
+//!
+//! ## Features
+//! * Perfect for game jams.
+//! * Easy to use and stable API with thorough documentation.
+//! * Endless or constrained tilemaps.
+//! * Batched rendering of many tiles.
 //!
 //! ## Design
+//! This is not intended to be just another Tile Map. It is meant to be a
+//! framework and extensible by design, like Bevy. As well as work done to keep
+//! it as close to Bevy API as possible while keeping in mind of Rust API best
+//! practices. It is not meant to be complicated and created to be simple to use
+//! but give enough functionality to advanced users.
 //!
-//! This is not intended to be just another Tile Map. It is meant to be a framework and extensible by
-//! design, like Bevy. There is an emphasis placed on generic traits to accomplish that. As well as
-//! work done to keep it as close to Bevy API as possible. This allows anyone to create their own tiles,
-//! chunks and maps and still retain the speed of a handcrafted multi-threaded chunk loader and tile map.
+//! Less time fiddling, more time building.
+//!
+//! # Constructing a basic tilemap, setting tiles, and spawning.
+//!
+//! Bevy Tilemap makes it easy to quickly implement a tilemap if you are in a
+//! rush or want to build a conceptual game.
+//!
+//! ```
+//! use bevy_tilemap::prelude::*;
+//! use bevy::asset::HandleId;
+//! use bevy::prelude::*;
+//!
+//! // This must be set in Asset<TextureAtlas>.
+//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+//!
+//! let mut tilemap = Tilemap::new(texture_atlas_handle);
+//!
+//! // Coordinate point with Z order.
+//! let point = (16, 16, 0);
+//! let tile_index = 0;
+//! tilemap.set_tile(point, tile_index);
+//!
+//! tilemap.spawn_chunk_containing_point(point);
+//! ```
+//!
+//! # Constructing a more advanced tilemap.
+//!
+//! For most cases, it is preferable to construct a tilemap with explicit
+//! parameters. For that you would use a [`Builder`].
+//!
+//! ```
+//! use bevy_tilemap::prelude::*;
+//! use bevy::asset::HandleId;
+//! use bevy::prelude::*;
+//!
+//! // This must be set in Asset<TextureAtlas>.
+//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+//!
+//! let mut tilemap = Tilemap::builder()
+//!     .texture_atlas(texture_atlas_handle)
+//!     .chunk_dimensions(64, 64)
+//!     .tile_dimensions(8, 8)
+//!     .dimensions(32, 32)
+//!     .add_layer(LayerKind::Dense, 0)
+//!     .add_layer(LayerKind::Sparse, 1)
+//!     .add_layer(LayerKind::Sparse, 2)
+//!     .z_layers(3)
+//!     .build()
+//!     .unwrap();
+//! ```
+//!
+//! The above example outlines all the current possible builder methods. What is
+//! neat is that if more layers are accidentally set than z_layer set, it will
+//! use the layer length instead. Much more features are planned including
+//! automated systems that will enhance the tilemap further.
+//!
+//! # Setting tiles
+//!
+//! There are two methods to set tiles in the tilemap. The first is single tiles
+//! at a time which is acceptable for tiny updates such as moving around
+//! characters. The second being bulk setting many tiles at once.
+//!
+//! If you expect to move multiple tiles a frame, **always** use the [`Tiles`]
+//! map and set it with [`set_tiles`]. A single event is created with all
+//! tiles if set this way.
+//!
+//! ```
+//! use bevy_tilemap::prelude::*;
+//! use bevy::asset::HandleId;
+//! use bevy::prelude::*;
+//!
+//! // This must be set in Asset<TextureAtlas>.
+//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+//!
+//! let mut tilemap = Tilemap::new(texture_atlas_handle);
+//!
+//! // Prefer this
+//! let mut tiles = Tiles::default();
+//! for y in 0..31 {
+//!     for x in 0..31 {
+//!         tiles.insert((x, y, 0), 0.into());
+//!     }
+//! }
+//!
+//! tilemap.set_tiles(&mut tiles);
+//!
+//! // Over this...
+//! for y in 0..31 {
+//!     for x in 0..31 {
+//!         tilemap.set_tile((x, y, 0), 0);
+//!     }
+//! }
+//! ```
+//!
+//! # Serde support
+//!
+//! Optionally serde is supported through the use of features.
+//!
+//! ```toml
+//! [dependencies]
+//! bevy_tilemap = { version = "0.2", features = ["serde"] }
+//! ```
 #![doc(html_root_url = "https://bevy_tilemap/0.2.0-pre.1")]
 #![no_implicit_prelude]
 // clippy
