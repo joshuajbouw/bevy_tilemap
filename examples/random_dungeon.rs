@@ -150,7 +150,7 @@ fn build_random_dungeon(
         );
 
         // Now we pass all the tiles to our map.
-        map.set_tiles(&mut tiles).unwrap();
+        map.set_tiles(tiles).unwrap();
 
         // Finally we spawn the chunk! In actual use this should be done in a
         // spawn system.

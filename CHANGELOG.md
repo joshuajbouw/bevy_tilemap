@@ -7,6 +7,37 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed API
+
+* `Tilemap::set_tiles` now implements `IntoIterator<Item = ((i32, i32, i32), Tile)>`
+which had broken the previous compatibility.
+
+**Before**
+```rust
+let mut tiles = Tiles::default();
+for y in 0..31 {
+    for x in 0..31 {
+        tiles.insert((x, y, 0), 0.into());
+    }
+}
+
+// Constructed Tilemap
+tilemap.set_tiles(&mut tiles);
+```
+
+**After**
+```rust
+let mut tiles = Tiles::default();
+for y in 0..31 {
+    for x in 0..31 {
+        tiles.insert((x, y, 0), 0.into());
+    }
+}
+
+// Constructed tilemap
+tilemap.set_tiles(tiles);
+```
+
 ## [0.2.0] - 2020-11-20
 
 ### Added

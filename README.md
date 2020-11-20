@@ -17,7 +17,7 @@ tilemaps with an attentive focus on performance, and low data usage.
 
 ## Features
 * Perfect for game jams.
-* Easy to use and stable API with thorough documentation.
+* Easy to use and *mostly* stable API with thorough documentation.
 * Endless or constrained tilemaps.
 * Batched rendering of many tiles.
 

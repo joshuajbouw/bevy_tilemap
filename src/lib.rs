@@ -111,7 +111,7 @@
 //!     }
 //! }
 //!
-//! tilemap.set_tiles(&mut tiles);
+//! tilemap.set_tiles(tiles);
 //!
 //! // Over this...
 //! for y in 0..31 {

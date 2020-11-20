@@ -953,11 +953,7 @@ impl Tilemap {
         (x, y)
     }
 
-    /// Sets many tiles using a `Tiles` map, creating new chunks if needed.
-    ///
-    /// [`Tiles`] is used here to make it convenient to set many tiles at one
-    /// time and to reduce the number of internal events. The method drains
-    /// [`Tiles`], leaving it empty for potential future use.
+    /// Sets many tiles, creating new chunks if needed.
     ///
     /// If setting a single tile is more preferable, then use the [`set_tile`]
     /// method instead.
@@ -990,16 +986,16 @@ impl Tilemap {
     /// assert_eq!(tiles.len(), 3);
     ///
     /// // Set multiple tiles and unwrap the result
-    /// tilemap.set_tiles(&mut tiles).unwrap();
-    ///
-    /// assert_eq!(tiles.len(), 0);
+    /// tilemap.set_tiles(tiles).unwrap();
     /// ```
     ///
     /// [`set_tile`]: Tilemap::set_tile
-    /// [`Tiles`]: crate::tile::Tiles
-    pub fn set_tiles(&mut self, tiles: &mut Tiles) -> TilemapResult<()> {
+    pub fn set_tiles<T>(&mut self, tiles: T) -> TilemapResult<()>
+    where
+        T: IntoIterator<Item = ((i32, i32, i32), Tile)>,
+    {
         let mut chunk_map: HashMap<Point2, TilePoints> = HashMap::default();
-        for (points, tile) in tiles.drain() {
+        for (points, tile) in tiles.into_iter() {
             let global_tile_point: Point3 = points.into();
             let chunk_point: Point2 = self.tile_to_chunk_point(&global_tile_point).into();
 
@@ -1075,7 +1071,7 @@ impl Tilemap {
         let mut tiles = Tiles::default();
         let point: Point3 = point.into();
         tiles.insert((point.x(), point.y(), point.z()), tile);
-        self.set_tiles(&mut tiles)
+        self.set_tiles(tiles)
     }
 
     /// Returns the center tile, if the tilemap has dimensions.
