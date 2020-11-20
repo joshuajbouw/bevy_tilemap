@@ -7,27 +7,100 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Notes
-A big update had been released which brings the project to being more realized
-with the original goals. This update takes all the work that was done by the CPU
-and shifted it to the GPU through the use of GLSL shaders. This brings it more
-inline with other modern tile maps in other projects.
-
-This release also brings in much better documentation to help developers with
-integration.
+## [0.2.0] - 2020-11-20
 
 ### Added
-- [GLSL shaders for TileMap](https://github.com/joshuajbouw/bevy_tilemap/commit/5956f451094159ddede1486d123a8c546f0a37fb)
 
-## [0.1.1] - 2020-11-04
+* `ChunkDimensions` component to help the renderer know the dimensions of a 
+chunk.
+* `Layer` trait was added internally to implement the same methods on layers.
+* `DenseLayer` and `SparseLayer` structs were added internally to provide
+different methods of storing tiles.
+* `LayerKind` enum was added to help specify what kind of layer needs to be
+created.
+* `LayerKindInner` enum was added internally to help wrap `DenseLayer` and 
+`SparseLayer`.
+* `Chunk` struct was added internally to store its location and sprite layers.
+* `ChunkComponents` entity was added internally to help spawn chunks.
+* `TilemapComponents` entity was added to help spawn tilemaps.
+* `prelude` module was added versioned.
+* `ChunkMesh` was added to add meshes to rendered layers.
+* `point` module was added publicly with `Point2` and `Point3` structs which 
+help with various operations to do with coordinates. They are not required to
+be used at all.
+* Render pipelines were added with GLSL shader files.
+* `Tile` struct was added publicly which stores the index value of a texture
+in a texture atlas.
+* `Tiles` a type for `Hashmap<(i32, i32, i32), Tile>` was added publicly. Helps
+to set tiles in bulk.
+* `TilePoints` was added privately which is similar to `Tiles` but stores the
+new `Point3`s instead.
+* `dense_tiles_to_attributes` and `sparse_tiles_to_attributes` were added to 
+help turn layers into attributes for the renderer.
+* `Tilemap` was added with a variety of new public API to help construct new
+tilemaps.
+* `TilemapBuilder` factory was added to help construct new `Tilemap`s.
+* Chunks with odd dimensions can now be spawned. (Thanks @blamelessgames!)
 
-### Notes
-This is mostly just a document fix minor patch with nothing else too 
-substantial. It would have been avoided if it could have been but alas, crates
-does not allow you to republish the same version. 
+### Changed
 
-### Fixes
-* [Fixed external doc leak](https://github.com/joshuajbouw/bevy_tilemap/commit/b277f55bf73535a01537e2f775702226cb33178b)
+* Updated `random_dungeon` example to use latest features.
+* Changed `serde` to be and optional feature.
+* Changed `Dimension2` and `Dimension3` into a struct and changed them
+extensively. They were also made into private API.
+* Changed `map_system` had been updated to accommodate for the new `Tilemap`.
+
+### Broken API
+
+* `Chunk` trait was made into a struct and vastly changed as well as made 
+internal.
+* `WorldChunk` struct was removed entirely.
+* `WorldMap` struct was removed entirely.
+* `Tile` trait was removed and replaced with a `Tile` struct.
+* `coord` module was removed entirely.
+* `dimension` module was made internal.
+* `Dimension2` and `Dimension3` traits were made into structs and made internal.
+* `ChunkTilesPlugin` had all the generic traits removed, replaced with structs.
+This makes it easier for people to use the library and encourages others to
+help contribute instead of keeping all the sweet updates to themselves. In the
+future, generic traits will likely be brought back.
+* `DimesionError` and `DimensionResult` were made private.
+* `MapError` was renamed to `TilemapError` and made private. 
+* `MapResult` was renamed to `TilemapResult` and made private.
+* `MapEvent` was renamed to `TilemapEvent` and made private.
+
+### Upgrade Notes
+
+The breakpocalypse is here... But with good reasons why!
+
+This was the actual update that made tilemap into mostly what was intended to be
+on release however, due to the clear early need a naive version was pushed for
+v0.1.0. Before, everything was rendered from textures that were made by the CPU
+for use with the GPU. Through proper research, help from the Bevy community, and
+education on GLSL shaders, shaders were created to offload all the work onto the
+GPU.
+
+The huge downside though is that pretty much 98% of the API had been broken
+entirely. So, extra time and effort was put in this time to ensure that the API
+will be stable from now on and going forward. Proper deprecation warnings and 
+everything will be done from here on.
+
+It was really considered to bring back all the API but, that would have been
+too much work from here and onwards. Plus, it was warned that the API will be
+broken between v0.1 and v0.2.
+
+### Key points
+
+- No more CPU work, all on the GPU with GLSL shaders.
+- Huge breaking API changes everywhere, oh my! (I warned it would happen :)...)
+- All traits removed, replaced with structs for early day simplicity.
+- Dense and sparse layers were added to cut down on data use and increase 
+performance where necessary.
+
+### Thanks
+
+Thank you so much @alec-deason, @alexschrod and @superdump for all your feedback, suggestions
+and help understanding everything needed for this release.
 
 ## [0.1.0] - 2020-11-04
 

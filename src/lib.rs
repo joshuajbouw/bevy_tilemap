@@ -124,7 +124,7 @@
 //! [dependencies]
 //! bevy_tilemap = { version = "0.2", features = ["serde"] }
 //! ```
-#![doc(html_root_url = "https://bevy_tilemap/0.2.0-pre.1")]
+#![doc(html_root_url = "https://bevy_tilemap/0.2.0")]
 #![no_implicit_prelude]
 // clippy
 #![allow(clippy::too_many_arguments)]

@@ -1,6 +1,6 @@
 [package]
 name = "bevy_tilemap"
-version = "0.2.0-pre.1"
+version = "0.2.0"
 authors = ["Joshua J. Bouw <dev@joshuajbouw.com>"]
 edition = "2018"
 description = "Tile maps with chunks for the Bevy game engine, a simple-driven game engine and app framework"

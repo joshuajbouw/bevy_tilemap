@@ -11,17 +11,22 @@
     [example by diesel-rs]
 - **Publish**
     - [ ] [Publish on Github] following the template below.
+    - [ ] Ensure that the release body and [CHANGELOG.md] are the same.
+    - [ ] Ensure that everything is pushed.
+    - [ ] Dry-run publish to crates.io with `cargo publish --dry-run` 
+    - [ ] Publish to crates.io with `cargo publish`
     
 [Cargo.toml]: ../Cargo.toml
 [lib.rs]: ../src/lib.rs
 [README.md]: ../README.md
+[CHANGELOG.md]: ../CHANGELOG.md
 [API guidelines]: https://rust-lang.github.io/api-guidelines/checklist.html
 [example by diesel-rs]: https://github.com/diesel-rs/diesel/blob/master/CHANGELOG.md
 [Publish on Github]: https://github.com/joshuajbouw/bevy_tilemap/releases/new
 
 # Release Template
 
-Set `tile` to `Bevy Tilemap x.y.z`.
+Set `tile` to `Bevy Tilemap x.y.z`. If it is a pre-release, `Bevy Tilemap x.y.z pre-release x`
 Set `version tag` to `vx.y.z`
 
 ```
