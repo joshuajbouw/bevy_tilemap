@@ -52,6 +52,8 @@
 //! For most cases, it is preferable to construct a tilemap with explicit
 //! parameters. For that you would use a [`Builder`].
 //!
+//! [`Builder`]: crate::tilemap::Builder
+//!
 //! ```
 //! use bevy_tilemap::prelude::*;
 //! use bevy::asset::HandleId;
@@ -87,6 +89,9 @@
 //! If you expect to move multiple tiles a frame, **always** use the [`Tiles`]
 //! map and set it with [`set_tiles`]. A single event is created with all
 //! tiles if set this way.
+//!
+//! [`Tiles`]: crate::tile::Tiles
+//! [`set_tiles`]: crate::tilemap::TileMap::set_tiles
 //!
 //! ```
 //! use bevy_tilemap::prelude::*;

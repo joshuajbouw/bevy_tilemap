@@ -55,10 +55,10 @@ impl Default for Tile {
 }
 
 impl Tile {
-    /// Creates a new `Tile` with a given index.
+    /// Creates a new a with a given index.
     ///
     /// By default, this makes a tile with no tint to the color at all. If tile
-    /// tinting is needed, use `with_color` instead.
+    /// tinting is needed, use [`with_color`] instead.
     ///
     /// # Examples
     /// ```
@@ -67,6 +67,9 @@ impl Tile {
     /// // Creates a tile with an index of 0
     /// let tile = Tile::new(0);
     /// ```
+    ///
+    /// [`Tile`]: Tile
+    /// [`with_color`]: Tile::with_color
     pub fn new(index: usize) -> Tile {
         Tile {
             index,
@@ -74,9 +77,9 @@ impl Tile {
         }
     }
 
-    /// Creates a new `Tile` with a color and a given index.
+    /// Creates a new tile with a color and a given index.
     ///
-    /// A color is handy if you want full tinting done on a tile.
+    /// A [`Color`] is handy if you want full tinting done on a tile.
     ///
     /// # Examples
     /// ```
@@ -85,6 +88,8 @@ impl Tile {
     ///
     /// let tile = Tile::with_color(0, Color::BLUE);
     /// ```
+    ///
+    /// [`Color`]: Bevy::render::color::Color
     pub fn with_color(index: usize, color: Color) -> Tile {
         Tile { index, color }
     }

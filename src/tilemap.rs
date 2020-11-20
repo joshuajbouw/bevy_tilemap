@@ -494,7 +494,7 @@ impl Tilemap {
         Builder::default()
     }
 
-    /// Sets the sprite sheet, or `TextureAtlas` for use in the tilemap.
+    /// Sets the sprite sheet for use in the tilemap.
     ///
     /// This can be used if the need to swap the sprite sheet for another is
     /// wanted.
@@ -516,10 +516,10 @@ impl Tilemap {
         self.texture_atlas = handle;
     }
 
-    /// Returns a reference the `Handle` of the `TextureAtlas`.
+    /// Returns a reference of the handle of the texture atlas.
     ///
     /// The Handle is used to get the correct sprite sheet that is used for this
-    /// `Tile Map` with the renderer.
+    /// tilemap with the renderer.
     ///
     /// # Examples
     /// ```
@@ -770,8 +770,6 @@ impl Tilemap {
     ///
     /// tilemap.spawn_chunk((0, 0));
     /// ```
-    ///
-    /// [`new_chunk`]: Tilemap::new_chunk
     pub fn spawn_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
