@@ -931,25 +931,31 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// let tile_point = (16, 16);
+    /// let tile_point = (15, 15);
     /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
     ///
     /// assert_eq!((0, 0), chunk_point);
     ///
-    /// let tile_point = (33, 33);
+    /// let tile_point = (16, 16);
     /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
     ///
     /// assert_eq!((1, 1), chunk_point);
     ///
-    /// let tile_point = (-33, -33);
+    /// let tile_point = (-15, -15);
     /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
     ///
+    /// assert_eq!((-0, -0), chunk_point);
+    ///
+    /// let tile_point = (-16, 16);
+    /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
     /// assert_eq!((-1, -1), chunk_point);
     /// ```
     pub fn tile_to_chunk_point<P: Into<Point2>>(&self, point: P) -> (i32, i32) {
         let point: Point2 = point.into();
-        let x = point.x() / self.chunk_dimensions.width() as i32;
-        let y = point.y() / self.chunk_dimensions.height() as i32;
+        let width = self.chunk_dimensions.width() as f32;
+        let height = self.chunk_dimensions.height() as f32;
+        let x = ((point.x as f32 + width / 2.0) / width).floor() as i32;
+        let y = ((point.y as f32 + height / 2.0) / height).floor() as i32;
         (x, y)
     }
 
@@ -994,19 +1000,22 @@ impl Tilemap {
     where
         T: IntoIterator<Item = ((i32, i32, i32), Tile)>,
     {
+        let x_width = self.chunk_dimensions.width() as i32 / 2;
+        let y_width = self.chunk_dimensions.width() as i32 / 2;
+
         let mut chunk_map: HashMap<Point2, TilePoints> = HashMap::default();
         for (points, tile) in tiles.into_iter() {
             let global_tile_point: Point3 = points.into();
             let chunk_point: Point2 = self.tile_to_chunk_point(&global_tile_point).into();
 
-            if self.layers[global_tile_point.z() as usize].is_none() {
-                self.add_layer(global_tile_point.z() as usize)?;
+            if self.layers[global_tile_point.z as usize].is_none() {
+                self.add_layer(global_tile_point.z as usize)?;
             }
 
             let tile_point = Point3::new(
-                global_tile_point.x() - chunk_point.x() * self.chunk_dimensions.width() as i32,
-                global_tile_point.y() - chunk_point.y() * self.chunk_dimensions.height() as i32,
-                global_tile_point.z(),
+                global_tile_point.x + x_width - (x_width * chunk_point.x / 2),
+                global_tile_point.y + y_width - (y_width * chunk_point.y / 2),
+                global_tile_point.z,
             );
 
             if let Some(tiles) = chunk_map.get_mut(&chunk_point) {
@@ -1070,7 +1079,7 @@ impl Tilemap {
         let tile: Tile = tile.into();
         let mut tiles = Tiles::default();
         let point: Point3 = point.into();
-        tiles.insert((point.x(), point.y(), point.z()), tile);
+        tiles.insert((point.x, point.y, point.z), tile);
         self.set_tiles(tiles)
     }
 
@@ -1365,7 +1374,7 @@ pub fn map_system(
             let chunk = chunks.get_mut(&handle).expect("`Chunk` is missing.");
             for (point, tile) in setter.into_iter() {
                 let index = map.chunk_dimensions.encode_point_unchecked(point.xy());
-                chunk.set_tile(point.z() as usize, index, tile);
+                chunk.set_tile(point.z as usize, index, tile);
             }
         }
 
@@ -1387,10 +1396,10 @@ pub fn map_system(
                 chunk.set_mesh(z, mesh_handle.clone());
 
                 let translation = Vec3::new(
-                    (chunk.point().x()
+                    (chunk.point().x
                         * map.tile_dimensions.width() as i32
                         * map.chunk_dimensions.width() as i32) as f32,
-                    (chunk.point().y()
+                    (chunk.point().y
                         * map.tile_dimensions.height() as i32
                         * map.chunk_dimensions.height() as i32) as f32,
                     z as f32,

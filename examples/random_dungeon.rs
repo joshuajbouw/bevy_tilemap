@@ -103,29 +103,30 @@ fn build_random_dungeon(
 
         // We must use the new handy `Tiles` tool which is a wrapped `Vec`
         let mut tiles = Tiles::with_capacity((height * width) as usize);
-        for y in 0..height {
-            for x in 0..width {
+        for y in (-height / 2)..(height / 2) {
+            for x in (-width / 2)..(width / 2) {
                 tiles.insert((x, y, 0), floor_tile);
             }
         }
         // Then we push in all wall tiles on the X axis.
-        for x in 0..width {
-            tiles.insert((x, 0, 0), wall_tile);
-            tiles.insert((x, height - 1, 0), wall_tile);
+        for x in (-width / 2)..(width / 2) {
+            tiles.insert((x, -height / 2, 0), wall_tile);
+            tiles.insert((x, height / 2 - 1, 0), wall_tile);
         }
+
         // Then the wall tiles on the Y axis.
-        for y in 0..height {
-            tiles.insert((0, y, 0), wall_tile);
-            tiles.insert((width - 1, y, 0), wall_tile);
+        for y in (-height / 2)..(height / 2) {
+            tiles.insert((-width / 2, y, 0), wall_tile);
+            tiles.insert((width / 2 - 1, y, 0), wall_tile);
         }
         // Lets just generate some random walls to sparsely place around the dungeon!
         let range = (width * height) as usize / 5;
         let mut rng = rand::thread_rng();
         for _ in 0..range {
-            let x = rng.gen_range(1, width as i32);
-            let y = rng.gen_range(1, height as i32);
+            let x = rng.gen_range(-width / 2, width / 2);
+            let y = rng.gen_range(-width / 2, height / 2);
             let coord = (x, y, 0i32);
-            if coord != (width / 2, height / 2, 0) {
+            if coord != (0, 0, 0) {
                 tiles.insert((x, y, 0), wall_tile);
             }
         }
@@ -145,7 +146,7 @@ fn build_random_dungeon(
         let dwarf_idx = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         let dwarf_tile = Tile::new(dwarf_idx);
         tiles.insert(
-            (width / 2, height / 2, 1), // Do note that we are pushing him onto z_layer 1 now!
+            (0, 0, 1), // Do note that we are pushing him onto z_layer 1 now!
             dwarf_tile,
         );
 
