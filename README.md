@@ -73,7 +73,7 @@ advanced features.
 With many more features planned for future updates to bring it up to par with
 other tilemap implementations for other projects.
 
-## Future plans
+# Future plans
 
 There is still a lot to do but the API is now stable and should be fine for a
 while now. The next release is focused on added automated methods and system.
@@ -87,9 +87,24 @@ that it can figure out such as texture sizes and the right size of chunks.
 - **LayeredMap**: Multiple tile maps working together to create 3D slices that
 work together and are aware of each other.
 
-## Live Example
-There will be more work done on examples in the very near future. For now, you 
-can check out a quick but non-interactive example with:
+# Building
+
+Bevy Tilemap requires Rust 1.43 or later to build.
+
+Once you have a development environment, Bevy Tilemap can be fetched using git:
+
+```bash
+$ git clone --recursive https://github.com/joshuajbouw/bevy_tilemap/
 ```
-cargo run --example random_dungeon
+
+and then built using cargo:
+
+```bash
+$ cargo build --examples
+```
+
+cargo can also be used to run tests:
+
+```
+$ cargo test
 ```
