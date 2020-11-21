@@ -1,0 +1,35 @@
+on:
+  push:
+    branches: [ master, bevy_nightly ]
+  pull_request:
+    branches: [ master, bevy_nightly ]
+
+name: Ubuntu-20.04
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+          - nightly
+          - 1.43.0 # MSRV
+    runs-on: Ubuntu
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
