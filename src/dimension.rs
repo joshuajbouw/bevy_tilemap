@@ -80,7 +80,7 @@ impl Dimension2 {
 
     /// Checks if a coordinate is valid and inbounds.
     pub(crate) fn check_point(&self, point: Point2) -> DimensionResult<()> {
-        if point.x() > self.x_max() as i32 || point.y() > self.y_max() as i32 {
+        if point.x > self.x_max() as i32 || point.y > self.y_max() as i32 {
             Err(ErrorKind::OutOfBounds.into())
         } else {
             Ok(())
@@ -98,7 +98,7 @@ impl Dimension2 {
 
     /// Encodes a coordinate and returns an index value, unchecked.
     pub(crate) fn encode_point_unchecked(&self, point: Point2) -> usize {
-        ((point.y() * self.width as i32) + point.x()) as usize
+        ((point.y * self.width as i32) + point.x) as usize
     }
 
     // /// Encodes a coordinate and returns an index value.
@@ -192,9 +192,9 @@ pub(crate) struct Dimension3 {
 //
 //     /// Checks if a given coordinate is within bounds of the `Chunk`.
 //     pub(crate) fn check_point(&self, point: Point3) -> DimensionResult<()> {
-//         if point.x() > self.width as i32
-//             || point.y() > self.height as i32
-//             || point.z() > self.depth as i32
+//         if point.x > self.width as i32
+//             || point.y > self.height as i32
+//             || point.z > self.depth as i32
 //         {
 //             Err(ErrorKind::OutOfBounds.into())
 //         } else {
@@ -213,9 +213,9 @@ pub(crate) struct Dimension3 {
 //
 //     /// Encodes a Vec3 coordinate to an usize index to use in the Tile vector, unchecked.
 //     pub(crate) fn encode_point_unchecked(&self, point: Point3) -> usize {
-//         ((point.z() * self.width as i32 * self.height as i32)
-//             + (point.y() * self.width as i32)
-//             + point.x()) as usize
+//         ((point.z * self.width as i32 * self.height as i32)
+//             + (point.y * self.width as i32)
+//             + point.x) as usize
 //     }
 //
 //     /// Encodes a `Vec3` coordinate to an `usize` index to use in the `Tile` vector.
