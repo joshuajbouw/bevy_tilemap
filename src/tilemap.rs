@@ -941,12 +941,12 @@ impl Tilemap {
     ///
     /// assert_eq!((1, 1), chunk_point);
     ///
-    /// let tile_point = (-15, -15);
+    /// let tile_point = (-16, -16);
     /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
     ///
     /// assert_eq!((-0, -0), chunk_point);
     ///
-    /// let tile_point = (-16, 16);
+    /// let tile_point = (-17, 17);
     /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
     /// assert_eq!((-1, -1), chunk_point);
     /// ```
@@ -1000,8 +1000,8 @@ impl Tilemap {
     where
         T: IntoIterator<Item = ((i32, i32, i32), Tile)>,
     {
-        let x_width = self.chunk_dimensions.width() as i32 / 2;
-        let y_width = self.chunk_dimensions.width() as i32 / 2;
+        let width = self.chunk_dimensions.width() as i32;
+        let height = self.chunk_dimensions.height() as i32;
 
         let mut chunk_map: HashMap<Point2, TilePoints> = HashMap::default();
         for (points, tile) in tiles.into_iter() {
@@ -1013,11 +1013,10 @@ impl Tilemap {
             }
 
             let tile_point = Point3::new(
-                global_tile_point.x + x_width - (x_width * chunk_point.x / 2),
-                global_tile_point.y + y_width - (y_width * chunk_point.y / 2),
+                global_tile_point.x - (width * chunk_point.x) + (width / 2),
+                global_tile_point.y - (height * chunk_point.y) + (width / 2),
                 global_tile_point.z,
             );
-
             if let Some(tiles) = chunk_map.get_mut(&chunk_point) {
                 tiles.insert(tile_point, tile);
             } else {
