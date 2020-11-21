@@ -946,7 +946,7 @@ impl Tilemap {
     ///
     /// assert_eq!((-0, -0), chunk_point);
     ///
-    /// let tile_point = (-17, 17);
+    /// let tile_point = (-17, -17);
     /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
     /// assert_eq!((-1, -1), chunk_point);
     /// ```
