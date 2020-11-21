@@ -2,7 +2,9 @@
 [![Crates.io](https://img.shields.io/crates/v/bevy_tilemap.svg)](https://crates.io/crates/bevy_tilemap)
 [![Crates.io](https://img.shields.io/crates/d/bevy_tilemap.svg)](https://crates.io/crates/bevy_tilemap)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/joshuajbouw/bevy_tilemap/blob/master/LICENSE)
-[![Rust](https://github.com/joshuajbouw/bevy_tilemap/workflows/CI/badge.svg)](https://github.com/joshuajbouw/bevy_tilemap/actions)
+[![Windows-2019](https://github.com/joshuajbouw/bevy_tilemap/workflows/Windows-2019/badge.svg)](https://github.com/joshuajbouw/bevy_tilemap/actions)
+[![Ubuntu-20.04](https://github.com/joshuajbouw/bevy_tilemap/workflows/Ubuntu-20.04/badge.svg)](https://github.com/joshuajbouw/bevy_tilemap/actions)
+[![macOS-11.0](https://github.com/joshuajbouw/bevy_tilemap/workflows/macOS-11.0/badge.svg)](https://github.com/joshuajbouw/bevy_tilemap/actions)
 
 Chunk based tilemap for Bevy game engine.
 
@@ -89,7 +91,8 @@ work together and are aware of each other.
 
 # Building
 
-Bevy Tilemap requires Rust 1.43 or later to build.
+Bevy Tilemap requires Rust 1.43 or later to build as it is the minimum supported
+Rust version or MSRV.
 
 Once you have a development environment, Bevy Tilemap can be fetched using git:
 
