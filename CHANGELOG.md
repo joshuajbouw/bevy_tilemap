@@ -7,7 +7,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Changed API
+## [0.2.1] - 2020-11-21
+
+### Added
+
+* Minimum supported rust version (MSRV) were noted to be 1.43.0 in documents.
+
+
+### Fixes
+
+* Coordinates were fixed so that 0,0 is now by default the center of the area,
+not the bottom left per chunk.
+* Coordinates outside of a single chunk were fixed so that they do not cause a
+panic.
+* Missing doc links were fixed.
+
+### Changed
 
 * `Tilemap::set_tiles` now implements `IntoIterator<Item = ((i32, i32, i32), Tile)>`
 which had broken the previous compatibility.
@@ -37,6 +52,25 @@ for y in 0..31 {
 // Constructed tilemap
 tilemap.set_tiles(tiles);
 ```
+
+### Removed
+
+* `Point2` impl `AsRef<(i32, i32)>` and `AsMut<(i32, i32)>` as it is not 
+possible to deprecate it.
+
+### Deprecated
+
+* `Point2` methods `.x()` and `.y()` were deprecated to be inline with glam 
+crate.
+* `Point3` methods `.x()`, `.x()`, and `.z()` were deprecated to be inline with 
+glam crate.
+
+### Upgrade notes
+
+Unfortunately some fairly big issues were released as more examples were being
+made. These were fairly critical as they absolutely hindered the goals of the 
+library. These have now since been fixed. Thanks to all that pointed out the
+issues.
 
 ## [0.2.0] - 2020-11-20
 
