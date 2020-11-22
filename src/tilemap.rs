@@ -1051,8 +1051,10 @@ impl Tilemap {
 
     /// Sets a single tile at a coordinate position, creating a chunk if necessary.
     ///
-    /// For convenience, this does not require to use a TileSetter which is beneficial for multiple
-    /// tiles. If that is preferred, do use [`set_tiles`] instead.
+    /// If you are setting more than one tile at a time, it is highly
+    /// recommended not to run this method! If that is preferred, do use
+    /// [`set_tiles`] instead. Every single tile that is created creates a new
+    /// event. With bulk tiles, it creates 1 event for all.
     ///
     /// If the chunk does not yet exist, it will create a new one automatically.
     ///
@@ -1090,9 +1092,32 @@ impl Tilemap {
         self.set_tiles(tiles)
     }
 
-    // pub fn set_tile_with_zorder
-
     /// Clears the tiles at the specified points from the tilemap.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// let mut tiles = vec![
+    ///     Tile::new((1, 1), 0),
+    ///     Tile::new((2, 2), 0),
+    ///     Tile::new((3, 3), 0)
+    /// ];
+    ///
+    /// // Set multiple tiles and unwrap the result
+    /// tilemap.set_tiles(tiles.clone()).unwrap();
+    ///
+    /// // Then later on... Do note that if this done in the same frame, the
+    /// // tiles will not even exist at all.
+    /// tilemap.remove_tiles(tiles);
+    /// ```
     pub fn clear_tiles<P, I>(&mut self, points: I) -> TilemapResult<()>
     where
         P: Into<Point2>,
@@ -1112,6 +1137,29 @@ impl Tilemap {
     }
 
     /// Clear a single tile at the specified point from the tilemap.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// use bevy_tilemap::tile::Tile;
+    /// let point = (9, 3);
+    /// let sprite_index = 3;
+    /// let tile = Tile::new(point, sprite_index);
+    ///
+    /// // Set a single tile and unwrap the result
+    /// tilemap.set_tile(tile).unwrap();
+    ///
+    /// // Later on...
+    /// tilemap.clear_tile(point, 0);
+    /// ```
     pub fn clear_tile<P>(&mut self, point: P, z_order: usize) -> TilemapResult<()>
     where
         P: Into<Point2>,
