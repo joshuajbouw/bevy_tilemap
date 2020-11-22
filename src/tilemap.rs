@@ -1096,7 +1096,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -1116,7 +1116,13 @@ impl Tilemap {
     ///
     /// // Then later on... Do note that if this done in the same frame, the
     /// // tiles will not even exist at all.
-    /// tilemap.remove_tiles(tiles);
+    /// let to_remove = vec![
+    ///     ((1, 1), 0),
+    ///     ((2, 2), 0),
+    ///     ((3, 3), 0),
+    /// ];
+    ///
+    /// tilemap.clear_tiles(to_remove);
     /// ```
     pub fn clear_tiles<P, I>(&mut self, points: I) -> TilemapResult<()>
     where
