@@ -17,6 +17,14 @@ Simple yet refined in its implementation, it is meant to attach to other
 extensible plugins that can enhance its functionality further. Hand-crafted
 tilemaps with an attentive focus on performance, and low data usage.
 
+## WARNING
+This project is still experimental and the API will likely break often before 
+the first release. It uses an experimental game engine which too may break the
+API. Semantic versioning will be followed as much as possible and the 
+contributors will as much as they possibly can try to keep the API stable.
+
+If you have API suggestions, now is the time to do it.
+
 ## Features
 * Perfect for game jams.
 * Easy to use and *mostly* stable API with thorough documentation.
@@ -30,7 +38,7 @@ Bevy API as possible while keeping in mind of Rust API best practices. It is not
 meant to be complicated and created to be simple to use but give enough 
 functionality to advanced users.
 
-Less time fiddling, more time building.
+Less time fiddling, more time building
 
 ## Usage
 Add to your `Cargo.toml` file:
