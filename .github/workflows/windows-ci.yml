@@ -1,15 +1,15 @@
+name: Windows-2019
+
 on:
+  push:
+    branches: [ master, bevy_nightly ]
   pull_request:
     branches: [master, bevy_nightly]
 
-name: Tests
-
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
-  test:
-    if: github.event.pull_request.draft == false
+  check:
+    name: Check
+    runs-on: windows-2019
     strategy:
       matrix:
         rust:
@@ -17,7 +17,6 @@ jobs:
           - beta
           - nightly
           - 1.43.0 # MSRV
-    runs-on: Ubuntu
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -27,4 +26,4 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: test
+          command: check
