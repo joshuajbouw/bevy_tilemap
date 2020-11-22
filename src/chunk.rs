@@ -187,7 +187,10 @@ impl Chunk {
     pub(crate) fn add_layer(&mut self, kind: &LayerKind, z: usize, dimensions: Dimension2) {
         match kind {
             LayerKind::Dense => {
-                let tiles = vec![Tile::new(0); dimensions.area() as usize];
+                let tiles = vec![
+                    Tile::with_color(0, Color::rgba(0.0, 0.0, 0.0, 0.0));
+                    dimensions.area() as usize
+                ];
                 self.sprite_layers[z] = Some(SpriteLayer {
                     inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
                     entity: None,
