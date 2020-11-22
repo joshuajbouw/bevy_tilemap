@@ -64,6 +64,8 @@ fn load(
         let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
         let atlas_handle = texture_atlases.add(texture_atlas);
 
+        // These are fairly advanced configurations just to quickly showcase
+        // them.
         let tilemap = Tilemap::builder()
             .dimensions(1, 1)
             .chunk_dimensions(32, 32)
@@ -81,19 +83,19 @@ fn load(
 
         commands
             .spawn(tilemap_components)
-            .with(Timer::from_seconds(0.05, true));
+            .with(Timer::from_seconds(0.075, true));
 
         sprite_handles.atlas_loaded = true;
     }
 }
 
 fn build_random_dungeon(
-    mut map_state: ResMut<GameState>,
+    mut game_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
     mut query: Query<&mut Tilemap>,
 ) {
-    if map_state.map_loaded {
+    if game_state.map_loaded {
         return;
     }
 
@@ -128,14 +130,22 @@ fn build_random_dungeon(
 
         // Then we push in all wall tiles on the X axis.
         for x in (-width / 2)..(width / 2) {
-            tiles.push(Tile::new((x, -height / 2), wall_idx));
-            tiles.push(Tile::new((x, height / 2 - 1), wall_idx));
+            let tile_a = (x, -height / 2);
+            let tile_b = (x, height / 2 - 1);
+            tiles.push(Tile::new(tile_a, wall_idx));
+            tiles.push(Tile::new(tile_b, wall_idx));
+            game_state.collisions.insert(tile_a);
+            game_state.collisions.insert(tile_b);
         }
 
         // Then the wall tiles on the Y axis.
         for y in (-height / 2)..(height / 2) {
-            tiles.push(Tile::new((-width / 2, y), wall_idx));
-            tiles.push(Tile::new((width / 2 - 1, y), wall_idx));
+            let tile_a = (-width / 2, y);
+            let tile_b = (width / 2 - 1, y);
+            tiles.push(Tile::new(tile_a, wall_idx));
+            tiles.push(Tile::new(tile_b, wall_idx));
+            game_state.collisions.insert(tile_a);
+            game_state.collisions.insert(tile_b);
         }
         // Lets just generate some random walls to sparsely place around the dungeon!
         let range = (width * height) as usize / 5;
@@ -146,6 +156,7 @@ fn build_random_dungeon(
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
                 tiles.push(Tile::new((x, y), wall_idx));
+                game_state.collisions.insert((x, y));
             }
         }
 
@@ -163,18 +174,21 @@ fn build_random_dungeon(
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf.png");
         let dwarf_idx = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         let dwarf_start_pos = (0, 0);
-        // We add in a Z order of 1 to place the tile above the background on Z order 0.
-        let dwarf_tile = Tile::with_z_order(dwarf_start_pos, 1, dwarf_idx);
+        // We add in a Z order of 1 to place the tile above the background on Z
+        // order 0.
+        let dwarf_tile = Tile::with_z_order(dwarf_start_pos, dwarf_idx, 1);
         tiles.push(dwarf_tile);
 
+        game_state.player = dwarf_tile;
+
         // Now we pass all the tiles to our map.
-        map.set_tiles(tiles).unwrap();
+        map.insert_tiles(tiles).unwrap();
 
         // Finally we spawn the chunk! In actual use this should be done in a
         // spawn system.
         map.spawn_chunk((0, 0)).unwrap();
 
-        map_state.map_loaded = true;
+        game_state.map_loaded = true;
     }
 }
 
@@ -193,36 +207,43 @@ fn character_movement(
         }
 
         for key in keyboard_input.get_pressed() {
+            // First we need to store our very current position.
             let previous_point = game_state.player.point;
 
+            // Of course we need to control where we are going to move our
+            // dwarf friend.
             use KeyCode::*;
             match key {
-                W => {
-                    println!("Pushed W");
+                W | Numpad8 | Up | K => {
                     game_state.move_player((0, 1));
                 }
-                A => {
-                    println!("Pushed A");
+                A | Numpad4 | Left | H => {
                     game_state.move_player((-1, 0));
                 }
-                S => {
-                    println!("Pushed S");
+                S | Numpad2 | Down | J => {
                     game_state.move_player((0, -1));
                 }
-                D => {
-                    println!("Pushed D");
+                D | Numpad6 | Right | L => {
                     game_state.move_player((1, 0));
                 }
+
+                Numpad9 | U => game_state.move_player((1, 1)),
+                Numpad3 | M => game_state.move_player((1, -1)),
+                Numpad1 | N => game_state.move_player((-1, -1)),
+                Numpad7 | Y => game_state.move_player((-1, 1)),
 
                 _ => {}
             }
 
+            // If we are standing still, don't do anything.
             if previous_point == game_state.player.point {
                 continue;
             }
 
-            map.clear_tile(previous_point, 1).unwrap();
-            map.set_tile(game_state.player).unwrap();
+            // We need to first remove where we were prior.
+            map.remove_tile(previous_point, 1).unwrap();
+            // We then need to update where we are going!
+            map.insert_tile(game_state.player).unwrap();
         }
     }
 }

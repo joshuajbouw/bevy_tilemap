@@ -19,15 +19,25 @@ compatibility.
 * `tile::Tile` had the `non_exhaustive` derive added it now that the fields are
 all public.
 * `tile::Tile` added methods `with_tint` and `with_tint_and_z_order`.
+* `chunk_update_system` was added internally to manage chunks and to get them to
+update if needed.
 
 ### Changed
 
+* `random_dungeon` example was updated to be interactive.
 * `Tilemap::set_tiles` was changed to take in a `IntoIterator<Item = Tile<P, C>`,
 where `C` is `Into<Color>` and P is `Into<Point2>`, from 
 `IntoIterator<Item = (i32, i32, i32), Tile>`.
 * `tile::Tile` was changed to include `z_order`, `sprite_index`, and `point`.
 Field `color` is now `tint`. All fields were made public.
 * `tile::Tile` methods `default`, `new` updated.
+* `ChunkDimensions` was made private, it should never of been exposed but I also
+very much doubt anyone would have used it.
+* `map_system` was made private, it should never of been exposed.
+* `add_tile` was renamed to `insert_tile`.
+* `add_tiles` was renamed to `insert_tiles`.
+* `clear_tile` was renamed to `remove_tile`.
+* `clear_tiles` was renamed to `remove_tiles`.
 
 **Before**
 ```rust

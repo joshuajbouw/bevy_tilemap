@@ -1,4 +1,4 @@
-use crate::{chunk::ChunkDimensions, lib::*};
+use crate::{entity::ChunkDimensions, lib::*};
 
 pub const CHUNK_PIPELINE_HANDLE: Handle<PipelineDescriptor> =
     Handle::weak_from_u64(PipelineDescriptor::TYPE_UUID, 2110840099625352487);

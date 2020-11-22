@@ -1,7 +1,7 @@
 use crate::{
     chunk::{Chunk, LayerKind},
     dimension::{Dimension2, DimensionError},
-    entity::ChunkComponents,
+    entity::{ChunkComponents, DirtyLayer},
     lib::*,
     mesh::ChunkMesh,
     point::Point2,
@@ -810,7 +810,7 @@ impl Tilemap {
     /// let index = 0;
     /// let tile = Tile::new(point, index);
     ///
-    /// tilemap.set_tile(tile);
+    /// tilemap.insert_tile(tile);
     ///
     /// tilemap.spawn_chunk_containing_point(point);
     /// ```
@@ -993,11 +993,11 @@ impl Tilemap {
     /// ];
     ///
     /// // Set multiple tiles and unwrap the result
-    /// tilemap.set_tiles(tiles).unwrap();
+    /// tilemap.insert_tiles(tiles).unwrap();
     /// ```
     ///
     /// [`set_tile`]: Tilemap::set_tile
-    pub fn set_tiles<P, C, I>(&mut self, tiles: I) -> TilemapResult<()>
+    pub fn insert_tiles<P, C, I>(&mut self, tiles: I) -> TilemapResult<()>
     where
         P: Into<Point2>,
         C: Into<Color>,
@@ -1079,17 +1079,17 @@ impl Tilemap {
     /// let tile = Tile::new(point, sprite_index);
     ///
     /// // Set a single tile and unwrap the result
-    /// tilemap.set_tile(tile).unwrap();
+    /// tilemap.insert_tile(tile).unwrap();
     /// ```
     ///
     /// [`set_tiles`]: Tilemap::set_tiles
-    pub fn set_tile<P, C>(&mut self, tile: Tile<P, C>) -> TilemapResult<()>
+    pub fn insert_tile<P, C>(&mut self, tile: Tile<P, C>) -> TilemapResult<()>
     where
         P: Into<Point2>,
         C: Into<Color>,
     {
         let tiles = vec![tile];
-        self.set_tiles(tiles)
+        self.insert_tiles(tiles)
     }
 
     /// Clears the tiles at the specified points from the tilemap.
@@ -1112,19 +1112,19 @@ impl Tilemap {
     /// ];
     ///
     /// // Set multiple tiles and unwrap the result
-    /// tilemap.set_tiles(tiles.clone()).unwrap();
+    /// tilemap.insert_tiles(tiles.clone()).unwrap();
     ///
     /// // Then later on... Do note that if this done in the same frame, the
     /// // tiles will not even exist at all.
-    /// let to_remove = vec![
+    /// let mut to_remove = vec![
     ///     ((1, 1), 0),
     ///     ((2, 2), 0),
     ///     ((3, 3), 0),
     /// ];
     ///
-    /// tilemap.clear_tiles(to_remove);
+    /// tilemap.remove_tiles(to_remove).unwrap();
     /// ```
-    pub fn clear_tiles<P, I>(&mut self, points: I) -> TilemapResult<()>
+    pub fn remove_tiles<P, I>(&mut self, points: I) -> TilemapResult<()>
     where
         P: Into<Point2>,
         I: IntoIterator<Item = (P, usize)>,
@@ -1133,12 +1133,12 @@ impl Tilemap {
         for (point, z_order) in points {
             tiles.push(Tile::with_z_order_and_tint(
                 point,
-                z_order,
                 0,
+                z_order,
                 Color::rgba(0.0, 0.0, 0.0, 0.0),
             ));
         }
-        self.set_tiles(tiles)?;
+        self.insert_tiles(tiles)?;
         Ok(())
     }
 
@@ -1161,17 +1161,17 @@ impl Tilemap {
     /// let tile = Tile::new(point, sprite_index);
     ///
     /// // Set a single tile and unwrap the result
-    /// tilemap.set_tile(tile).unwrap();
+    /// tilemap.insert_tile(tile).unwrap();
     ///
     /// // Later on...
-    /// tilemap.clear_tile(point, 0);
+    /// tilemap.remove_tile(point, 0);
     /// ```
-    pub fn clear_tile<P>(&mut self, point: P, z_order: usize) -> TilemapResult<()>
+    pub fn remove_tile<P>(&mut self, point: P, z_order: usize) -> TilemapResult<()>
     where
         P: Into<Point2>,
     {
         let points = vec![(point, z_order)];
-        self.clear_tiles(points)
+        self.remove_tiles(points)
     }
 
     /// Returns the center tile, if the tilemap has dimensions.
@@ -1374,7 +1374,7 @@ impl Tilemap {
 /// 1. Despawn chunks
 /// 1. Remove chunks
 #[inline(always)]
-pub fn map_system(
+pub(crate) fn map_system(
     mut commands: Commands,
     mut chunks: ResMut<Assets<Chunk>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -1461,26 +1461,35 @@ pub fn map_system(
             }
         }
 
-        for (handle, setter) in modified_chunks.into_iter() {
+        for (handle, tiles) in modified_chunks.into_iter() {
             let chunk = chunks.get_mut(&handle).expect("`Chunk` is missing.");
-            for tile in setter.into_iter() {
+
+            let mut entities = HashMap::default();
+            for tile in tiles.into_iter() {
                 let index = map.chunk_dimensions.encode_point_unchecked(tile.point);
                 let raw_tile = RawTile {
                     index: tile.sprite_index,
                     color: tile.tint,
                 };
                 chunk.set_raw_tile(tile.z_order, index, raw_tile);
+                if let Some(entity) = chunk.get_entity(tile.z_order) {
+                    entities.entry(tile.z_order).or_insert(entity);
+                }
+            }
+
+            for (layer, entity) in entities.into_iter() {
+                commands.insert_one(entity, DirtyLayer(layer));
             }
         }
 
         let capacity = spawned_chunks.len();
         for handle in spawned_chunks.into_iter() {
-            let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
+            let chunk = chunks.get_mut(&handle).expect("`Chunk` is missing.");
             let mut entities = Vec::with_capacity(capacity);
             for z in 0..map.layers.len() {
                 let mut mesh = Mesh::from(&ChunkMesh::new(map.chunk_dimensions));
                 let (indexes, colors) =
-                    if let Some(parts) = chunk.tiles_to_renderer_parts(z, &map.chunk_dimensions) {
+                    if let Some(parts) = chunk.tiles_to_renderer_parts(z, map.chunk_dimensions) {
                         parts
                     } else {
                         continue;
@@ -1501,6 +1510,7 @@ pub fn map_system(
                 );
                 let entity = commands
                     .spawn(ChunkComponents {
+                        chunk: handle.clone_weak(),
                         texture_atlas: map.texture_atlas().clone_weak(),
                         chunk_dimensions: map.chunk_dimensions.into(),
                         mesh: mesh_handle.clone_weak(),
