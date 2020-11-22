@@ -1,9 +1,6 @@
 on:
-  workflow_run:
-    workflows: ["Lints"]
-    branches: [master, bevy_nightly, ci]
-    types:
-      - completed
+  pull_request:
+    branches: [master, bevy_nightly]
 
 name: Ubuntu-20.04
 

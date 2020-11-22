@@ -1,9 +1,6 @@
 on:
-  workflow_run:
-    workflows: ["Ubuntu-20.04"]
-    branches: [master, bevy_nightly, ci]
-    types:
-      - completed
+  pull_request:
+    branches: [master, bevy_nightly]
 
 name: Tests
 
