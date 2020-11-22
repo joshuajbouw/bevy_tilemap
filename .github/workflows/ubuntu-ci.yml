@@ -27,6 +27,8 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
+      - name: Install dependencies
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
       - uses: actions-rs/cargo@v1
         with:
           command: check
@@ -42,6 +44,8 @@ jobs:
           toolchain: nightly
           override: true
           components: rustfmt, clippy
+      - name: Install dependencies
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
       - name: Rustfmt
         uses: actions-rs/cargo@v1
         with:
@@ -64,7 +68,6 @@ jobs:
           profile: minimal
           toolchain: nightly
           override: true
-          components: rustfmt, clippy
       - name: Install dependencies
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
       - uses: actions-rs/cargo@v1
