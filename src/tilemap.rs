@@ -812,7 +812,7 @@ impl Tilemap {
     ///
     /// tilemap.set_tile(tile);
     ///
-    /// tilemap.spawn_chunk_containing_point(tile_point);
+    /// tilemap.spawn_chunk_containing_point(point);
     /// ```
     pub fn spawn_chunk_containing_point<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point = self.tile_to_chunk_point(point);
@@ -984,7 +984,7 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// use bevy_tilemap::tile::{Tile, Tiles};
+    /// use bevy_tilemap::tile::Tile;
     ///
     /// let mut tiles = vec![
     ///     Tile::new((1, 1), 0),

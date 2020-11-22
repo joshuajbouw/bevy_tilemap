@@ -81,9 +81,9 @@ impl<P: Into<Point2>, C: Into<Color>> Tile<P, C> {
     ///
     /// let point = (15, 15);
     /// let sprite_index = 3;
-    /// let color = Color::BLUE;
+    /// let tint = Color::BLUE;
     ///
-    /// let tile = Tile::with_tint(0, sprite_index, color);
+    /// let tile = Tile::with_tint(point, sprite_index, tint);
     /// ```
     ///
     /// [`Color`]: Bevy::render::color::Color
@@ -103,12 +103,12 @@ impl<P: Into<Point2>, C: Into<Color>> Tile<P, C> {
     /// # Examples
     /// ```
     /// use bevy_tilemap::prelude::*;
-    /// use bevy_prelude::*;
+    /// use bevy::prelude::*;
     ///
     /// let point = (15, 15);
     /// let z_order = 0;
     /// let sprite_index = 2;
-    /// let tint = Color::YELLOW;
+    /// let tint = Color::RED;
     ///
     /// let tile = Tile::with_z_order_and_tint(point, z_order, sprite_index, tint);
     /// ```

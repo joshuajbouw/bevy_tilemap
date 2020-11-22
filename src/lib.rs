@@ -40,9 +40,10 @@
 //! let mut tilemap = Tilemap::new(texture_atlas_handle);
 //!
 //! // Coordinate point with Z order.
-//! let point = (16, 16, 0);
-//! let tile_index = 0;
-//! tilemap.set_tile(point, tile_index);
+//! let point = (16, 16);
+//! let sprite_index = 0;
+//! let tile = Tile::new(point, sprite_index);
+//! tilemap.set_tile(tile);
 //!
 //! tilemap.spawn_chunk_containing_point(point);
 //! ```
@@ -104,10 +105,10 @@
 //! let mut tilemap = Tilemap::new(texture_atlas_handle);
 //!
 //! // Prefer this
-//! let mut tiles = Tiles::default();
+//! let mut tiles = Vec::new();
 //! for y in 0..31 {
 //!     for x in 0..31 {
-//!         tiles.insert((x, y, 0), 0.into());
+//!         tiles.push(Tile::new((x, y, 0), 0));
 //!     }
 //! }
 //!
@@ -116,7 +117,7 @@
 //! // Over this...
 //! for y in 0..31 {
 //!     for x in 0..31 {
-//!         tilemap.set_tile((x, y, 0), 0);
+//!         tilemap.set_tile(Tile::new((x, y, 0), 0));
 //!     }
 //! }
 //! ```
