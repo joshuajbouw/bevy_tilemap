@@ -1,8 +1,6 @@
 on:
-  push:
-    branches: [ master, bevy_nightly ]
   pull_request:
-    branches: [ master, bevy_nightly ]
+    branches: [master, bevy_nightly]
 
 name: Lints
 
@@ -10,7 +8,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  lint:
     runs-on: Linux
     steps:
       - uses: actions/checkout@v2

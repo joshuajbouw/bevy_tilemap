@@ -1,17 +1,17 @@
 on:
   workflow_run:
-    workflows: ["Lints"]
+    workflows: ["Ubuntu-20.04"]
     branches: [master, bevy_nightly, ci]
     types:
       - completed
 
-name: macOS-11.0
+name: Tests
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
+  test:
     if: github.event.pull_request.draft == false
     strategy:
       matrix:
@@ -20,7 +20,7 @@ jobs:
           - beta
           - nightly
           - 1.43.0 # MSRV
-    runs-on: macOS
+    runs-on: Ubuntu
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -30,4 +30,4 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: check
+          command: test

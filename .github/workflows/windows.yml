@@ -1,8 +1,9 @@
 on:
-  push:
-    branches: [ master, bevy_nightly ]
-  pull_request:
-    branches: [ master, bevy_nightly ]
+  workflow_run:
+    workflows: ["Lints"]
+    branches: [master, bevy_nightly, ci]
+    types:
+      - completed
 
 name: Windows-2019
 
@@ -10,7 +11,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  check:
+    if: github.event.pull_request.draft == false
     strategy:
       matrix:
         rust:
@@ -28,8 +30,4 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: build
-          args: --release --all-features
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+          command: check
