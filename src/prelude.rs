@@ -33,15 +33,10 @@
 //! [`bevy_tilemap`]: crate
 
 /// The 0.2 prelude version of Bevy Tilemap.
-pub mod v0_2 {
+pub mod v0 {
     pub use crate::{
-        chunk::LayerKind,
-        entity::TilemapComponents,
-        tile::{Tile, Tiles},
-        tilemap::Tilemap,
-        ChunkTilesPlugin,
+        chunk::LayerKind, entity::TilemapComponents, tile::Tile, tilemap::Tilemap, ChunkTilesPlugin,
     };
 }
 
-#[cfg(not(v0_1))]
-pub use v0_2::*;
+pub use v0::*;

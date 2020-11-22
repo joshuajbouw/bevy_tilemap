@@ -1,4 +1,4 @@
-use crate::{dimension::Dimension2, lib::*, point::Point2, tile::Tile};
+use crate::{dimension::Dimension2, lib::*, point::Point2, tile::RawTile};
 
 /// A component that stores the dimensions of the Chunk for the renderer.
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, RenderResources, RenderResource)]
@@ -29,7 +29,7 @@ pub(crate) trait Layer: 'static {
 
     fn set_mesh(&mut self, mesh: Handle<Mesh>);
 
-    fn set_tile(&mut self, index: usize, tile: Tile);
+    fn set_raw_tile(&mut self, index: usize, tile: RawTile);
 
     fn tiles_to_renderer_parts(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>);
 }
@@ -46,7 +46,7 @@ pub(crate) struct DenseLayer {
     #[cfg_attr(feature = "serde", serde(skip))]
     mesh: Handle<Mesh>,
     /// A vector of all the tiles in the chunk.
-    tiles: Vec<Tile>,
+    tiles: Vec<RawTile>,
 }
 
 impl Layer for DenseLayer {
@@ -58,7 +58,7 @@ impl Layer for DenseLayer {
         self.mesh = mesh;
     }
 
-    fn set_tile(&mut self, index: usize, tile: Tile) {
+    fn set_raw_tile(&mut self, index: usize, tile: RawTile) {
         self.tiles[index] = tile;
     }
 
@@ -68,7 +68,7 @@ impl Layer for DenseLayer {
 }
 
 impl DenseLayer {
-    pub(crate) fn new(tiles: Vec<Tile>) -> DenseLayer {
+    pub(crate) fn new(tiles: Vec<RawTile>) -> DenseLayer {
         DenseLayer {
             mesh: Default::default(),
             tiles,
@@ -84,7 +84,7 @@ pub(crate) struct SparseLayer {
     #[cfg_attr(feature = "serde", serde(skip))]
     mesh: Handle<Mesh>,
     /// A map of all the tiles in the chunk.
-    tiles: HashMap<usize, Tile>,
+    tiles: HashMap<usize, RawTile>,
 }
 
 impl Layer for SparseLayer {
@@ -96,7 +96,7 @@ impl Layer for SparseLayer {
         self.mesh = mesh;
     }
 
-    fn set_tile(&mut self, index: usize, tile: Tile) {
+    fn set_raw_tile(&mut self, index: usize, tile: RawTile) {
         self.tiles.insert(index, tile);
     }
 
@@ -106,7 +106,7 @@ impl Layer for SparseLayer {
 }
 
 impl SparseLayer {
-    pub(crate) fn new(tiles: HashMap<usize, Tile>) -> SparseLayer {
+    pub(crate) fn new(tiles: HashMap<usize, RawTile>) -> SparseLayer {
         SparseLayer {
             mesh: Default::default(),
             tiles,
@@ -188,7 +188,10 @@ impl Chunk {
         match kind {
             LayerKind::Dense => {
                 let tiles = vec![
-                    Tile::with_color(0, Color::rgba(0.0, 0.0, 0.0, 0.0));
+                    RawTile {
+                        index: 0,
+                        color: Color::rgba(0.0, 0.0, 0.0, 0.0)
+                    };
                     dimensions.area() as usize
                 ];
                 self.sprite_layers[z] = Some(SpriteLayer {
@@ -218,26 +221,26 @@ impl Chunk {
         self.sprite_layers[from_z] = None;
     }
 
-    pub(crate) fn remove_layer(&mut self, z_layer: usize) {
-        self.sprite_layers[z_layer] = None;
+    pub(crate) fn remove_layer(&mut self, z_order: usize) {
+        self.sprite_layers[z_order] = None;
     }
 
-    pub(crate) fn set_mesh(&mut self, z_layer: usize, mesh: Handle<Mesh>) {
-        let layer = self.sprite_layers[z_layer]
+    pub(crate) fn set_mesh(&mut self, z_order: usize, mesh: Handle<Mesh>) {
+        let layer = self.sprite_layers[z_order]
             .as_mut()
             .expect("`SpriteLayer` is missing.");
         layer.inner.as_mut().set_mesh(mesh);
     }
 
-    pub(crate) fn set_tile(&mut self, z_layer: usize, index: usize, tile: Tile) {
-        let layer = self.sprite_layers[z_layer]
+    pub(crate) fn set_raw_tile(&mut self, z_order: usize, index: usize, raw_tile: RawTile) {
+        let layer = self.sprite_layers[z_order]
             .as_mut()
             .expect("`SpriteLayer` is missing.");
-        layer.inner.as_mut().set_tile(index, tile);
+        layer.inner.as_mut().set_raw_tile(index, raw_tile);
     }
 
-    pub(crate) fn add_entity(&mut self, z_layer: usize, entity: Entity) {
-        let layer = self.sprite_layers[z_layer]
+    pub(crate) fn add_entity(&mut self, z_order: usize, entity: Entity) {
+        let layer = self.sprite_layers[z_order]
             .as_mut()
             .expect("`SpriteLayer` is missing.");
         layer.entity = Some(entity);

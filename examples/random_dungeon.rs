@@ -1,20 +1,33 @@
 use bevy::{
-    asset::LoadState, ecs::bevy_utils::HashMapExt, prelude::*, sprite::TextureAtlasBuilder,
-    window::WindowMode,
+    asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, utils::HashSet, window::WindowMode,
 };
 use bevy_tilemap::prelude::*;
 use rand::Rng;
 
 #[derive(Default, Clone)]
-pub struct TileSpriteHandles {
+struct TileSpriteHandles {
     handles: Vec<HandleUntyped>,
     atlas_loaded: bool,
 }
 
 #[derive(Default, Clone)]
-pub struct MapState {
+struct GameState {
     map_loaded: bool,
     spawned: bool,
+    collisions: HashSet<(i32, i32)>,
+    player: Tile<(i32, i32), Color>,
+}
+
+impl GameState {
+    fn move_player(&mut self, delta_xy: (i32, i32)) {
+        let new_pos = (
+            self.player.point.0 + delta_xy.0,
+            self.player.point.1 + delta_xy.1,
+        );
+        if !self.collisions.contains(&new_pos) {
+            self.player.point = new_pos;
+        }
+    }
 }
 
 fn setup(
@@ -66,14 +79,16 @@ fn load(
             global_transform: Default::default(),
         };
 
-        commands.spawn(tilemap_components);
+        commands
+            .spawn(tilemap_components)
+            .with(Timer::from_seconds(0.05, true));
 
         sprite_handles.atlas_loaded = true;
     }
 }
 
 fn build_random_dungeon(
-    mut map_state: ResMut<MapState>,
+    mut map_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
     mut query: Query<&mut Tilemap>,
@@ -98,26 +113,29 @@ fn build_random_dungeon(
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let floor_idx = texture_atlas.get_texture_index(&floor_sprite).unwrap();
         let wall_idx = texture_atlas.get_texture_index(&wall_sprite).unwrap();
-        let floor_tile = Tile::new(floor_idx);
-        let wall_tile = Tile::new(wall_idx);
 
-        // We must use the new handy `Tiles` tool which is a wrapped `Vec`
-        let mut tiles = Tiles::with_capacity((height * width) as usize);
+        // Now we fill the entire space with floors.
+        let mut tiles = Vec::new();
         for y in (-height / 2)..(height / 2) {
             for x in (-width / 2)..(width / 2) {
-                tiles.insert((x, y, 0), floor_tile);
+                // By default tile sets the Z order at 0. Lower means that tile
+                // will render lower than others. 0 is the absolute bottom
+                // level which is perfect for backgrounds.
+                let tile = Tile::new((x, y), floor_idx);
+                tiles.push(tile);
             }
         }
+
         // Then we push in all wall tiles on the X axis.
         for x in (-width / 2)..(width / 2) {
-            tiles.insert((x, -height / 2, 0), wall_tile);
-            tiles.insert((x, height / 2 - 1, 0), wall_tile);
+            tiles.push(Tile::new((x, -height / 2), wall_idx));
+            tiles.push(Tile::new((x, height / 2 - 1), wall_idx));
         }
 
         // Then the wall tiles on the Y axis.
         for y in (-height / 2)..(height / 2) {
-            tiles.insert((-width / 2, y, 0), wall_tile);
-            tiles.insert((width / 2 - 1, y, 0), wall_tile);
+            tiles.push(Tile::new((-width / 2, y), wall_idx));
+            tiles.push(Tile::new((width / 2 - 1, y), wall_idx));
         }
         // Lets just generate some random walls to sparsely place around the dungeon!
         let range = (width * height) as usize / 5;
@@ -127,7 +145,7 @@ fn build_random_dungeon(
             let y = rng.gen_range(-width / 2, height / 2);
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
-                tiles.insert((x, y, 0), wall_tile);
+                tiles.push(Tile::new((x, y), wall_idx));
             }
         }
 
@@ -144,11 +162,10 @@ fn build_random_dungeon(
         // Now lets add in a dwarf friend!
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf.png");
         let dwarf_idx = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
-        let dwarf_tile = Tile::new(dwarf_idx);
-        tiles.insert(
-            (0, 0, 1), // Do note that we are pushing him onto z_layer 1 now!
-            dwarf_tile,
-        );
+        let dwarf_start_pos = (0, 0);
+        // We add in a Z order of 1 to place the tile above the background on Z order 0.
+        let dwarf_tile = Tile::with_z_order(dwarf_start_pos, 1, dwarf_idx);
+        tiles.push(dwarf_tile);
 
         // Now we pass all the tiles to our map.
         map.set_tiles(tiles).unwrap();
@@ -158,6 +175,55 @@ fn build_random_dungeon(
         map.spawn_chunk((0, 0)).unwrap();
 
         map_state.map_loaded = true;
+    }
+}
+
+fn character_movement(
+    mut game_state: ResMut<GameState>,
+    keyboard_input: Res<Input<KeyCode>>,
+    mut query: Query<(&mut Tilemap, &mut Timer)>,
+) {
+    if !game_state.map_loaded {
+        return;
+    }
+
+    for (mut map, timer) in query.iter_mut() {
+        if !timer.finished {
+            continue;
+        }
+
+        for key in keyboard_input.get_pressed() {
+            let previous_point = game_state.player.point;
+
+            use KeyCode::*;
+            match key {
+                W => {
+                    println!("Pushed W");
+                    game_state.move_player((0, 1));
+                }
+                A => {
+                    println!("Pushed A");
+                    game_state.move_player((-1, 0));
+                }
+                S => {
+                    println!("Pushed S");
+                    game_state.move_player((0, -1));
+                }
+                D => {
+                    println!("Pushed D");
+                    game_state.move_player((1, 0));
+                }
+
+                _ => {}
+            }
+
+            if previous_point == game_state.player.point {
+                continue;
+            }
+
+            map.clear_tile(previous_point, 1).unwrap();
+            map.set_tile(game_state.player).unwrap();
+        }
     }
 }
 
@@ -173,11 +239,12 @@ fn main() {
             ..Default::default()
         })
         .init_resource::<TileSpriteHandles>()
-        .init_resource::<MapState>()
+        .init_resource::<GameState>()
         .add_plugins(DefaultPlugins)
         .add_plugin(ChunkTilesPlugin::default())
         .add_startup_system(setup.system())
         .add_system(load.system())
         .add_system(build_random_dungeon.system())
+        .add_system(character_movement.system())
         .run()
 }

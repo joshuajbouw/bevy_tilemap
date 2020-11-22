@@ -7,12 +7,86 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+* `Tilemap::clear_tile` was added to easily clear a single tile.
+* `Tilemap::clear_tiles` likewise will clear an array of tiles.
+* `Point2` now implements `From<&Point2>`.
+* `Point3` now implements `From<&Point3>`.
+* `tilemap::Tilemap::set_tiles` now implements 
+`IntoIterator<Item = ((i32, i32, i32), Tile)>` which had broken the previous 
+compatibility.
+* `tile::Tile` had the `non_exhaustive` derive added it now that the fields are
+all public.
+* `tile::Tile` added methods `with_tint` and `with_tint_and_z_order`.
+
+### Changed
+
+* `Tilemap::set_tiles` was changed to take in a `IntoIterator<Item = Tile<P, C>`,
+where `C` is `Into<Color>` and P is `Into<Point2>`, from 
+`IntoIterator<Item = (i32, i32, i32), Tile>`.
+* `tile::Tile` was changed to include `z_order`, `sprite_index`, and `point`.
+Field `color` is now `tint`. All fields were made public.
+* `tile::Tile` methods `default`, `new` updated.
+
+**Before**
+```rust
+let z_order = 0;
+let point = (1, 1, z_order)
+let tile = Tile::new(0);
+let tiles = vec![(point, tile)];
+ 
+// defined elsewhere
+tilemap.set_tiles(tiles).unwrap();
+```
+
+**After**
+```rust
+let point = (1, 1);
+let z_order = 0;
+let tiles = vec![Tile::new(point, z_order)];
+
+// defined elsewhere
+tilemap.set_tiles(tiles).unwrap();
+```
+
+* `Tilemap::set_tile` was changed to take in `Tile<P, C>`, where `P` is 
+`Into<Point2>` and `C` is `Into<Color>`. This replaces the previous argument
+`P` and `T` where `T` was `Into<Tile>`.
+
+**Before**
+```rust
+let point = (9, 3, 0);
+let sprite_index = 3;
+let tile = Tile::new(sprite_index);
+
+// defined elsewhere
+tilemap.set(point, tile).unwrap();
+```
+
+**After**
+```rust
+let point = (9, 3);
+let sprite_index = 3;
+let tile = Tile::new(point, sprite_index);
+
+tilemap.set_tile(tile).unwrap();
+```
+
+### Removed
+
+* `tile::Tiles` was removed as it is no longer needed as all data as been set
+into `Tile` to make everything easier.
+* `tile::Tiles` was removed from `prelude`.
+* `tile::Tile` methods `index` and `color` were removed as the fields are now
+public.
+* `tile::Tile` all `<Into<Tile>>` implements were removed.
+
 ## [0.2.1] - 2020-11-21
 
 ### Added
 
 * Minimum supported rust version (MSRV) were noted to be 1.43.0 in documents.
-
 
 ### Fixes
 
