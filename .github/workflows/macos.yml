@@ -1,5 +1,6 @@
 on:
   pull_request:
+    types: [ opened, syncronize, reopened, ready_for_review ]
     branches: [ master, bevy_nightly ]
 
 name: macOS-11.0
@@ -8,9 +9,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  JOB:
-    if: github.event.pull_request.draft == false
   build:
+    if: github.event.pull_request.draft == false
     strategy:
       matrix:
         rust:
