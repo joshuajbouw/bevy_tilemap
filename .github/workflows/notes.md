@@ -1,1 +1,0 @@
-- Only run linux on PRs.
