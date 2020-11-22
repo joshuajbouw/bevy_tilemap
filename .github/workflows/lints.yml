@@ -1,6 +1,4 @@
 on:
-  push:
-    branches: [ master, bevy_nightly ]
   pull_request:
     branches: [ master, bevy_nightly ]
 
