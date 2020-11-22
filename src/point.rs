@@ -47,6 +47,12 @@ impl Display for Point2 {
     }
 }
 
+impl From<&Point2> for Point2 {
+    fn from(point: &Point2) -> Point2 {
+        *point
+    }
+}
+
 impl From<Point2> for Vec2 {
     fn from(point: Point2) -> Vec2 {
         Vec2::new(point.x as f32, point.y as f32)
@@ -324,9 +330,21 @@ impl Display for Point3 {
     }
 }
 
+impl From<Point3> for Point2 {
+    fn from(point: Point3) -> Point2 {
+        Point2::new(point.x, point.y)
+    }
+}
+
 impl From<&Point3> for Point2 {
     fn from(point: &Point3) -> Point2 {
         Point2::new(point.x, point.y)
+    }
+}
+
+impl From<&Point3> for Point3 {
+    fn from(point: &Point3) -> Point3 {
+        *point
     }
 }
 

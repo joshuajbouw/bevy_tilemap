@@ -4,8 +4,8 @@ use crate::{
     entity::ChunkComponents,
     lib::*,
     mesh::ChunkMesh,
-    point::{Point2, Point3},
-    tile::{Tile, TilePoints, Tiles},
+    point::Point2,
+    tile::{RawTile, Tile},
 };
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -82,29 +82,29 @@ pub(crate) enum TilemapEvent {
     },
     /// An event when a layer is created for all chunks.
     AddedLayer {
-        /// The *Z* layer to add.
-        z_layer: usize,
+        /// The *Z* order to add.
+        z_order: usize,
         /// The `LayerKind` of the layer.
         kind: LayerKind,
     },
     /// An event when a layer is moved.
     MovedLayer {
-        /// From which *Z* layer.
-        from_z_layer: usize,
-        /// To which *Z* layer.
+        /// From which *Z* order.
+        from_z_order: usize,
+        /// To which *Z* order.
         to_z_layer: usize,
     },
     /// An event when a layer is removed for all chunks.
     RemovedLayer {
-        /// The *Z* layer to remove.
-        z_layer: usize,
+        /// The *Z* order to remove.
+        z_order: usize,
     },
     /// An event when a chunk had been modified by changing tiles.
     ModifiedChunk {
         /// The map index where the chunk needs to be stored.
         handle: Handle<Chunk>,
-        /// The `TileSetter` that is used to set all the tiles.
-        tiles: TilePoints,
+        /// The tiles that need to be set.
+        tiles: Vec<Tile<Point2, Color>>,
     },
     /// An event when a chunk is spawned.
     SpawnedChunk { handle: Handle<Chunk> },
@@ -607,18 +607,18 @@ impl Tilemap {
     /// ```
     ///
     /// [`LayerKind`]: crate::chunk::LayerKind
-    pub fn add_layer_with_kind(&mut self, kind: LayerKind, z_layer: usize) -> TilemapResult<()> {
-        if let Some(some_kind) = self.layers[z_layer] {
+    pub fn add_layer_with_kind(&mut self, kind: LayerKind, z_order: usize) -> TilemapResult<()> {
+        if let Some(some_kind) = self.layers[z_order] {
             return if some_kind == kind {
                 Ok(())
             } else {
-                Err(ErrorKind::LayerExists(z_layer).into())
+                Err(ErrorKind::LayerExists(z_order).into())
             };
         }
 
-        self.layers[z_layer] = Some(kind);
+        self.layers[z_order] = Some(kind);
 
-        self.events.send(TilemapEvent::AddedLayer { z_layer, kind });
+        self.events.send(TilemapEvent::AddedLayer { z_order, kind });
         Ok(())
     }
 
@@ -699,7 +699,7 @@ impl Tilemap {
         self.layers[from_z] = None;
 
         self.events.send(TilemapEvent::MovedLayer {
-            from_z_layer: from_z,
+            from_z_order: from_z,
             to_z_layer: to_z,
         });
 
@@ -742,7 +742,7 @@ impl Tilemap {
 
         self.layers[z] = None;
 
-        self.events.send(TilemapEvent::RemovedLayer { z_layer: z })
+        self.events.send(TilemapEvent::RemovedLayer { z_order: z })
     }
 
     /// Spawns a chunk at a given index or coordinate.
@@ -797,7 +797,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -806,11 +806,13 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// let tile_point = (16, 16, 0);
-    /// let tile_index = 0;
-    /// tilemap.set_tile(tile_point, tile_index);
+    /// let point = (16, 16, 0);
+    /// let index = 0;
+    /// let tile = Tile::new(point, index);
     ///
-    /// tilemap.spawn_chunk_containing_point(tile_point);
+    /// tilemap.set_tile(tile);
+    ///
+    /// tilemap.spawn_chunk_containing_point(point);
     /// ```
     pub fn spawn_chunk_containing_point<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point = self.tile_to_chunk_point(point);
@@ -982,46 +984,52 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// use bevy_tilemap::tile::{Tile, Tiles};
+    /// use bevy_tilemap::tile::Tile;
     ///
-    /// let mut tiles = Tiles::default();
-    /// tiles.insert((1, 1, 0), Tile::new(1));
-    /// tiles.insert((2, 2, 0), Tile::new(2));
-    /// tiles.insert((3, 3, 0), Tile::new(3));
-    ///
-    /// assert_eq!(tiles.len(), 3);
+    /// let mut tiles = vec![
+    ///     Tile::new((1, 1), 0),
+    ///     Tile::new((2, 2), 0),
+    ///     Tile::new((3, 3), 0)
+    /// ];
     ///
     /// // Set multiple tiles and unwrap the result
     /// tilemap.set_tiles(tiles).unwrap();
     /// ```
     ///
     /// [`set_tile`]: Tilemap::set_tile
-    pub fn set_tiles<T>(&mut self, tiles: T) -> TilemapResult<()>
+    pub fn set_tiles<P, C, I>(&mut self, tiles: I) -> TilemapResult<()>
     where
-        T: IntoIterator<Item = ((i32, i32, i32), Tile)>,
+        P: Into<Point2>,
+        C: Into<Color>,
+        I: IntoIterator<Item = Tile<P, C>>,
     {
         let width = self.chunk_dimensions.width() as i32;
         let height = self.chunk_dimensions.height() as i32;
 
-        let mut chunk_map: HashMap<Point2, TilePoints> = HashMap::default();
-        for (points, tile) in tiles.into_iter() {
-            let global_tile_point: Point3 = points.into();
-            let chunk_point: Point2 = self.tile_to_chunk_point(&global_tile_point).into();
+        let mut chunk_map: HashMap<Point2, Vec<Tile<Point2, Color>>> = HashMap::default();
+        for tile in tiles.into_iter() {
+            let global_tile_point: Point2 = tile.point.into();
+            let chunk_point: Point2 = self.tile_to_chunk_point(global_tile_point).into();
 
-            if self.layers[global_tile_point.z as usize].is_none() {
-                self.add_layer(global_tile_point.z as usize)?;
+            if self.layers[tile.z_order as usize].is_none() {
+                self.add_layer(tile.z_order as usize)?;
             }
 
-            let tile_point = Point3::new(
+            let tile_point = Point2::new(
                 global_tile_point.x - (width * chunk_point.x) + (width / 2),
                 global_tile_point.y - (height * chunk_point.y) + (width / 2),
-                global_tile_point.z,
             );
+
+            let chunk_tile: Tile<Point2, Color> = Tile {
+                point: tile_point,
+                z_order: tile.z_order,
+                sprite_index: tile.sprite_index,
+                tint: tile.tint.into(),
+            };
             if let Some(tiles) = chunk_map.get_mut(&chunk_point) {
-                tiles.insert(tile_point, tile);
+                tiles.push(chunk_tile);
             } else {
-                let mut tiles = TilePoints::default();
-                tiles.insert(tile_point, tile);
+                let tiles = vec![chunk_tile];
                 chunk_map.insert(chunk_point, tiles);
             }
         }
@@ -1043,8 +1051,10 @@ impl Tilemap {
 
     /// Sets a single tile at a coordinate position, creating a chunk if necessary.
     ///
-    /// For convenience, this does not require to use a TileSetter which is beneficial for multiple
-    /// tiles. If that is preferred, do use [`set_tiles`] instead.
+    /// If you are setting more than one tile at a time, it is highly
+    /// recommended not to run this method! If that is preferred, do use
+    /// [`set_tiles`] instead. Every single tile that is created creates a new
+    /// event. With bulk tiles, it creates 1 event for all.
     ///
     /// If the chunk does not yet exist, it will create a new one automatically.
     ///
@@ -1064,22 +1074,104 @@ impl Tilemap {
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
     /// use bevy_tilemap::tile::Tile;
+    /// let point = (9, 3);
+    /// let sprite_index = 3;
+    /// let tile = Tile::new(point, sprite_index);
     ///
     /// // Set a single tile and unwrap the result
-    /// tilemap.set_tile((15, 15, 0), Tile::new(1)).unwrap();
+    /// tilemap.set_tile(tile).unwrap();
     /// ```
     ///
     /// [`set_tiles`]: Tilemap::set_tiles
-    pub fn set_tile<P, T>(&mut self, point: P, tile: T) -> TilemapResult<()>
+    pub fn set_tile<P, C>(&mut self, tile: Tile<P, C>) -> TilemapResult<()>
     where
-        P: Into<Point3>,
-        T: Into<Tile>,
+        P: Into<Point2>,
+        C: Into<Color>,
     {
-        let tile: Tile = tile.into();
-        let mut tiles = Tiles::default();
-        let point: Point3 = point.into();
-        tiles.insert((point.x, point.y, point.z), tile);
+        let tiles = vec![tile];
         self.set_tiles(tiles)
+    }
+
+    /// Clears the tiles at the specified points from the tilemap.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::prelude::*;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// let mut tiles = vec![
+    ///     Tile::new((1, 1), 0),
+    ///     Tile::new((2, 2), 0),
+    ///     Tile::new((3, 3), 0)
+    /// ];
+    ///
+    /// // Set multiple tiles and unwrap the result
+    /// tilemap.set_tiles(tiles.clone()).unwrap();
+    ///
+    /// // Then later on... Do note that if this done in the same frame, the
+    /// // tiles will not even exist at all.
+    /// let to_remove = vec![
+    ///     ((1, 1), 0),
+    ///     ((2, 2), 0),
+    ///     ((3, 3), 0),
+    /// ];
+    ///
+    /// tilemap.clear_tiles(to_remove);
+    /// ```
+    pub fn clear_tiles<P, I>(&mut self, points: I) -> TilemapResult<()>
+    where
+        P: Into<Point2>,
+        I: IntoIterator<Item = (P, usize)>,
+    {
+        let mut tiles = Vec::new();
+        for (point, z_order) in points {
+            tiles.push(Tile::with_z_order_and_tint(
+                point,
+                z_order,
+                0,
+                Color::rgba(0.0, 0.0, 0.0, 0.0),
+            ));
+        }
+        self.set_tiles(tiles)?;
+        Ok(())
+    }
+
+    /// Clear a single tile at the specified point from the tilemap.
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy::asset::HandleId;
+    /// # use bevy::prelude::*;
+    /// #
+    /// # // In production use a strong handle from an actual source.
+    /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    /// #
+    /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// #
+    /// use bevy_tilemap::tile::Tile;
+    /// let point = (9, 3);
+    /// let sprite_index = 3;
+    /// let tile = Tile::new(point, sprite_index);
+    ///
+    /// // Set a single tile and unwrap the result
+    /// tilemap.set_tile(tile).unwrap();
+    ///
+    /// // Later on...
+    /// tilemap.clear_tile(point, 0);
+    /// ```
+    pub fn clear_tile<P>(&mut self, point: P, z_order: usize) -> TilemapResult<()>
+    where
+        P: Into<Point2>,
+    {
+        let points = vec![(point, z_order)];
+        self.clear_tiles(points)
     }
 
     /// Returns the center tile, if the tilemap has dimensions.
@@ -1310,18 +1402,18 @@ pub fn map_system(
                     new_chunks.push((*point, handle.clone_weak()));
                 }
                 AddedLayer {
-                    z_layer: ref z,
+                    z_order: ref z,
                     ref kind,
                 } => {
                     added_layers.push((*z, *kind));
                 }
                 MovedLayer {
-                    from_z_layer: ref from_z,
+                    from_z_order: ref from_z,
                     to_z_layer: ref to_z,
                 } => {
                     moved_layers.push((*from_z, *to_z));
                 }
-                RemovedLayer { z_layer: ref z } => {
+                RemovedLayer { z_order: ref z } => {
                     removed_layers.push(*z);
                 }
                 ModifiedChunk {
@@ -1371,9 +1463,13 @@ pub fn map_system(
 
         for (handle, setter) in modified_chunks.into_iter() {
             let chunk = chunks.get_mut(&handle).expect("`Chunk` is missing.");
-            for (point, tile) in setter.into_iter() {
-                let index = map.chunk_dimensions.encode_point_unchecked(point.xy());
-                chunk.set_tile(point.z as usize, index, tile);
+            for tile in setter.into_iter() {
+                let index = map.chunk_dimensions.encode_point_unchecked(tile.point);
+                let raw_tile = RawTile {
+                    index: tile.sprite_index,
+                    color: tile.tint,
+                };
+                chunk.set_raw_tile(tile.z_order, index, raw_tile);
             }
         }
 
