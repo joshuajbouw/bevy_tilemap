@@ -1,15 +1,18 @@
+name: macOS-11.0
+
 on:
+  push:
+    branches: [ master, bevy_nightly ]
   pull_request:
     branches: [master, bevy_nightly]
-
-name: Windows-2019
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   check:
-    if: github.event.pull_request.draft == false
+    name: Check
+    runs-on: macos-11.0
     strategy:
       matrix:
         rust:
@@ -17,7 +20,6 @@ jobs:
           - beta
           - nightly
           - 1.43.0 # MSRV
-    runs-on: Windows
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
