@@ -1,6 +1,5 @@
 on:
   pull_request:
-    types: [ opened, synchronize, reopened, ready_for_review ]
     branches: [ master, bevy_nightly ]
 
 name: Ubuntu-20.04
