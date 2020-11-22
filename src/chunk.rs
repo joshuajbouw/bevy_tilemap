@@ -1,28 +1,11 @@
-use crate::{dimension::Dimension2, lib::*, point::Point2, tile::RawTile};
-
-/// A component that stores the dimensions of the Chunk for the renderer.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, RenderResources, RenderResource)]
-#[render_resources(from_self)]
-pub struct ChunkDimensions {
-    /// The chunk dimensions.
-    pub dimensions: Vec2,
-}
-
-unsafe impl Byteable for ChunkDimensions {}
-
-impl From<Dimension2> for ChunkDimensions {
-    fn from(dimensions: Dimension2) -> ChunkDimensions {
-        ChunkDimensions {
-            dimensions: dimensions.into(),
-        }
-    }
-}
-
-impl From<Vec2> for ChunkDimensions {
-    fn from(vec: Vec2) -> ChunkDimensions {
-        ChunkDimensions { dimensions: vec }
-    }
-}
+use crate::{
+    dimension::Dimension2,
+    entity::{ChunkDimensions, DirtyLayer},
+    lib::*,
+    mesh::ChunkMesh,
+    point::Point2,
+    tile::RawTile,
+};
 
 pub(crate) trait Layer: 'static {
     fn mesh(&self) -> &Handle<Mesh>;
@@ -97,6 +80,9 @@ impl Layer for SparseLayer {
     }
 
     fn set_raw_tile(&mut self, index: usize, tile: RawTile) {
+        if tile.color.a() == 0.0 {
+            self.tiles.remove(&index);
+        }
         self.tiles.insert(index, tile);
     }
 
@@ -246,6 +232,13 @@ impl Chunk {
         layer.entity = Some(entity);
     }
 
+    pub(crate) fn get_entity(&self, z_order: usize) -> Option<Entity> {
+        let layer = self.sprite_layers[z_order]
+            .as_ref()
+            .expect("`SpriteLayer` is missing.");
+        layer.entity
+    }
+
     pub(crate) fn get_entities(&self) -> Vec<Entity> {
         let mut entities = Vec::new();
         for sprite_layer in &self.sprite_layers {
@@ -258,14 +251,42 @@ impl Chunk {
         entities
     }
 
-    pub(crate) fn tiles_to_renderer_parts(
+    pub(crate) fn tiles_to_renderer_parts<D: Into<Dimension2>>(
         &self,
         z: usize,
-        dimensions: &Dimension2,
+        dimensions: D,
     ) -> Option<(Vec<f32>, Vec<[f32; 4]>)> {
+        let dimensions = dimensions.into();
         let area = dimensions.area() as usize;
         self.sprite_layers[z]
             .as_ref()
             .map(|sprite_layer| sprite_layer.inner.as_ref().tiles_to_renderer_parts(area))
+    }
+}
+
+pub(crate) fn chunk_update_system(
+    mut commands: Commands,
+    chunks: Res<Assets<Chunk>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    query: Query<(
+        Entity,
+        &ChunkDimensions,
+        &Handle<Chunk>,
+        &Handle<Mesh>,
+        &DirtyLayer,
+    )>,
+) {
+    for (entity, dimensions, chunk_handle, mesh_handle, dirty_layer) in query.iter() {
+        let chunk = chunks.get(chunk_handle).expect("`Chunk` is missing");
+        let mesh = meshes.get_mut(mesh_handle).expect("`Mesh` is missing");
+
+        let (indexes, colors) = chunk
+            .tiles_to_renderer_parts(dirty_layer.0, dimensions.dimensions)
+            .expect("Tiles missing.");
+
+        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes.into());
+        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors.into());
+
+        commands.remove_one::<DirtyLayer>(entity);
     }
 }

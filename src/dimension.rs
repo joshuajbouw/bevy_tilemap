@@ -133,6 +133,12 @@ impl From<Dimension2> for Vec2 {
     }
 }
 
+impl From<Vec2> for Dimension2 {
+    fn from(vec: Vec2) -> Self {
+        Dimension2::new(vec.x() as u32, vec.y() as u32)
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Dimension3 {

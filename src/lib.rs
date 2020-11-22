@@ -43,7 +43,7 @@
 //! let point = (16, 16);
 //! let sprite_index = 0;
 //! let tile = Tile::new(point, sprite_index);
-//! tilemap.set_tile(tile);
+//! tilemap.insert_tile(tile);
 //!
 //! tilemap.spawn_chunk_containing_point(point);
 //! ```
@@ -112,12 +112,12 @@
 //!     }
 //! }
 //!
-//! tilemap.set_tiles(tiles);
+//! tilemap.insert_tiles(tiles);
 //!
 //! // Over this...
 //! for y in 0..31 {
 //!     for x in 0..31 {
-//!         tilemap.set_tile(Tile::new((x, y, 0), 0));
+//!         tilemap.insert_tile(Tile::new((x, y, 0), 0));
 //!     }
 //! }
 //! ```
@@ -133,7 +133,7 @@
 #![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.2.1")]
 #![no_implicit_prelude]
 // clippy
-#![allow(clippy::too_many_arguments)]
+#![allow(clippy::too_many_arguments, clippy::type_complexity)]
 // rustc
 #![deny(dead_code, missing_docs, unused_imports)]
 
@@ -165,7 +165,8 @@ impl Plugin for ChunkTilesPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
             .add_asset::<Chunk>()
-            .add_system_to_stage("post_update", crate::tilemap::map_system.system());
+            .add_system_to_stage("post_update", crate::tilemap::map_system.system())
+            .add_system_to_stage("post_update", crate::chunk::chunk_update_system.system());
 
         let resources = app.resources_mut();
         let mut render_graph = resources
@@ -192,7 +193,7 @@ mod lib {
         bevy_app::{AppBuilder, Events, Plugin},
         bevy_asset::{AddAsset, Assets, Handle, HandleId},
         bevy_core::Byteable,
-        bevy_ecs::{Bundle, Commands, Entity, IntoQuerySystem, Query, ResMut, Resources},
+        bevy_ecs::{Bundle, Commands, Entity, IntoQuerySystem, Query, Res, ResMut, Resources},
         bevy_math::{Vec2, Vec3},
         bevy_render::{
             color::Color,
