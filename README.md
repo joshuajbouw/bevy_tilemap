@@ -111,7 +111,7 @@ $ git clone --recursive https://github.com/joshuajbouw/bevy_tilemap/
 and then built using cargo:
 
 ```bash
-$ cargo build --examples
+$ cargo build --example random_dungeon
 ```
 
 cargo can also be used to run tests:
