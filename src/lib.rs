@@ -165,6 +165,7 @@ impl Plugin for ChunkTilesPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
             .add_asset::<Chunk>()
+            .add_system_to_stage("post_update", crate::tilemap::map_auto_configure.system())
             .add_system_to_stage("post_update", crate::tilemap::map_system.system())
             .add_system_to_stage("post_update", crate::chunk::chunk_update_system.system());
 
@@ -216,7 +217,7 @@ mod lib {
             hierarchy::BuildChildren,
         },
         bevy_type_registry::{TypeUuid, Uuid},
-        bevy_utils::HashMap,
+        bevy_utils::{HashMap, HashSet},
     };
 
     // Need to add this here as there is a Rust issue surrounding the fact that
@@ -245,5 +246,9 @@ mod lib {
     };
 
     // Macros
-    pub(crate) use ::std::{panic, vec, write};
+    pub(crate) use ::std::{assert_eq, panic, vec, write};
+
+    #[cfg(debug_assertions)]
+    #[allow(unused_imports)]
+    pub(crate) use ::std::println;
 }

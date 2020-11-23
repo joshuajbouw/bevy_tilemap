@@ -45,7 +45,7 @@ pub(crate) struct Dimension2 {
 }
 
 impl Dimension2 {
-    pub(crate) fn new(width: u32, height: u32) -> Dimension2 {
+    pub(crate) const fn new(width: u32, height: u32) -> Dimension2 {
         Dimension2 { width, height }
     }
 
@@ -139,13 +139,69 @@ impl From<Vec2> for Dimension2 {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Copy, Clone)]
-pub(crate) struct Dimension3 {
-    width: u32,
-    height: u32,
-    depth: u32,
+impl Add for Dimension2 {
+    type Output = Dimension2;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Dimension2::new(self.width + rhs.width, self.height + rhs.height)
+    }
 }
+
+impl AddAssign for Dimension2 {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = Dimension2::new(self.width + rhs.width, self.height + rhs.height)
+    }
+}
+
+impl Div for Dimension2 {
+    type Output = Dimension2;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Dimension2::new(self.width / rhs.width, self.height / rhs.height)
+    }
+}
+
+impl DivAssign for Dimension2 {
+    fn div_assign(&mut self, rhs: Self) {
+        *self = Dimension2::new(self.width / rhs.width, self.height / rhs.height)
+    }
+}
+
+impl Mul for Dimension2 {
+    type Output = Dimension2;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Dimension2::new(self.width * rhs.width, self.height * rhs.height)
+    }
+}
+
+impl MulAssign for Dimension2 {
+    fn mul_assign(&mut self, rhs: Self) {
+        *self = Dimension2::new(self.width * rhs.width, self.height * rhs.height)
+    }
+}
+
+impl Sub for Dimension2 {
+    type Output = Dimension2;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Dimension2::new(self.width - rhs.width, self.height - rhs.height)
+    }
+}
+
+impl SubAssign for Dimension2 {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = Dimension2::new(self.width - rhs.width, self.height - rhs.height)
+    }
+}
+
+// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+// #[derive(Debug, Copy, Clone)]
+// pub(crate) struct Dimension3 {
+//     width: u32,
+//     height: u32,
+//     depth: u32,
+// }
 
 // /// Trait methods that have to do with the 3rd dimension.
 // impl Dimension3 {
