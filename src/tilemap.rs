@@ -120,6 +120,11 @@ pub(crate) enum TilemapEvent {
     },
 }
 
+const DEFAULT_TEXTURE_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
+const DEFAULT_CHUNK_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
+const DEFAULT_Z_LAYERS: usize = 5;
+const DEFAULT_AUTO_CONFIGURE: bool = true;
+
 /// A Tilemap which maintains chunks and its tiles within.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
@@ -128,6 +133,7 @@ pub struct Tilemap {
     chunk_dimensions: Dimension2,
     tile_dimensions: Dimension2,
     layers: Vec<Option<LayerKind>>,
+    auto_configure: bool,
     #[cfg_attr(feature = "serde", serde(skip))]
     texture_atlas: Handle<TextureAtlas>,
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -202,17 +208,19 @@ pub struct Builder {
     z_layers: usize,
     layers: Option<HashMap<usize, LayerKind>>,
     texture_atlas: Option<Handle<TextureAtlas>>,
+    auto_configure: bool,
 }
 
 impl Default for Builder {
     fn default() -> Self {
         Builder {
             dimensions: None,
-            chunk_dimensions: Dimension2::new(32, 32),
-            tile_dimensions: Dimension2::new(32, 32),
-            z_layers: 20,
+            chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
+            tile_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
+            z_layers: DEFAULT_Z_LAYERS,
             layers: None,
             texture_atlas: None,
+            auto_configure: DEFAULT_AUTO_CONFIGURE,
         }
     }
 }
@@ -355,6 +363,25 @@ impl Builder {
         self
     }
 
+    /// Sets if you want the tilemap to automatically configure itself.
+    ///
+    /// This is useful and meant as a shortcut if you want the tilemap to
+    /// figure out the size of the textures and optimal chunk sizes on its own.
+    ///
+    /// By default this is set to true.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::tilemap;
+    /// use bevy::prelude::*;
+    ///
+    /// let builder = tilemap::Builder::new().auto_configure(false);
+    /// ```
+    pub fn auto_configure(mut self, b: bool) -> Builder {
+        self.auto_configure = b;
+        self
+    }
+
     /// Consumes the builder and returns a result.
     ///
     /// If successful a [`TilemapResult`] is return with [tilemap] on
@@ -403,6 +430,7 @@ impl Builder {
             chunk_dimensions: self.chunk_dimensions,
             tile_dimensions: self.tile_dimensions,
             layers: vec![None; z_layers],
+            auto_configure: self.auto_configure,
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
@@ -429,9 +457,10 @@ impl Default for Tilemap {
     fn default() -> Self {
         Tilemap {
             dimensions: None,
-            chunk_dimensions: Dimension2::new(32, 32),
-            tile_dimensions: Dimension2::new(32, 32),
-            layers: vec![None; 20],
+            chunk_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
+            tile_dimensions: DEFAULT_CHUNK_DIMENSIONS,
+            layers: vec![None; DEFAULT_Z_LAYERS],
+            auto_configure: DEFAULT_AUTO_CONFIGURE,
             texture_atlas: Handle::default(),
             chunks: Default::default(),
             entities: Default::default(),
@@ -1356,6 +1385,53 @@ impl Tilemap {
     /// ```
     pub fn tile_height(&self) -> u32 {
         self.tile_dimensions.height()
+    }
+}
+
+pub(crate) fn map_auto_configure(
+    texture_atlases: Res<Assets<TextureAtlas>>,
+    mut query: Query<&mut Tilemap>,
+) {
+    for mut map in query.iter_mut() {
+        if !map.auto_configure {
+            return;
+        }
+
+        let atlas = texture_atlases
+            .get(&map.texture_atlas)
+            .expect("`TextureAtlas` is missing.");
+
+        let mut tile_dimensions: Dimension2 = Dimension2::new(0, 0);
+        let mut base_size: u32 = 0;
+        let mut sizes = HashSet::default();
+        for texture in &atlas.textures {
+            let dimensions: Dimension2 = Vec2::new(texture.width(), texture.height()).into();
+            let size = dimensions.area();
+            sizes.insert(size);
+            if size < base_size || base_size == 0 {
+                tile_dimensions = dimensions;
+                base_size = size;
+            }
+        }
+
+        for size in sizes.into_iter() {
+            assert_eq!(
+                size % base_size,
+                0,
+                "The tiles in the set `TextureAtlas` must be divisible by the smallest tile."
+            );
+        }
+
+        let chunk_dimensions = Dimension2::new(
+            (DEFAULT_TEXTURE_DIMENSIONS.width() as f32 / tile_dimensions.width() as f32
+                * DEFAULT_CHUNK_DIMENSIONS.width() as f32) as u32,
+            (DEFAULT_TEXTURE_DIMENSIONS.height() as f32 / tile_dimensions.height() as f32
+                * DEFAULT_CHUNK_DIMENSIONS.height() as f32) as u32,
+        );
+
+        map.tile_dimensions = tile_dimensions;
+        map.chunk_dimensions = chunk_dimensions;
+        map.auto_configure = false;
     }
 }
 
