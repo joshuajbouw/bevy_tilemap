@@ -122,7 +122,7 @@ pub(crate) enum TilemapEvent {
 
 const DEFAULT_TEXTURE_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
 const DEFAULT_CHUNK_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
-const DEFAULT_Z_LAYERS: usize = 0;
+const DEFAULT_Z_LAYERS: usize = 5;
 const DEFAULT_AUTO_CONFIGURE: bool = true;
 
 /// A Tilemap which maintains chunks and its tiles within.
