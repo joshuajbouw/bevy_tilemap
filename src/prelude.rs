@@ -1,41 +1,39 @@
-//! The Bevy Tilemap Prelude.
-//!
-//! Since there is not a lot public declarations and much of the library is
-//! mostly private API, everything that you would likely use is included in
-//! here.
-//!
-//! While there is acknowledgement that there is some useful private API that
-//! will be useful publicly, this should happen in another crate as it is out
-//! of scope.
+//! The Bevy Tilemap prelude.
 //!
 //! # Prelude contents
 //!
-//! The current version of this prelude (version 0.2) is located in
-//! [`bevy_tilemap::prelude::v0_2`], and re-exports the following.
+//! The current version of this prelude (version 0) is located in
+//! [`bevy_tilemap_2d::prelude::v0`], and re-exports the following.
 //!
-//! * [`bevy_tilemap::chunk`]::[`LayerKind`], the only public part
+//! * [`bevy_tilemap_2d::chunk`]::[`LayerKind`], the only public part
 //! of `chunk` module is the kind of layer you need to specify to create.
-//! * [`bevy_tilemap::entity`]::[`TilemapComponents`], the components
+//! * [`bevy_tilemap_2d::entity`]::[`TilemapComponents`], the components
 //! for spawning with a Tilemap.
-//! * [`bevy_tilemap::map`]::[`Tilemap`], the core object that is
-//! used for virtually everything in this library.
-//! * [`bevy_tilemap::tile`]::{[`Tile`], [`Tiles`]}, a sprite tile which
-//! holds minimal amount of data for small data sizes. Used in the `Tilemap`.
-//! Tiles helps set tiles.
-//! * [`bevy_tilemap`]::[`ChunkTilesPlugin`], the main plugin with
+//! * [`bevy_tilemap_2d::tilemap`]::{[`Tilemap`], [`TilemapBuilder`]},
+//! the core object that is used for virtually everything in this library.
+//! * [`bevy_tilemap_2d::tile`]::[`Tile`], a sprite tile which
+//! holds minimal amount of data for small data sizes.
+//! * [`bevy_tilemap_2d`]::[`Tilemap2DPlugin`], the main plugin with
 //! a collection of systems, components and assets to be used in a Bevy app.
 //!
-//! [`bevy_tilemap::dimensions`]: crate::dimensions
-//! [`bevy_tilemap::chunk`]: crate::chunk
-//! [`bevy_tilemap::entity`]: crate::entity
-//! [`bevy_tilemap::map`]: crate::map
-//! [`bevy_tilemap::tile`]: crate::tile
-//! [`bevy_tilemap`]: crate
+//! [`bevy_tilemap_2d::prelude::v0`]: crate::prelude::v0
+//! [`bevy_tilemap_2d::chunk`]: crate::chunk
+//! [`bevy_tilemap_2d::entity`]: crate::entity
+//! [`bevy_tilemap_2d::tilemap`]: crate::tilemap
+//! [`bevy_tilemap_2d::tile`]: crate::tile
+//! [`bevy_tilemap_2d`]: crate
 
-/// The 0.2 prelude version of Bevy Tilemap.
+/// Version 0 prelude.
 pub mod v0 {
+    #[cfg(feature = "types")]
+    pub use crate::bevy_tilemap_types::prelude::v0::*;
     pub use crate::{
-        chunk::LayerKind, entity::TilemapComponents, tile::Tile, tilemap::Tilemap, ChunkTilesPlugin,
+        bevy_tilemap_spritesheet::prelude::v0::*,
+        chunk::LayerKind,
+        entity::TilemapComponents,
+        tile::Tile,
+        tilemap::{Tilemap, TilemapBuilder},
+        Tilemap2DPlugin,
     };
 }
 

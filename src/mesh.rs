@@ -1,15 +1,18 @@
-use crate::{dimension::Dimension2, lib::*};
-use bevy::render::pipeline::PrimitiveTopology;
+use crate::lib::*;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+/// The mesh of a chunk layer.
 pub(crate) struct ChunkMesh {
     dimensions: Dimension2,
 }
 
 impl ChunkMesh {
+    /// Vertex attribute of the tile's index.
     pub(crate) const ATTRIBUTE_TILE_INDEX: &'static str = "Vertex_Tile_Index";
+    /// Vertex attribute of the tile's color.
     pub(crate) const ATTRIBUTE_TILE_COLOR: &'static str = "Vertex_Tile_Color";
 
+    /// Constructs a new chunk mesh.
     pub(crate) fn new(dimensions: Dimension2) -> ChunkMesh {
         ChunkMesh { dimensions }
     }
@@ -17,8 +20,8 @@ impl ChunkMesh {
 
 impl From<&ChunkMesh> for Mesh {
     fn from(chunk_mesh: &ChunkMesh) -> Mesh {
-        let chunk_width = chunk_mesh.dimensions.width() as i32;
-        let chunk_height = chunk_mesh.dimensions.height() as i32;
+        let chunk_width = chunk_mesh.dimensions.width as i32;
+        let chunk_height = chunk_mesh.dimensions.height as i32;
         let step_size_x = 1. / chunk_width as f32;
         let step_size_y = 1. / chunk_height as f32;
         let start_x = chunk_width as f32 * -0.5;

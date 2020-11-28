@@ -1,9 +1,7 @@
 use crate::{
-    dimension::Dimension2,
     entity::{ChunkDimensions, DirtyLayer},
     lib::*,
     mesh::ChunkMesh,
-    point::Point2,
     tile::RawTile,
 };
 
@@ -22,8 +20,7 @@ pub(crate) trait Layer: 'static {
 /// The difference between a dense layer and a sparse layer is simply the
 /// storage types.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, TypeUuid)]
-#[uuid = "beea20b4-8d36-49cd-9410-ec1fb7696605"]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct DenseLayer {
     /// A mesh handle.
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -159,7 +156,6 @@ pub(crate) struct SpriteLayer {
 pub struct Chunk {
     point: Point2,
     sprite_layers: Vec<Option<SpriteLayer>>,
-    // flags: Vec<u32>, // TODO
 }
 
 impl Chunk {

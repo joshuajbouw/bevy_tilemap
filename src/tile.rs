@@ -1,4 +1,4 @@
-use crate::{lib::*, point::Point2};
+use crate::lib::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -37,7 +37,7 @@ impl<P: Into<Point2>> Tile<P, Color> {
     /// Creates a new tile with a provided point and tile index.
     ///
     /// By default, this makes a tile with no tint to the color at all. If tile
-    /// tinting is needed, use [`with_color`] instead.
+    /// tinting is needed, use [`with_tint`] instead.
     ///
     /// # Examples
     /// ```
@@ -48,7 +48,7 @@ impl<P: Into<Point2>> Tile<P, Color> {
     /// ```
     ///
     /// [`Tile`]: Tile
-    /// [`with_color`]: Tile::with_color
+    /// [`with_tint`]: Tile::with_tint
     pub fn new(point: P, sprite_index: usize) -> Tile<P, Color> {
         Tile {
             point,
