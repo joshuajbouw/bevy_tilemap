@@ -21,7 +21,7 @@
         <img src="https://img.shields.io/crates/l/bevy_tilemap.svg?style=for-the-badge" height="20"/></a>
 </p>
 
-<p align="center">Chunk based tilemap for Bevy game engine.</p>
+<h4 align="center">Chunk based tilemap for Bevy game engine.</h4>
 
 Bevy Tilemap allows for Bevy native batch-rendered tiles in maps to be 
 constructed with chunk based loading, efficiently.
