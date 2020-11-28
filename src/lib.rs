@@ -28,7 +28,6 @@
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 // rustc
 #![deny(dead_code, missing_docs, unused_imports)]
-#![cfg_attr(feature = "dynamic", crate_type = "dylib")]
 
 extern crate bevy;
 extern crate bevy_tilemap_spritesheet;

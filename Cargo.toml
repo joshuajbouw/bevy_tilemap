@@ -17,7 +17,6 @@ features = ["serialize", "types"]
 default-target = "x86_64-pc-windows-msvc"
 
 [features]
-dynamic = []
 serialize = ["bevy_tilemap_types/serialize", "serde"]
 types = []
 
