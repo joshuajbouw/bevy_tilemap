@@ -6,8 +6,6 @@
         src="https://github.com/joshuajbouw/bevy_tilemap/raw/master/assets/img/logo.gif">
 </p>
 
-<p align="center">Chunk based tilemap for Bevy game engine.</p>
-
 <p align="center">
     <a href="https://github.com/joshuajbouw/bevy_tilemap" alt="github">
         <img src="https://img.shields.io/badge/github-joshuajbouw/bevy__tilemap-8da0cb?style=for-the-badge&logo=github" height="20"/></a>
@@ -22,6 +20,8 @@
     <a href="https://github.com/joshuajbouw/bevy_tilemap/blob/master/LICENSE" alt="license">
         <img src="https://img.shields.io/crates/l/bevy_tilemap.svg?style=for-the-badge" height="20"/></a>
 </p>
+
+<p align="center">Chunk based tilemap for Bevy game engine.</p>
 
 Bevy Tilemap allows for Bevy native batch-rendered tiles in maps to be 
 constructed with chunk based loading, efficiently.
