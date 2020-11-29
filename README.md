@@ -1,14 +1,27 @@
-# bevy_tilemap
-[![Crates.io](https://img.shields.io/crates/v/bevy_tilemap.svg)](https://crates.io/crates/bevy_tilemap)
-[![Crates.io](https://img.shields.io/crates/d/bevy_tilemap.svg)](https://crates.io/crates/bevy_tilemap)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/joshuajbouw/bevy_tilemap/blob/master/LICENSE)
-[![Windows-2019](https://github.com/joshuajbouw/bevy_tilemap/workflows/Windows-2019/badge.svg)](https://github.com/joshuajbouw/bevy_tilemap/actions)
-[![Ubuntu-20.04](https://github.com/joshuajbouw/bevy_tilemap/workflows/Ubuntu-20.04/badge.svg)](https://github.com/joshuajbouw/bevy_tilemap/actions)
-[![macOS-11.0](https://github.com/joshuajbouw/bevy_tilemap/workflows/macOS-11.0/badge.svg)](https://github.com/joshuajbouw/bevy_tilemap/actions)
+<h1 align="center">Bevy Tilemap</h1>
 
-Chunk based tilemap for Bevy game engine.
+<p align="center">
+    <img width="600"
+        alt="Bevy Tilemap logo"
+        src="https://github.com/joshuajbouw/bevy_tilemap/raw/master/assets/img/logo.gif">
+</p>
 
-![](assets/img/logo.gif)
+<p align="center">
+    <a href="https://github.com/joshuajbouw/bevy_tilemap" alt="github">
+        <img src="https://img.shields.io/badge/github-joshuajbouw/bevy__tilemap-8da0cb?style=for-the-badge&logo=github" height="20"/></a>
+    <a href="https://blog.rust-lang.org/2020/04/23/Rust-1.43.0.html" alt="rust msrv">
+        <img src="https://img.shields.io/badge/MSRV-%3E%3D%201.43-green?style=for-the-badge&logo=rust" height="20"/></a>
+    <a href="https://crates.io/crates/bevy_tilemap" alt="crates.io">
+        <img src="https://img.shields.io/crates/v/bevy_tilemap.svg?style=for-the-badge" height="20"/></a>
+    <a href="https://docs.rs/bevy_tilemap" alt="docs.rs">
+        <img src="https://img.shields.io/badge/docs.rs-bevy__tilemap-66c2a5?style=for-the-badge&logoColor=white&logo=data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDUxMiA1MTIiPjxwYXRoIGZpbGw9IiNmNWY1ZjUiIGQ9Ik00ODguNiAyNTAuMkwzOTIgMjE0VjEwNS41YzAtMTUtOS4zLTI4LjQtMjMuNC0zMy43bC0xMDAtMzcuNWMtOC4xLTMuMS0xNy4xLTMuMS0yNS4zIDBsLTEwMCAzNy41Yy0xNC4xIDUuMy0yMy40IDE4LjctMjMuNCAzMy43VjIxNGwtOTYuNiAzNi4yQzkuMyAyNTUuNSAwIDI2OC45IDAgMjgzLjlWMzk0YzAgMTMuNiA3LjcgMjYuMSAxOS45IDMyLjJsMTAwIDUwYzEwLjEgNS4xIDIyLjEgNS4xIDMyLjIgMGwxMDMuOS01MiAxMDMuOSA1MmMxMC4xIDUuMSAyMi4xIDUuMSAzMi4yIDBsMTAwLTUwYzEyLjItNi4xIDE5LjktMTguNiAxOS45LTMyLjJWMjgzLjljMC0xNS05LjMtMjguNC0yMy40LTMzLjd6TTM1OCAyMTQuOGwtODUgMzEuOXYtNjguMmw4NS0zN3Y3My4zek0xNTQgMTA0LjFsMTAyLTM4LjIgMTAyIDM4LjJ2LjZsLTEwMiA0MS40LTEwMi00MS40di0uNnptODQgMjkxLjFsLTg1IDQyLjV2LTc5LjFsODUtMzguOHY3NS40em0wLTExMmwtMTAyIDQxLjQtMTAyLTQxLjR2LS42bDEwMi0zOC4yIDEwMiAzOC4ydi42em0yNDAgMTEybC04NSA0Mi41di03OS4xbDg1LTM4Ljh2NzUuNHptMC0xMTJsLTEwMiA0MS40LTEwMi00MS40di0uNmwxMDItMzguMiAxMDIgMzguMnYuNnoiPjwvcGF0aD48L3N2Zz4K" height="20"/></a>
+    <a href="https://github.com/joshuajbouw/bevy_tilemap/actions" alt="build status">
+        <img src="https://img.shields.io/github/workflow/status/joshuajbouw/bevy_tilemap/Ubuntu-20.04/master?style=for-the-badge" height="20"/></a>
+    <a href="https://github.com/joshuajbouw/bevy_tilemap/blob/master/LICENSE" alt="license">
+        <img src="https://img.shields.io/crates/l/bevy_tilemap.svg?style=for-the-badge" height="20"/></a>
+</p>
+
+<h4 align="center">Chunk based tilemap for Bevy game engine.</h4>
 
 Bevy Tilemap allows for Bevy native batch-rendered tiles in maps to be 
 constructed with chunk based loading, efficiently.

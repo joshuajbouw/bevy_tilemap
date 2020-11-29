@@ -1,4 +1,4 @@
-//! ![](https://cloud.midgardhr.dev/index.php/s/Pz3bdsNntyHxGC4/preview)
+//! ![](https://github.com/joshuajbouw/bevy_tilemap/raw/master/assets/img/logo.gif)
 //!
 //! # Bevy Tilemap
 //!
@@ -23,130 +23,43 @@
 //! but give enough functionality to advanced users.
 //!
 //! Less time fiddling, more time building.
-//!
-//! # Constructing a basic tilemap, setting tiles, and spawning.
-//!
-//! Bevy Tilemap makes it easy to quickly implement a tilemap if you are in a
-//! rush or want to build a conceptual game.
-//!
-//! ```
-//! use bevy_tilemap::prelude::*;
-//! use bevy::asset::HandleId;
-//! use bevy::prelude::*;
-//!
-//! // This must be set in Asset<TextureAtlas>.
-//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-//!
-//! let mut tilemap = Tilemap::new(texture_atlas_handle);
-//!
-//! // Coordinate point with Z order.
-//! let point = (16, 16);
-//! let sprite_index = 0;
-//! let tile = Tile::new(point, sprite_index);
-//! tilemap.insert_tile(tile);
-//!
-//! tilemap.spawn_chunk_containing_point(point);
-//! ```
-//!
-//! # Constructing a more advanced tilemap.
-//!
-//! For most cases, it is preferable to construct a tilemap with explicit
-//! parameters. For that you would use a [`Builder`].
-//!
-//! [`Builder`]: crate::tilemap::Builder
-//!
-//! ```
-//! use bevy_tilemap::prelude::*;
-//! use bevy::asset::HandleId;
-//! use bevy::prelude::*;
-//!
-//! // This must be set in Asset<TextureAtlas>.
-//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-//!
-//! let mut tilemap = Tilemap::builder()
-//!     .texture_atlas(texture_atlas_handle)
-//!     .chunk_dimensions(64, 64)
-//!     .tile_dimensions(8, 8)
-//!     .dimensions(32, 32)
-//!     .add_layer(LayerKind::Dense, 0)
-//!     .add_layer(LayerKind::Sparse, 1)
-//!     .add_layer(LayerKind::Sparse, 2)
-//!     .z_layers(3)
-//!     .build()
-//!     .unwrap();
-//! ```
-//!
-//! The above example outlines all the current possible builder methods. What is
-//! neat is that if more layers are accidentally set than z_layer set, it will
-//! use the layer length instead. Much more features are planned including
-//! automated systems that will enhance the tilemap further.
-//!
-//! # Setting tiles
-//!
-//! There are two methods to set tiles in the tilemap. The first is single tiles
-//! at a time which is acceptable for tiny updates such as moving around
-//! characters. The second being bulk setting many tiles at once.
-//!
-//! If you expect to move multiple tiles a frame, **always** use the [`Tiles`]
-//! map and set it with [`set_tiles`]. A single event is created with all
-//! tiles if set this way.
-//!
-//! [`Tiles`]: crate::tile::Tiles
-//! [`set_tiles`]: crate::tilemap::TileMap::set_tiles
-//!
-//! ```
-//! use bevy_tilemap::prelude::*;
-//! use bevy::asset::HandleId;
-//! use bevy::prelude::*;
-//!
-//! // This must be set in Asset<TextureAtlas>.
-//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-//!
-//! let mut tilemap = Tilemap::new(texture_atlas_handle);
-//!
-//! // Prefer this
-//! let mut tiles = Vec::new();
-//! for y in 0..31 {
-//!     for x in 0..31 {
-//!         tiles.push(Tile::new((x, y, 0), 0));
-//!     }
-//! }
-//!
-//! tilemap.insert_tiles(tiles);
-//!
-//! // Over this...
-//! for y in 0..31 {
-//!     for x in 0..31 {
-//!         tilemap.insert_tile(Tile::new((x, y, 0), 0));
-//!     }
-//! }
-//! ```
-//!
-//! # Serde support
-//!
-//! Optionally serde is supported through the use of features.
-//!
-//! ```toml
-//! [dependencies]
-//! bevy_tilemap = { version = "0.2", features = ["serde"] }
-//! ```
-#![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.2.2")]
 #![no_implicit_prelude]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 // rustc
 #![deny(dead_code, missing_docs, unused_imports)]
 
+extern crate bevy;
+extern crate bevy_tilemap_spritesheet;
+extern crate bevy_tilemap_types;
+extern crate bitflags;
+#[cfg(feature = "serde")]
+extern crate serde;
+extern crate std;
+
+/// The default plugin to be used in Bevy applications.
+pub mod default_plugin;
+/// Various dimension based traits.
+#[cfg(feature = "types")]
+pub mod dimension {
+    pub use crate::bevy_tilemap_types::dimension::*;
+}
+/// Similar to a texture atlas but splits everything into the same size tiles.
+pub mod sprite_sheet {
+    pub use crate::bevy_tilemap_spritesheet::*;
+}
+/// Points used for helping with coordinates.
+#[cfg(feature = "types")]
+pub mod point {
+    pub use crate::bevy_tilemap_types::point::*;
+}
+// pub mod auto_tile;
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
 pub mod chunk;
-/// Various dimension based traits.
-mod dimension;
 /// Bundles of components for spawning entities.
 pub mod entity;
-/// Meshes for use in rendering.
+/// Meshes for rendering to vertices.
 mod mesh;
-/// Points used for helping with coordinates.
-pub mod point;
 pub mod prelude;
 /// Files and helpers for rendering.
 mod render;
@@ -157,16 +70,19 @@ pub mod tilemap;
 
 use crate::{chunk::Chunk, lib::*, render::TilemapRenderGraphBuilder, tilemap::Tilemap};
 
-/// The Bevy Tilemap main plugin.
+/// The Bevy Tilemap 2D main plugin.
 #[derive(Default)]
-pub struct ChunkTilesPlugin;
+pub struct Tilemap2DPlugin;
 
-impl Plugin for ChunkTilesPlugin {
+impl Plugin for Tilemap2DPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
             .add_asset::<Chunk>()
-            .add_system_to_stage("post_update", crate::tilemap::map_auto_configure.system())
-            .add_system_to_stage("post_update", crate::tilemap::map_system.system())
+            .add_system_to_stage(
+                "post_update",
+                crate::tilemap::tilemap_auto_configure.system(),
+            )
+            .add_system_to_stage("post_update", crate::tilemap::tilemap_system.system())
             .add_system_to_stage("post_update", crate::chunk::chunk_update_system.system());
 
         let resources = app.resources_mut();
@@ -179,11 +95,8 @@ impl Plugin for ChunkTilesPlugin {
 
 /// A custom prelude around all the types we need from `std`, `bevy`, and `serde`.
 mod lib {
-    // Need to add this here as there is a Rust issue surrounding the fact that
-    // bevy also uses `no_implicit_prelude`. Without this, it would complain
-    // that I am not using `self`, and will refuse to build.
-    // See: https://github.com/rust-lang/rust/issues/72381
-    pub use ::bevy;
+    // Having to add this is a bug which is fixed in next Bevy (v > 0.3)
+    pub(crate) use ::bevy;
     use ::bevy::{
         app as bevy_app, asset as bevy_asset, core as bevy_core, ecs as bevy_ecs,
         math as bevy_math, render as bevy_render, sprite as bevy_sprite,
@@ -191,7 +104,7 @@ mod lib {
     };
 
     pub(crate) use self::{
-        bevy_app::{AppBuilder, Events, Plugin},
+        bevy_app::{AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder},
         bevy_asset::{AddAsset, Assets, Handle, HandleId},
         bevy_core::Byteable,
         bevy_ecs::{Bundle, Commands, Entity, IntoQuerySystem, Query, Res, ResMut, Resources},
@@ -203,7 +116,8 @@ mod lib {
             pipeline::{
                 BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
                 CompareFunction, CullMode, DepthStencilStateDescriptor, DynamicBinding, FrontFace,
-                PipelineDescriptor, RasterizationStateDescriptor, RenderPipeline, RenderPipelines,
+                PipelineDescriptor, PipelineSpecialization, PrimitiveTopology,
+                RasterizationStateDescriptor, RenderPipeline, RenderPipelines,
                 StencilStateDescriptor, StencilStateFaceDescriptor,
             },
             render_graph::{base::MainPass, RenderGraph, RenderResourcesNode},
@@ -220,12 +134,11 @@ mod lib {
         bevy_utils::{HashMap, HashSet},
     };
 
-    // Need to add this here as there is a Rust issue surrounding the fact that
-    // serde also uses `no_implicit_prelude`. Without this, it would complain
-    // that I am not using `self`, and will refuse to build.
-    // See: https://github.com/rust-lang/rust/issues/72381
-    #[cfg(feature = "serde")]
-    pub use ::serde;
+    pub(crate) use ::bevy_tilemap_types::{
+        dimension::{Dimension2, DimensionError},
+        point::Point2,
+    };
+
     #[cfg(feature = "serde")]
     pub(crate) use ::serde::{Deserialize, Serialize};
 
@@ -239,7 +152,7 @@ mod lib {
         error::Error,
         fmt::{Debug, Display, Formatter, Result as FmtResult},
         iter::{Extend, IntoIterator, Iterator},
-        ops::{Add, AddAssign, Div, DivAssign, FnMut, FnOnce, Mul, MulAssign, Neg, Sub, SubAssign},
+        ops::{FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},
         vec::Vec,

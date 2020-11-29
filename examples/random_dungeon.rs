@@ -70,7 +70,7 @@ fn load(
             .dimensions(1, 1)
             .z_layers(2)
             .texture_atlas(atlas_handle)
-            .build()
+            .finish()
             .unwrap();
 
         let tilemap_components = TilemapComponents {
@@ -260,7 +260,7 @@ fn main() {
         .init_resource::<TileSpriteHandles>()
         .init_resource::<GameState>()
         .add_plugins(DefaultPlugins)
-        .add_plugin(ChunkTilesPlugin::default())
+        .add_plugin(Tilemap2DPlugin::default())
         .add_startup_system(setup.system())
         .add_system(load.system())
         .add_system(build_random_dungeon.system())

@@ -3,7 +3,7 @@ name = "bevy_tilemap"
 version = "0.2.2"
 authors = ["Joshua J. Bouw <dev@joshuajbouw.com>"]
 edition = "2018"
-description = "Tile maps with chunks for the Bevy game engine, a simple-driven game engine and app framework"
+description = "Tilemaps with chunks for the Bevy game engine, a simple-driven game engine and app framework"
 repository = "https://github.com/joshuajbouw/bevy_tilemap"
 license = "MIT"
 keywords = ["game", "engine", "bevy", "tiles", "tilemap"]
@@ -12,11 +12,26 @@ readme = "README.md"
 documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap/"
 exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 
+[package.metadata.docs.rs]
+features = ["serialize", "types"]
+default-target = "x86_64-pc-windows-msvc"
+
+[features]
+serialize = ["bevy_tilemap_types/serialize", "serde"]
+types = []
+
+[workspace]
+members = ["crates/*"]
+
 [dependencies]
-bevy = { version = "0.3" }
-serde = { version = "1.0", optional = true, features = ["derive"] }
+bevy = "0.3"
+bevy_tilemap_spritesheet = { path = "crates/sprite_sheet" }
+bevy_tilemap_types = { path = "crates/types" }
+bitflags = "1.2.1"
+serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
+bevy = "0.3"
 rand = "0.7"
 
 [[example]]

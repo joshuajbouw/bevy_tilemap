@@ -1,5 +1,4 @@
-use crate::{chunk::Chunk, dimension::Dimension2, lib::*, render::CHUNK_PIPELINE_HANDLE, Tilemap};
-use bevy::render::pipeline::PipelineSpecialization;
+use crate::{chunk::Chunk, lib::*, render::CHUNK_PIPELINE_HANDLE, Tilemap};
 
 /// A component that stores the dimensions of the Chunk for the renderer.
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, RenderResources, RenderResource)]
@@ -25,7 +24,7 @@ impl From<Vec2> for ChunkDimensions {
     }
 }
 
-// /// A component that is used as a flag for dirty chunks that need updating.
+/// A component that is used as a flag for dirty chunks that need updating.
 pub(crate) struct DirtyLayer(pub(crate) usize);
 
 /// A component bundle for `Chunk` entities.

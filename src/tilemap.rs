@@ -1,16 +1,119 @@
+//! # Constructing a basic tilemap, setting tiles, and spawning.
+//!
+//! Bevy Tilemap makes it easy to quickly implement a tilemap if you are in a
+//! rush or want to build a conceptual game.
+//!
+//! ```
+//! use bevy_tilemap::prelude::*;
+//! use bevy::asset::HandleId;
+//! use bevy::prelude::*;
+//!
+//! // This must be set in Asset<TextureAtlas>.
+//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+//!
+//! let mut tilemap = Tilemap::new(texture_atlas_handle);
+//!
+//! // Coordinate point with Z order.
+//! let point = (16, 16);
+//! let sprite_index = 0;
+//! let tile = Tile::new(point.clone(), sprite_index);
+//! tilemap.insert_tile(tile);
+//!
+//! tilemap.spawn_chunk_containing_point(point);
+//! ```
+//!
+//! # Constructing a more advanced tilemap.
+//!
+//! For most cases, it is preferable to construct a tilemap with explicit
+//! parameters. For that you would use a [`TilemapBuilder`].
+//!
+//! [`TilemapBuilder`]: crate::tilemap::TilemapBuilder
+//!
+//! ```
+//! use bevy_tilemap::prelude::*;
+//! use bevy::asset::HandleId;
+//! use bevy::prelude::*;
+//!
+//! // This must be set in Asset<TextureAtlas>.
+//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+//!
+//! let mut tilemap = TilemapBuilder::new()
+//!     .texture_atlas(texture_atlas_handle)
+//!     .chunk_dimensions(64, 64)
+//!     .tile_dimensions(8, 8)
+//!     .dimensions(32, 32)
+//!     .add_layer(LayerKind::Dense, 0)
+//!     .add_layer(LayerKind::Sparse, 1)
+//!     .add_layer(LayerKind::Sparse, 2)
+//!     .z_layers(3)
+//!     .finish()
+//!     .unwrap();
+//! ```
+//!
+//! The above example outlines all the current possible builder methods. What is
+//! neat is that if more layers are accidentally set than z_layer set, it will
+//! use the layer length instead. Much more features are planned including
+//! automated systems that will enhance the tilemap further.
+//!
+//! # Setting tiles
+//!
+//! There are two methods to set tiles in the tilemap. The first is single tiles
+//! at a time which is acceptable for tiny updates such as moving around
+//! characters. The second being bulk setting many tiles at once.
+//!
+//! If you expect to move multiple tiles a frame, **always** use [`insert_tiles`].
+//! A single event is created with all tiles if set this way.
+//!
+//! [`insert_tiles`]: crate::tilemap::Tilemap::insert_tiles
+//!
+//! ```
+//! use bevy_tilemap::prelude::*;
+//! use bevy::asset::HandleId;
+//! use bevy::prelude::*;
+//!
+//! // This must be set in Asset<TextureAtlas>.
+//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+//!
+//! let mut tilemap = Tilemap::new(texture_atlas_handle);
+//!
+//! // Prefer this
+//! let mut tiles = Vec::new();
+//! for y in 0..31 {
+//!     for x in 0..31 {
+//!         tiles.push(Tile::new((x, y, 0), 0));
+//!     }
+//! }
+//!
+//! tilemap.insert_tiles(tiles);
+//!
+//! // Over this...
+//! for y in 0..31 {
+//!     for x in 0..31 {
+//!         tilemap.insert_tile(Tile::new((x, y, 0), 0));
+//!     }
+//! }
+//! ```
+//!
+//! # Serde support
+//!
+//! Optionally serde is supported through the use of features.
+//!
+//! ```toml
+//! [dependencies]
+//! bevy_tilemap = { version = "0.2", features = ["serde"] }
+//! ```
+
 use crate::{
     chunk::{Chunk, LayerKind},
-    dimension::{Dimension2, DimensionError},
     entity::{ChunkComponents, DirtyLayer},
     lib::*,
     mesh::ChunkMesh,
-    point::Point2,
     tile::{RawTile, Tile},
 };
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 /// The kinds of errors that can occur.
-pub(crate) enum ErrorKind {
+enum ErrorKind {
     /// If the coordinate or index is out of bounds.
     DimensionError(DimensionError),
     /// If a layer already exists this error is returned.
@@ -162,25 +265,25 @@ pub struct Tilemap {
 /// - [`texture_atlas`]: specifies the texture atlas handle
 /// to use for the tilemap.
 ///
-/// The [`build`] method will take ownership and consume the builder returning
+/// The [`finish`] method will take ownership and consume the builder returning
 /// a [`TilemapResult`] with either an [`TilemapError`] or the [tilemap].
 ///
 /// # Examples
 /// ```
-/// use bevy_tilemap::tilemap;
+/// use bevy_tilemap::prelude::*;
 /// use bevy::asset::HandleId;
 /// use bevy::prelude::*;
 ///
 /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 ///
-/// let builder = tilemap::Builder::new().texture_atlas(texture_atlas_handle);
+/// let builder = TilemapBuilder::new().texture_atlas(texture_atlas_handle);
 ///
-/// let tilemap = builder.build().unwrap();
+/// let tilemap = builder.finish().unwrap();
 /// ```
 ///
 /// Can also get a builder like this:
 /// ```
-/// use bevy_tilemap::tilemap::Tilemap;
+/// use bevy_tilemap::prelude::*;
 /// use bevy::asset::HandleId;
 /// use bevy::prelude::*;
 ///
@@ -188,20 +291,20 @@ pub struct Tilemap {
 ///
 /// let builder = Tilemap::builder().texture_atlas(texture_atlas_handle);
 ///
-/// let tilemap = builder.build().unwrap();
+/// let tilemap = builder.finish().unwrap();
 /// ```
 ///
-/// [`build`]: Builder::build
-/// [`chunk_dimensions`]: Builder::chunk_dimensions
-/// [`dimensions`]: Builder::dimensions
-/// [`texture_atlas`]: Builder::texture_atlas
-/// [`tile_dimensions`]: Builder::tile_dimensions
-/// [`z_layers`]: Builder::z_layers
+/// [`finish`]: TilemapBuilder::finish
+/// [`chunk_dimensions`]: TilemapBuilder::chunk_dimensions
+/// [`dimensions`]: TilemapBuilder::dimensions
+/// [`texture_atlas`]: TilemapBuilder::texture_atlas
+/// [`tile_dimensions`]: TilemapBuilder::tile_dimensions
+/// [`z_layers`]: TilemapBuilder::z_layers
 /// [tilemap]: Tilemap
 /// [`TilemapError`]: TilemapError
 /// [`TilemapResult`]: TilemapResult
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct Builder {
+#[derive(Clone, PartialEq, Debug)]
+pub struct TilemapBuilder {
     dimensions: Option<Dimension2>,
     chunk_dimensions: Dimension2,
     tile_dimensions: Dimension2,
@@ -209,11 +312,12 @@ pub struct Builder {
     layers: Option<HashMap<usize, LayerKind>>,
     texture_atlas: Option<Handle<TextureAtlas>>,
     auto_configure: bool,
+    // auto_tile: Option<HashMap<usize, AutoTileFlags>>,
 }
 
-impl Default for Builder {
+impl Default for TilemapBuilder {
     fn default() -> Self {
-        Builder {
+        TilemapBuilder {
             dimensions: None,
             chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
             tile_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
@@ -221,35 +325,37 @@ impl Default for Builder {
             layers: None,
             texture_atlas: None,
             auto_configure: DEFAULT_AUTO_CONFIGURE,
+            // auto_tile: None,
         }
     }
 }
 
-impl Builder {
+impl TilemapBuilder {
     /// Configures the builder with the default settings.
     ///
     /// Is equivalent to [`default`] and [`builder`] method in the
     /// [tilemap]. Start with this then you are able to method chain.
     ///
-    /// [`default`]: Builder::default
-    /// [`builder`]: Tilemap::builder
+    /// [`default`]: TilemapBuilder::default
+    /// [`builder`]: TilemapBuilder
     /// [tilemap]: Tilemap
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap::{self, Tilemap};
+    /// use bevy_tilemap::prelude::*;
+    /// use bevy_tilemap::tilemap;
     ///
-    /// let builder = tilemap::Builder::new();
+    /// let builder = TilemapBuilder::new();
     ///
     /// // Equivalent to...
     ///
-    /// let builder = tilemap::Builder::default();
+    /// let builder = TilemapBuilder::default();
     ///
     /// // Or...
     ///
     /// let builder = Tilemap::builder();
     /// ```
-    pub fn new() -> Builder {
-        Builder::default()
+    pub fn new() -> TilemapBuilder {
+        TilemapBuilder::default()
     }
 
     /// Sets the dimensions of the tilemap.
@@ -258,11 +364,11 @@ impl Builder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = tilemap::Builder::new().dimensions(5, 5);
+    /// let builder = TilemapBuilder::new().dimensions(5, 5);
     /// ```
-    pub fn dimensions(mut self, width: u32, height: u32) -> Builder {
+    pub fn dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
         self.dimensions = Some(Dimension2::new(width, height));
         self
     }
@@ -274,11 +380,11 @@ impl Builder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = tilemap::Builder::new().chunk_dimensions(32, 32);
+    /// let builder = TilemapBuilder::new().chunk_dimensions(32, 32);
     /// ```
-    pub fn chunk_dimensions(mut self, width: u32, height: u32) -> Builder {
+    pub fn chunk_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
         self.chunk_dimensions = Dimension2::new(width, height);
         self
     }
@@ -290,11 +396,11 @@ impl Builder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = tilemap::Builder::new().tile_dimensions(32, 32);
+    /// let builder = TilemapBuilder::new().tile_dimensions(32, 32);
     /// ```
-    pub fn tile_dimensions(mut self, width: u32, height: u32) -> Builder {
+    pub fn tile_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
         self.tile_dimensions = Dimension2::new(width, height);
         self
     }
@@ -305,11 +411,11 @@ impl Builder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = tilemap::Builder::new().z_layers(5);
+    /// let builder = TilemapBuilder::new().z_layers(5);
     /// ```
-    pub fn z_layers(mut self, layers: usize) -> Builder {
+    pub fn z_layers(mut self, layers: usize) -> TilemapBuilder {
         self.z_layers = layers;
         self
     }
@@ -325,17 +431,16 @@ impl Builder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
-    /// use bevy_tilemap::chunk::LayerKind;
+    /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = tilemap::Builder::new()
+    /// let builder = TilemapBuilder::new()
     ///     .add_layer(LayerKind::Dense, 0)
     ///     .add_layer(LayerKind::Sparse, 1)
     ///     .add_layer(LayerKind::Sparse, 2);
     /// ```
     ///
     /// [`LayerKind`]: crate::chunk::LayerKind
-    pub fn add_layer(mut self, kind: LayerKind, z_layer: usize) -> Builder {
+    pub fn add_layer(mut self, kind: LayerKind, z_layer: usize) -> TilemapBuilder {
         if let Some(layers) = &mut self.layers {
             layers.insert(z_layer, kind);
         } else {
@@ -350,15 +455,15 @@ impl Builder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let builder = tilemap::Builder::new().texture_atlas(texture_atlas_handle);
+    /// let builder = TilemapBuilder::new().texture_atlas(texture_atlas_handle);
     /// ```
-    pub fn texture_atlas(mut self, handle: Handle<TextureAtlas>) -> Builder {
+    pub fn texture_atlas(mut self, handle: Handle<TextureAtlas>) -> TilemapBuilder {
         self.texture_atlas = Some(handle);
         self
     }
@@ -372,12 +477,12 @@ impl Builder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::prelude::*;
     ///
-    /// let builder = tilemap::Builder::new().auto_configure(false);
+    /// let builder = TilemapBuilder::new().auto_configure(false);
     /// ```
-    pub fn auto_configure(mut self, b: bool) -> Builder {
+    pub fn auto_configure(mut self, b: bool) -> TilemapBuilder {
         self.auto_configure = b;
         self
     }
@@ -393,22 +498,22 @@ impl Builder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let builder = tilemap::Builder::new().texture_atlas(texture_atlas_handle);
+    /// let builder = TilemapBuilder::new().texture_atlas(texture_atlas_handle);
     ///
-    /// let tilemap = builder.build();
+    /// let tilemap = builder.finish();
     /// ```
     ///
-    /// [`texture_atlas`]: Builder::texture_atlas
+    /// [`texture_atlas`]: TilemapBuilder::texture_atlas
     /// [tilemap]: Tilemap
     /// [`TilemapError`]: TilemapError
     /// [`TilemapResult`]: TilemapResult
-    pub fn build(self) -> TilemapResult<Tilemap> {
+    pub fn finish(self) -> TilemapResult<Tilemap> {
         let texture_atlas = if let Some(atlas) = self.texture_atlas {
             atlas
         } else {
@@ -478,7 +583,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap::Tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
@@ -501,26 +606,26 @@ impl Tilemap {
     /// Is equivalent to [`default`] and [`builder`] method in the
     /// [tilemap]. Start with this then you are able to method chain.
     ///
-    /// [`default`]: Builder::default
+    /// [`default`]: TilemapBuilder::default
     /// [`builder`]: Tilemap::builder
     /// [tilemap]: Tilemap
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap::{self, Tilemap};
+    /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = tilemap::Builder::new();
+    /// let builder = TilemapBuilder::new();
     ///
     /// // Equivalent to...
     ///
-    /// let builder = tilemap::Builder::default();
+    /// let builder = TilemapBuilder::default();
     ///
     /// // Or...
     ///
     /// let builder = Tilemap::builder();
     /// ```
-    pub fn builder() -> Builder {
-        Builder::default()
+    pub fn builder() -> TilemapBuilder {
+        TilemapBuilder::default()
     }
 
     /// Sets the sprite sheet for use in the tilemap.
@@ -530,7 +635,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -552,7 +657,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -581,7 +686,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -620,8 +725,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
-    /// use bevy_tilemap::chunk::LayerKind;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -671,10 +775,9 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
-    /// # use bevy_tilemap::chunk::LayerKind;
     /// #
     /// # // In production use a strong handle from an actual source.
     /// # let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
@@ -700,7 +803,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -746,7 +849,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -763,7 +866,7 @@ impl Tilemap {
     /// tilemap.remove_layer(1);
     /// ```
     ///
-    /// [`move_layer`]: TIlemap::move_layer
+    /// [`move_layer`]: Tilemap::move_layer
     pub fn remove_layer(&mut self, z: usize) {
         if self.layers[z].is_none() {
             return;
@@ -783,7 +886,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -859,7 +962,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -910,7 +1013,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -953,7 +1056,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -983,8 +1086,8 @@ impl Tilemap {
     /// ```
     pub fn tile_to_chunk_point<P: Into<Point2>>(&self, point: P) -> (i32, i32) {
         let point: Point2 = point.into();
-        let width = self.chunk_dimensions.width() as f32;
-        let height = self.chunk_dimensions.height() as f32;
+        let width = self.chunk_dimensions.width as f32;
+        let height = self.chunk_dimensions.height as f32;
         let x = ((point.x as f32 + width / 2.0) / width).floor() as i32;
         let y = ((point.y as f32 + height / 2.0) / height).floor() as i32;
         (x, y)
@@ -992,7 +1095,7 @@ impl Tilemap {
 
     /// Sets many tiles, creating new chunks if needed.
     ///
-    /// If setting a single tile is more preferable, then use the [`set_tile`]
+    /// If setting a single tile is more preferable, then use the [`insert_tile`]
     /// method instead.
     ///
     /// If the chunk does not yet exist, it will create a new one automatically.
@@ -1004,7 +1107,7 @@ impl Tilemap {
     /// # Examples
     ///
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -1013,8 +1116,6 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// use bevy_tilemap::tile::Tile;
-    ///
     /// let mut tiles = vec![
     ///     Tile::new((1, 1), 0),
     ///     Tile::new((2, 2), 0),
@@ -1025,15 +1126,15 @@ impl Tilemap {
     /// tilemap.insert_tiles(tiles).unwrap();
     /// ```
     ///
-    /// [`set_tile`]: Tilemap::set_tile
+    /// [`insert_tile`]: Tilemap::insert_tile
     pub fn insert_tiles<P, C, I>(&mut self, tiles: I) -> TilemapResult<()>
     where
         P: Into<Point2>,
         C: Into<Color>,
         I: IntoIterator<Item = Tile<P, C>>,
     {
-        let width = self.chunk_dimensions.width() as i32;
-        let height = self.chunk_dimensions.height() as i32;
+        let width = self.chunk_dimensions.width as i32;
+        let height = self.chunk_dimensions.height as i32;
 
         let mut chunk_map: HashMap<Point2, Vec<Tile<Point2, Color>>> = HashMap::default();
         for tile in tiles.into_iter() {
@@ -1082,7 +1183,7 @@ impl Tilemap {
     ///
     /// If you are setting more than one tile at a time, it is highly
     /// recommended not to run this method! If that is preferred, do use
-    /// [`set_tiles`] instead. Every single tile that is created creates a new
+    /// [`insert_tiles`] instead. Every single tile that is created creates a new
     /// event. With bulk tiles, it creates 1 event for all.
     ///
     /// If the chunk does not yet exist, it will create a new one automatically.
@@ -1093,7 +1194,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -1102,7 +1203,6 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// use bevy_tilemap::tile::Tile;
     /// let point = (9, 3);
     /// let sprite_index = 3;
     /// let tile = Tile::new(point, sprite_index);
@@ -1111,7 +1211,7 @@ impl Tilemap {
     /// tilemap.insert_tile(tile).unwrap();
     /// ```
     ///
-    /// [`set_tiles`]: Tilemap::set_tiles
+    /// [`insert_tiles`]: Tilemap::insert_tiles
     pub fn insert_tile<P, C>(&mut self, tile: Tile<P, C>) -> TilemapResult<()>
     where
         P: Into<Point2>,
@@ -1175,7 +1275,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// # use bevy_tilemap::tilemap::Tilemap;
+    /// # use bevy_tilemap::prelude::*;
     /// # use bevy::asset::HandleId;
     /// # use bevy::prelude::*;
     /// #
@@ -1184,7 +1284,6 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// use bevy_tilemap::tile::Tile;
     /// let point = (9, 3);
     /// let sprite_index = 3;
     /// let tile = Tile::new(point, sprite_index);
@@ -1210,17 +1309,17 @@ impl Tilemap {
     /// # Examples
     ///
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = tilemap::Builder::new()
+    /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(32, 32)
-    ///     .build()
+    ///     .finish()
     ///     .unwrap();
     ///
     /// let center: (i32, i32) = tilemap.center_tile_coord().unwrap();
@@ -1231,8 +1330,8 @@ impl Tilemap {
     pub fn center_tile_coord(&self) -> Option<(i32, i32)> {
         self.dimensions.map(|dimensions| {
             (
-                (dimensions.width() / 2 * self.chunk_dimensions.width()) as i32,
-                (dimensions.height() / 2 * self.chunk_dimensions.height()) as i32,
+                (dimensions.width / 2 * self.chunk_dimensions.width) as i32,
+                (dimensions.height / 2 * self.chunk_dimensions.height) as i32,
             )
         })
     }
@@ -1241,17 +1340,17 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = tilemap::Builder::new()
+    /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(32, 32)
-    ///     .build()
+    ///     .finish()
     ///     .unwrap();
     ///
     /// let width: u32 = tilemap.width().unwrap();
@@ -1259,24 +1358,24 @@ impl Tilemap {
     /// assert_eq!(width, 32);
     /// ```
     pub fn width(&self) -> Option<u32> {
-        self.dimensions.map(|dimensions| dimensions.width())
+        self.dimensions.map(|dimensions| dimensions.width)
     }
 
     /// The height of the tilemap in chunks, if it has dimensions.
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = tilemap::Builder::new()
+    /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(32, 32)
-    ///     .build()
+    ///     .finish()
     ///     .unwrap();
     ///
     /// let height: u32 = tilemap.height().unwrap();
@@ -1284,24 +1383,24 @@ impl Tilemap {
     /// assert_eq!(height, 32);
     /// ```
     pub fn height(&self) -> Option<u32> {
-        self.dimensions.map(|dimensions| dimensions.height())
+        self.dimensions.map(|dimensions| dimensions.height)
     }
 
     /// The width of all the chunks in tiles.
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = tilemap::Builder::new()
+    /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 32)
-    ///     .build()
+    ///     .finish()
     ///     .unwrap();
     ///
     /// let chunk_width: u32 = tilemap.chunk_width();
@@ -1309,24 +1408,24 @@ impl Tilemap {
     /// assert_eq!(chunk_width, 32);
     /// ```
     pub fn chunk_width(&self) -> u32 {
-        self.chunk_dimensions.width()
+        self.chunk_dimensions.width
     }
 
     /// The height of all the chunks in tiles.
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = tilemap::Builder::new()
+    /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 32)
-    ///     .build()
+    ///     .finish()
     ///     .unwrap();
     ///
     /// let chunk_height: u32 = tilemap.chunk_height();
@@ -1334,24 +1433,24 @@ impl Tilemap {
     /// assert_eq!(chunk_height, 32);
     /// ```
     pub fn chunk_height(&self) -> u32 {
-        self.chunk_dimensions.height()
+        self.chunk_dimensions.height
     }
 
     /// The width of a tile in pixels.
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = tilemap::Builder::new()
+    /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .tile_dimensions(32, 32)
-    ///     .build()
+    ///     .finish()
     ///     .unwrap();
     ///
     /// let tile_width: u32 = tilemap.tile_width();
@@ -1359,24 +1458,24 @@ impl Tilemap {
     /// assert_eq!(tile_width, 32);
     /// ```
     pub fn tile_width(&self) -> u32 {
-        self.tile_dimensions.width()
+        self.tile_dimensions.width
     }
 
     /// The height of a tile in pixels.
     ///
     /// # Examples
     /// ```
-    /// use bevy_tilemap::tilemap;
+    /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = tilemap::Builder::new()
+    /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .tile_dimensions(32, 32)
-    ///     .build()
+    ///     .finish()
     ///     .unwrap();
     ///
     /// let tile_height: u32 = tilemap.tile_height();
@@ -1384,11 +1483,11 @@ impl Tilemap {
     /// assert_eq!(tile_height, 32);
     /// ```
     pub fn tile_height(&self) -> u32 {
-        self.tile_dimensions.height()
+        self.tile_dimensions.height
     }
 }
 
-pub(crate) fn map_auto_configure(
+pub(crate) fn tilemap_auto_configure(
     texture_atlases: Res<Assets<TextureAtlas>>,
     mut query: Query<&mut Tilemap>,
 ) {
@@ -1423,10 +1522,10 @@ pub(crate) fn map_auto_configure(
         }
 
         let chunk_dimensions = Dimension2::new(
-            (DEFAULT_TEXTURE_DIMENSIONS.width() as f32 / tile_dimensions.width() as f32
-                * DEFAULT_CHUNK_DIMENSIONS.width() as f32) as u32,
-            (DEFAULT_TEXTURE_DIMENSIONS.height() as f32 / tile_dimensions.height() as f32
-                * DEFAULT_CHUNK_DIMENSIONS.height() as f32) as u32,
+            (DEFAULT_TEXTURE_DIMENSIONS.width as f32 / tile_dimensions.width as f32
+                * DEFAULT_CHUNK_DIMENSIONS.width as f32) as u32,
+            (DEFAULT_TEXTURE_DIMENSIONS.height as f32 / tile_dimensions.height as f32
+                * DEFAULT_CHUNK_DIMENSIONS.height as f32) as u32,
         );
 
         map.tile_dimensions = tile_dimensions;
@@ -1450,7 +1549,7 @@ pub(crate) fn map_auto_configure(
 /// 1. Despawn chunks
 /// 1. Remove chunks
 #[inline(always)]
-pub(crate) fn map_system(
+pub(crate) fn tilemap_system(
     mut commands: Commands,
     mut chunks: ResMut<Assets<Chunk>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -1577,11 +1676,11 @@ pub(crate) fn map_system(
 
                 let translation = Vec3::new(
                     (chunk.point().x
-                        * map.tile_dimensions.width() as i32
-                        * map.chunk_dimensions.width() as i32) as f32,
+                        * map.tile_dimensions.width as i32
+                        * map.chunk_dimensions.width as i32) as f32,
                     (chunk.point().y
-                        * map.tile_dimensions.height() as i32
-                        * map.chunk_dimensions.height() as i32) as f32,
+                        * map.tile_dimensions.height as i32
+                        * map.chunk_dimensions.height as i32) as f32,
                     z as f32,
                 );
                 let entity = commands

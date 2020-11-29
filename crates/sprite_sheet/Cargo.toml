@@ -1,0 +1,18 @@
+[package]
+name = "bevy_tilemap_spritesheet"
+version = "0.1.0"
+authors = ["Joshua J. Bouw <dev@joshuajbouw.com>"]
+edition = "2018"
+description = "Sprite sheets for tilemaps or whatever else"
+repository = "https://github.com/joshuajbouw/bevy_tilemap"
+license = "MIT"
+keywords = ["bevy", "bevy_tilemap"]
+documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap_spritesheet/"
+
+[package.metadata.docs.rs]
+default-target = "x86_64-pc-windows-msvc"
+
+[dependencies]
+bevy = { version = "0.3" }
+bevy_tilemap_types = { path = "../types" }
+rectangle-pack = "0.2"
