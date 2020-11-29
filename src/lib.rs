@@ -24,18 +24,23 @@
 //!
 //! Less time fiddling, more time building.
 #![no_implicit_prelude]
+// rustc
+#![deny(dead_code, unused_imports)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
-// rustc
-#![deny(dead_code, missing_docs, unused_imports)]
-
-extern crate bevy;
-extern crate bevy_tilemap_spritesheet;
-extern crate bevy_tilemap_types;
-extern crate bitflags;
-#[cfg(feature = "serde")]
-extern crate serde;
-extern crate std;
+#![warn(clippy::print_stdout, clippy::unwrap_in_result)]
+#![deny(
+    clippy::missing_docs_in_private_items,
+    clippy::missing_errors_doc,
+    clippy::decimal_literal_representation,
+    clippy::else_if_without_else,
+    // clippy::indexing_slicing,
+    clippy::let_underscore_must_use,
+    clippy::panic_in_result_fn,
+    clippy::cast_lossless,
+    clippy::redundant_pub_crate,
+    // clippy::missing_inline_in_public_items,
+)]
 
 /// The default plugin to be used in Bevy applications.
 pub mod default_plugin;
@@ -62,7 +67,7 @@ pub mod entity;
 mod mesh;
 pub mod prelude;
 /// Files and helpers for rendering.
-mod render;
+pub mod render;
 /// Tile traits to implement for a custom tile.
 pub mod tile;
 /// Map traits to implement for a custom map and a basic struct for use.
@@ -93,20 +98,27 @@ impl Plugin for Tilemap2DPlugin {
     }
 }
 
-/// A custom prelude around all the types we need from `std`, `bevy`, and `serde`.
+/// A custom prelude around everything that we only need to use.
 mod lib {
+    pub extern crate bevy;
+    pub extern crate bevy_tilemap_spritesheet;
+    pub extern crate bevy_tilemap_types;
+    pub extern crate bitflags;
+    #[cfg(feature = "serde")]
+    pub extern crate serde;
+    pub extern crate std;
+
     // Having to add this is a bug which is fixed in next Bevy (v > 0.3)
-    pub(crate) use ::bevy;
-    use ::bevy::{
+    use bevy::{
         app as bevy_app, asset as bevy_asset, core as bevy_core, ecs as bevy_ecs,
         math as bevy_math, render as bevy_render, sprite as bevy_sprite,
         transform as bevy_transform, type_registry as bevy_type_registry, utils as bevy_utils,
     };
 
-    pub(crate) use self::{
+    pub use self::{
         bevy_app::{AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder},
         bevy_asset::{AddAsset, Assets, Handle, HandleId},
-        bevy_core::Byteable,
+        bevy_core::{Byteable, Bytes},
         bevy_ecs::{Bundle, Commands, Entity, IntoQuerySystem, Query, Res, ResMut, Resources},
         bevy_math::{Vec2, Vec3},
         bevy_render::{
@@ -121,9 +133,11 @@ mod lib {
                 StencilStateDescriptor, StencilStateFaceDescriptor,
             },
             render_graph::{base::MainPass, RenderGraph, RenderResourcesNode},
-            renderer::{RenderResource, RenderResources},
+            renderer::{
+                RenderResource, RenderResourceIterator, RenderResourceType, RenderResources,
+            },
             shader::{Shader, ShaderStage, ShaderStages},
-            texture::TextureFormat,
+            texture::{Texture, TextureFormat},
         },
         bevy_sprite::TextureAtlas,
         bevy_transform::{
@@ -134,16 +148,15 @@ mod lib {
         bevy_utils::{HashMap, HashSet},
     };
 
-    pub(crate) use ::bevy_tilemap_types::{
+    pub use crate::bevy_tilemap_types::{
         dimension::{Dimension2, DimensionError},
         point::Point2,
     };
 
     #[cfg(feature = "serde")]
-    pub(crate) use ::serde::{Deserialize, Serialize};
+    pub use serde::{Deserialize, Serialize};
 
-    pub(crate) use ::std::{
-        self,
+    pub use std::{
         boxed::Box,
         clone::Clone,
         cmp::Ord,
@@ -159,9 +172,9 @@ mod lib {
     };
 
     // Macros
-    pub(crate) use ::std::{assert_eq, panic, vec, write};
+    pub use std::{assert_eq, panic, vec, write};
 
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
-    pub(crate) use ::std::println;
+    pub use std::println;
 }

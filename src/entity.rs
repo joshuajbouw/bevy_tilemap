@@ -30,6 +30,7 @@ pub(crate) struct DirtyLayer(pub(crate) usize);
 /// A component bundle for `Chunk` entities.
 #[derive(Bundle)]
 pub(crate) struct ChunkComponents {
+    /// The handle of the chunk.
     pub(crate) chunk: Handle<Chunk>,
     /// The handle for a TextureAtlas which contains multiple textures.
     pub(crate) texture_atlas: Handle<TextureAtlas>,

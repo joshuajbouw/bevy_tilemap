@@ -2,7 +2,8 @@ use crate::lib::*;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 /// The mesh of a chunk layer.
-pub(crate) struct ChunkMesh {
+pub struct ChunkMesh {
+    /// The dimensions of the chunk in pixels.
     dimensions: Dimension2,
 }
 

@@ -31,7 +31,6 @@ bitflags = "1.2.1"
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
-bevy = "0.3"
 rand = "0.7"
 
 [[example]]

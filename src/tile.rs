@@ -2,10 +2,44 @@ use crate::lib::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, PartialEq, Debug)]
+/// A raw tile composed of simply an index and a color.
 pub(crate) struct RawTile {
+    /// The index of the tile in the sprite sheet.
     pub index: usize,
+    /// The color, or tint, of the tile.
     pub color: Color,
 }
+
+// pub struct TileBuilder {
+//     point: Point2,
+//     z_order: usize,
+//     sprite_index: usize,
+//     // auto_tile: Option<AutoTileFlags>,
+//     tint: Color,
+// }
+//
+// impl Default for TileBuilder {
+//     fn default() -> TileBuilder {
+//         TileBuilder {
+//             point: Point2::new(0, 0),
+//             z_order: 0,
+//             sprite_index: 0,
+//             // auto_tile: None,
+//             tint: Color::WHITE,
+//         }
+//     }
+// }
+//
+// impl TileBuilder {
+//     pub fn new() -> TileBuilder {
+//         TileBuilder::default()
+//     }
+//
+//     pub fn point<P: Into<Point2>>(mut self, point: P) -> TileBuilder {
+//         self.point = point.into();
+//         self
+//     }
+// }
 
 /// A tile with an index value and color.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -49,6 +83,7 @@ impl<P: Into<Point2>> Tile<P, Color> {
     ///
     /// [`Tile`]: Tile
     /// [`with_tint`]: Tile::with_tint
+
     pub fn new(point: P, sprite_index: usize) -> Tile<P, Color> {
         Tile {
             point,
@@ -59,6 +94,7 @@ impl<P: Into<Point2>> Tile<P, Color> {
     }
 
     /// Creates a new tile with a given Z order and sprite index at a point.
+
     pub fn with_z_order(point: P, sprite_index: usize, z_order: usize) -> Tile<P, Color> {
         Tile {
             point,
@@ -87,6 +123,7 @@ impl<P: Into<Point2>, C: Into<Color>> Tile<P, C> {
     /// ```
     ///
     /// [`Color`]: Bevy::render::color::Color
+
     pub fn with_tint(point: P, sprite_index: usize, tint: C) -> Tile<P, C> {
         Tile {
             point,
@@ -112,6 +149,7 @@ impl<P: Into<Point2>, C: Into<Color>> Tile<P, C> {
     ///
     /// let tile = Tile::with_z_order_and_tint(point, z_order, sprite_index, tint);
     /// ```
+
     pub fn with_z_order_and_tint(
         point: P,
         sprite_index: usize,
@@ -152,8 +190,12 @@ pub(crate) fn sparse_tiles_to_attributes(
     let mut tile_colors = vec![[0.0, 0.0, 0.0, 0.0]; area * 4];
     for (index, tile) in tiles.iter() {
         for i in 0..4 {
-            tile_indexes[index * 4 + i] = tile.index as f32;
-            tile_colors[index * 4 + i] = tile.color.into();
+            if let Some(index) = tile_indexes.get_mut(index * 4 + i) {
+                *index = tile.index as f32;
+            }
+            if let Some(index) = tile_colors.get_mut(index * 4 + i) {
+                *index = tile.color.into();
+            }
         }
     }
     (tile_indexes, tile_colors)

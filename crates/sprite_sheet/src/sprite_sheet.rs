@@ -1,10 +1,16 @@
 use crate::lib::*;
 
 #[derive(PartialEq)]
+/// The kind of error that can happen for a sprite sheet.
 enum ErrorKind {
+    /// Holds an inner dimension error.
     DimensionError(DimensionError),
+    /// Holds a inner rectangle pack error.
     RectanglePackError(RectanglePackError),
+    /// If the rectangle has no more room in the sprite sheet.
     NotEnoughSpace,
+    /// If the texture does not exist.
+    TextureNotExists,
 }
 
 impl Debug for ErrorKind {
@@ -17,6 +23,7 @@ impl Debug for ErrorKind {
                 f,
                 "not enough space in the sprite sheet, increase the maximum size"
             ),
+            TextureNotExists => write!(f, "the texture does not exist"),
         }
     }
 }
@@ -56,8 +63,12 @@ pub type SpriteSheetResult<T> = Result<T, SpriteSheetError>;
 
 /// A builder which is used to create a sprite sheet.
 pub struct SpriteSheetBuilder {
+    /// The grouped rects which must be placed with a key value pair of a
+    /// texture handle to an index.
     rects_to_place: GroupedRectsToPlace<(Handle<Texture>, usize)>,
+    /// The sprite size in pixels.
     sprite_size: Dimension2,
+    /// The absolute maximum size of a sprite sheet in pixels.
     max_size: Dimension2,
 }
 
@@ -74,23 +85,27 @@ impl Default for SpriteSheetBuilder {
 impl SpriteSheetBuilder {
     /// Constructs a new sprite sheet builder then is consumed to create a new
     /// sprite sheet.
+
     pub fn new() -> SpriteSheetBuilder {
         SpriteSheetBuilder::default()
     }
 
     /// Sets the dimensions per sprite in pixels.
+
     pub fn sprite_dimensions<D: Into<Dimension2>>(mut self, sprite_size: D) -> SpriteSheetBuilder {
         self.sprite_size = sprite_size.into();
         self
     }
 
     /// Sets the maximum dimensions of the sprite sheet in pixels.
+
     pub fn max_dimensions<D: Into<Dimension2>>(mut self, max_size: D) -> SpriteSheetBuilder {
         self.max_size = max_size.into();
         self
     }
 
     /// Adds a sprite to the sprite sheet texture.
+
     pub fn add_sprite<D: Into<Dimension2>>(
         mut self,
         texture_handle: Handle<Texture>,
@@ -107,6 +122,7 @@ impl SpriteSheetBuilder {
 
     /// Adds multiple sprites already in a single texture or, can be used to
     /// combine multiple sprite sheets.
+
     pub fn add_sprites<D: Into<Dimension2>>(
         &mut self,
         texture_handle: Handle<Texture>,
@@ -130,7 +146,9 @@ impl SpriteSheetBuilder {
         }
     }
 
-    fn place_texture(
+    /// Copies the texture from one texture to another at a given packed
+    /// location.
+    fn copy_texture(
         &mut self,
         atlas_texture: &mut Texture,
         texture: &Texture,
@@ -148,13 +166,26 @@ impl SpriteSheetBuilder {
             let end = begin + rect_width * format_size;
             let texture_begin = texture_y * rect_width * format_size;
             let texture_end = texture_begin + rect_width * format_size;
-            atlas_texture.data[begin..end]
-                .copy_from_slice(&texture.data[texture_begin..texture_end]);
+            if let Some(slice_data) = atlas_texture.data.get_mut(begin..end) {
+                if let Some(texture_slice_data) = texture.data.get(texture_begin..texture_end) {
+                    slice_data.copy_from_slice(&texture_slice_data);
+                } // TODO: Else statement that passes an error when bevy updates.
+            } // TODO: Else statement that passes an error when bevy updates.
         }
     }
 
-    /// Consumes the builder, runs some final operations, and returns a new
-    /// sprite sheet with a single texture.
+    /// Consumes the builder and returns a result with a new sprite sheet.
+    ///
+    /// Internally it copies all the rectangles from the textures and copies
+    /// them into a new texture which the sprite sheet will use. It is not
+    /// useful to hold a strong handle to the texture afterwards else it will
+    /// exist twice in memory.
+    ///
+    /// # Errors
+    ///
+    /// If there is not enough space in the sprite sheet texture, an error will
+    /// be returned. It is then recommended to make a larger sprite sheet.
+
     pub fn finish(mut self, textures: &mut Assets<Texture>) -> SpriteSheetResult<SpriteSheet> {
         let initial_width = self.sprite_size.width;
         let initial_height = self.sprite_size.height;
@@ -201,7 +232,9 @@ impl SpriteSheetBuilder {
         for ((texture_handle, index), (_, packed_location)) in
             rect_placements.packed_locations().iter()
         {
-            let texture = textures.get(texture_handle).unwrap();
+            let texture = textures
+                .get(texture_handle)
+                .ok_or_else(|| SpriteSheetError::from(ErrorKind::TextureNotExists))?;
             let min = Vec2::new(packed_location.x() as f32, packed_location.y() as f32);
             let max = min
                 + Vec2::new(
@@ -216,7 +249,7 @@ impl SpriteSheetBuilder {
                     indices
                 });
             texture_rects.push(Rect { min, max });
-            self.place_texture(&mut atlas_texture, texture, packed_location);
+            self.copy_texture(&mut atlas_texture, texture, packed_location);
         }
         Ok(SpriteSheet {
             size: atlas_texture.size.into(),
@@ -231,24 +264,38 @@ impl SpriteSheetBuilder {
     }
 }
 
-#[derive(Debug, RenderResources, TypeUuid)]
-#[uuid = "0ae39dfc-2d54-4c2f-bbe0-29a41d6518b5"]
+#[derive(Debug, RenderResources)]
 /// A sprite sheet which is used to get individual sprites from a single
 /// texture.
 pub struct SpriteSheet {
+    /// The texture handle.
     texture: Handle<Texture>,
+    /// The dimensions of the sprite sheet in cells.
     #[render_resources(ignore)]
     dimensions: Dimension2,
+    /// The dimensions of the sprite sheet in pixels.
     #[render_resources(ignore)]
     size: Dimension2,
+    /// The vector of all the sprite positions, indexed.
     #[render_resources(buffer)]
     sprites: Vec<Rect>,
+    /// Contains the ID of the handle to the index in the texture, which
+    /// further points to the index in the sprite sheet.
     #[render_resources(ignore)]
     sprite_handles: Option<HashMap<Handle<Texture>, HashMap<usize, usize>>>,
 }
 
+// NOTE: This has been fixed in Bevy v > 0.3 and should be removed then.
+impl TypeUuid for SpriteSheet {
+    const TYPE_UUID: Uuid = Uuid::from_bytes([
+        0xA, 0xE3, 0x9D, 0xFC, 0x2D, 0x54, 0x4C, 0x2F, 0xBB, 0xE0, 0x29, 0xA4, 0x1D, 0x65, 0x18,
+        0xB5,
+    ]);
+}
+
 impl SpriteSheet {
     /// Constructs a new sprite sheet with a single texture that has padding.
+
     pub fn with_padding<D: Into<Dimension2>>(
         texture: Handle<Texture>,
         tile_dimensions: D,
@@ -304,6 +351,7 @@ impl SpriteSheet {
     }
 
     /// Constructs a new sprite sheet.
+
     pub fn new<D: Into<Dimension2>>(
         texture: Handle<Texture>,
         tile_dimensions: D,
@@ -325,21 +373,32 @@ impl SpriteSheet {
     ///
     /// Use this if the aim is to combine multiple sprite sheets or to combine
     /// loose sprites.
+
     pub fn builder() -> SpriteSheetBuilder {
         SpriteSheetBuilder::default()
     }
 
     /// The number of the sprites in the sprite sheet, also known as the length.
+
     pub fn len(&self) -> usize {
         self.sprites.len()
     }
 
     /// If the sprite sheet contains sprites or not.
+
     pub fn is_empty(&self) -> bool {
         self.sprites.is_empty()
     }
 
     /// Retrieves the sprite's index from a given texture and point.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist on the sprite sheet then an
+    /// [`SpriteSheetError`] is returned.
+    ///
+    /// [`SpriteSheetError`]: SpriteSheetError
+
     pub fn get_sprite_index<P: Into<Point2>>(
         &self,
         texture: &Handle<Texture>,

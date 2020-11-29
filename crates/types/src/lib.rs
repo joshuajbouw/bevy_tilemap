@@ -4,15 +4,23 @@
 //! all contained here.
 
 #![no_implicit_prelude]
+// rustc
+#![deny(dead_code, unused_imports)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
-// rustc
-#![deny(dead_code, missing_docs, unused_imports)]
-
-extern crate bevy;
-#[cfg(feature = "serde")]
-extern crate serde;
-extern crate std;
+#![warn(clippy::print_stdout, clippy::unwrap_in_result)]
+#![deny(
+    clippy::missing_docs_in_private_items,
+    clippy::missing_errors_doc,
+    clippy::decimal_literal_representation,
+    clippy::else_if_without_else,
+    // clippy::indexing_slicing,
+    clippy::let_underscore_must_use,
+    clippy::panic_in_result_fn,
+    clippy::cast_lossless,
+    clippy::redundant_pub_crate,
+    // clippy::missing_inline_in_public_items,
+)]
 
 /// Dimension helpers with encoding and decoding to and from indexes.
 pub mod dimension;
@@ -22,14 +30,19 @@ pub mod prelude;
 
 /// A custom prelude around all the types we need from `std`, `bevy`, and `serde`.
 mod lib {
-    use ::bevy::math as bevy_math;
+    extern crate bevy;
+    #[cfg(feature = "serde")]
+    extern crate serde;
+    extern crate std;
 
-    pub(crate) use self::bevy_math::{Vec2, Vec3};
+    use bevy::math as bevy_math;
+
+    pub use self::bevy_math::{Vec2, Vec3};
 
     #[cfg(feature = "serde")]
-    pub(crate) use ::serde::{Deserialize, Serialize};
+    pub use serde::{Deserialize, Serialize};
 
-    pub(crate) use ::std::{
+    pub use std::{
         boxed::Box,
         clone::Clone,
         cmp::Ord,
@@ -42,9 +55,9 @@ mod lib {
     };
 
     // MacrosD
-    pub(crate) use ::std::write;
+    pub use std::write;
 
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
-    pub(crate) use ::std::println;
+    pub use std::println;
 }
