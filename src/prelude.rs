@@ -28,9 +28,9 @@ pub mod v0 {
     #[cfg(feature = "types")]
     pub use crate::bevy_tilemap_types::prelude::v0::*;
     pub use crate::{
-        bevy_tilemap_spritesheet::prelude::v0::*,
         chunk::LayerKind,
         entity::TilemapComponents,
+        sprite_sheet::prelude::v0::*,
         tile::Tile,
         tilemap::{Tilemap, TilemapBuilder},
         Tilemap2DPlugin,

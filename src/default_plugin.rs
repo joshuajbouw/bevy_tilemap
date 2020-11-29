@@ -6,6 +6,6 @@ pub struct DefaultPlugins;
 impl PluginGroup for DefaultPlugins {
     fn build(&mut self, group: &mut PluginGroupBuilder) {
         group.add(crate::Tilemap2DPlugin::default());
-        group.add(crate::bevy_tilemap_spritesheet::SpriteSheetPlugin::default());
+        group.add(crate::sprite_sheet::SpriteSheetPlugin::default());
     }
 }

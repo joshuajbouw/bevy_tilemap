@@ -5,14 +5,19 @@ use crate::{
     tile::RawTile,
 };
 
+/// Common methods for layers in a chunk.
 pub(crate) trait Layer: 'static {
+    /// Returns the handle of the mesh.
     fn mesh(&self) -> &Handle<Mesh>;
 
+    /// Sets the mesh for the layer.
     fn set_mesh(&mut self, mesh: Handle<Mesh>);
 
+    /// Sets a raw tile for a layer at an index.
     fn set_raw_tile(&mut self, index: usize, tile: RawTile);
 
-    fn tiles_to_renderer_parts(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>);
+    /// Takes all the tiles in the layer and returns attributes for the renderer.
+    fn tiles_to_attributes(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>);
 }
 
 /// A layer with dense sprite tiles.
@@ -39,15 +44,18 @@ impl Layer for DenseLayer {
     }
 
     fn set_raw_tile(&mut self, index: usize, tile: RawTile) {
-        self.tiles[index] = tile;
+        if let Some(inner_tile) = self.tiles.get_mut(index) {
+            *inner_tile = tile;
+        } // TODO: Else statement with an ERR log when released
     }
 
-    fn tiles_to_renderer_parts(&self, _area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
+    fn tiles_to_attributes(&self, _area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
         crate::tile::dense_tiles_to_attributes(&self.tiles)
     }
 }
 
 impl DenseLayer {
+    /// Constructs a new dense layer with tiles.
     pub(crate) fn new(tiles: Vec<RawTile>) -> DenseLayer {
         DenseLayer {
             mesh: Default::default(),
@@ -83,12 +91,13 @@ impl Layer for SparseLayer {
         self.tiles.insert(index, tile);
     }
 
-    fn tiles_to_renderer_parts(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
+    fn tiles_to_attributes(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
         crate::tile::sparse_tiles_to_attributes(area, &self.tiles)
     }
 }
 
 impl SparseLayer {
+    /// Constructs a new sparse layer with a tile hashmap.
     pub(crate) fn new(tiles: HashMap<usize, RawTile>) -> SparseLayer {
         SparseLayer {
             mesh: Default::default(),
@@ -118,8 +127,11 @@ pub enum LayerKind {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Debug)]
+/// Inner enum used for storing either a dense or sparse layer.
 enum LayerKindInner {
+    /// Inner dense layer storage.
     Dense(DenseLayer),
+    /// Inner sparse layer storage.
     Sparse(SparseLayer),
 }
 
@@ -143,9 +155,12 @@ impl AsMut<dyn Layer> for LayerKindInner {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Debug)]
+/// A sprite layer which can either store a sparse or dense layer.
 pub(crate) struct SpriteLayer {
+    /// Enum storage of the kind of layer.
     inner: LayerKindInner,
     #[cfg_attr(feature = "serde", serde(skip))]
+    /// Contains an entity if the layer had been spawned.
     entity: Option<Entity>,
 }
 
@@ -159,6 +174,7 @@ pub struct Chunk {
 }
 
 impl Chunk {
+    /// A newly constructed chunk from a point and the maximum number of layers.
     pub(crate) fn new(point: Point2, max_layers: usize) -> Chunk {
         Chunk {
             point,
@@ -166,6 +182,8 @@ impl Chunk {
         }
     }
 
+    /// Adds a layer from a layer kind, the z layer, and dimensions of the
+    /// chunk.
     pub(crate) fn add_layer(&mut self, kind: &LayerKind, z: usize, dimensions: Dimension2) {
         match kind {
             LayerKind::Dense => {
@@ -176,65 +194,79 @@ impl Chunk {
                     };
                     dimensions.area() as usize
                 ];
-                self.sprite_layers[z] = Some(SpriteLayer {
-                    inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
-                    entity: None,
-                });
+                if let Some(layer) = self.sprite_layers.get_mut(z) {
+                    *layer = Some(SpriteLayer {
+                        inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
+                        entity: None,
+                    });
+                } // TODO: Else statement with an ERR log when released
             }
             LayerKind::Sparse => {
-                self.sprite_layers[z] = Some(SpriteLayer {
-                    inner: LayerKindInner::Sparse(SparseLayer::new(HashMap::default())),
-                    entity: None,
-                })
+                if let Some(layer) = self.sprite_layers.get_mut(z) {
+                    *layer = Some(SpriteLayer {
+                        inner: LayerKindInner::Sparse(SparseLayer::new(HashMap::default())),
+                        entity: None,
+                    });
+                } // TODO: Else statement with an ERR log when released
             }
         }
     }
 
+    /// Returns the point of the location of the chunk.
     pub(crate) fn point(&self) -> Point2 {
         self.point
     }
 
+    /// Moves a layer from a z layer to another.
     pub(crate) fn move_layer(&mut self, from_z: usize, to_z: usize) {
-        if self.sprite_layers[to_z].is_some() {
+        // TODO: rename to swap and include it in the greater api
+        if self.sprite_layers.get(to_z).is_some() {
             panic!("Sprite layer {} unexpectedly exists.", to_z);
         }
 
-        self.sprite_layers[to_z] = self.sprite_layers[from_z].clone();
-        self.sprite_layers[from_z] = None;
+        self.sprite_layers.swap(from_z, to_z);
     }
 
+    /// Removes a layer from the specified layer.
     pub(crate) fn remove_layer(&mut self, z_order: usize) {
-        self.sprite_layers[z_order] = None;
+        self.sprite_layers.get_mut(z_order).take();
     }
 
+    /// Sets the mesh for the chunk layer to use.
     pub(crate) fn set_mesh(&mut self, z_order: usize, mesh: Handle<Mesh>) {
-        let layer = self.sprite_layers[z_order]
-            .as_mut()
-            .expect("`SpriteLayer` is missing.");
-        layer.inner.as_mut().set_mesh(mesh);
+        if let Some(layer) = self.sprite_layers.get_mut(z_order) {
+            if let Some(layer) = layer.as_mut() {
+                layer.inner.as_mut().set_mesh(mesh)
+            } // TODO: Bevy log error when implemented
+        } // TODO: Bevy log error when implemented
     }
 
+    /// Sets a single raw tile to be added to a z layer and index.
     pub(crate) fn set_raw_tile(&mut self, z_order: usize, index: usize, raw_tile: RawTile) {
-        let layer = self.sprite_layers[z_order]
-            .as_mut()
-            .expect("`SpriteLayer` is missing.");
-        layer.inner.as_mut().set_raw_tile(index, raw_tile);
+        if let Some(layer) = self.sprite_layers.get_mut(z_order) {
+            if let Some(layer) = layer.as_mut() {
+                layer.inner.as_mut().set_raw_tile(index, raw_tile);
+            } // TODO: Bevy log error when implemented
+        } // TODO: Bevy log error when implemented
     }
 
+    /// Adds an entity to a z layer, always when it is spawned.
     pub(crate) fn add_entity(&mut self, z_order: usize, entity: Entity) {
-        let layer = self.sprite_layers[z_order]
-            .as_mut()
-            .expect("`SpriteLayer` is missing.");
-        layer.entity = Some(entity);
+        if let Some(layer) = self.sprite_layers.get_mut(z_order) {
+            if let Some(layer) = layer.as_mut() {
+                layer.entity = Some(entity);
+            } // TODO: Bevy log error when implemented
+        } // TODO: Bevy log error when implemented
     }
 
+    /// Gets the layers entity, if any. Useful for despawning.
     pub(crate) fn get_entity(&self, z_order: usize) -> Option<Entity> {
-        let layer = self.sprite_layers[z_order]
-            .as_ref()
-            .expect("`SpriteLayer` is missing.");
-        layer.entity
+        self.sprite_layers
+            .get(z_order)
+            .and_then(|o| o.as_ref().and_then(|layer| layer.entity))
     }
 
+    /// Gets all the layers entities for use with bulk despawning.
     pub(crate) fn get_entities(&self) -> Vec<Entity> {
         let mut entities = Vec::new();
         for sprite_layer in &self.sprite_layers {
@@ -247,6 +279,10 @@ impl Chunk {
         entities
     }
 
+    /// At the given z layer, changes the tiles into attributes for use with
+    /// the renderer using the given dimensions.
+    ///
+    /// Easier to pass in the dimensions opposed to storing it everywhere.
     pub(crate) fn tiles_to_renderer_parts<D: Into<Dimension2>>(
         &self,
         z: usize,
@@ -254,12 +290,15 @@ impl Chunk {
     ) -> Option<(Vec<f32>, Vec<[f32; 4]>)> {
         let dimensions = dimensions.into();
         let area = dimensions.area() as usize;
-        self.sprite_layers[z]
-            .as_ref()
-            .map(|sprite_layer| sprite_layer.inner.as_ref().tiles_to_renderer_parts(area))
+        self.sprite_layers.get(z).and_then(|o| {
+            o.as_ref()
+                .map(|layer| layer.inner.as_ref().tiles_to_attributes(area))
+        })
     }
 }
 
+/// The chunk update system that is used to set attributes of the tiles and
+/// tints if they need updating.
 pub(crate) fn chunk_update_system(
     mut commands: Commands,
     chunks: Res<Assets<Chunk>>,

@@ -52,31 +52,41 @@ pub struct Dimension2 {
 
 impl Dimension2 {
     /// Constructs a new 2nd dimension.
+
     pub const fn new(width: u32, height: u32) -> Dimension2 {
         Dimension2 { width, height }
     }
 
     /// The total area of the dimension.
+
     pub fn area(&self) -> u32 {
         self.width * self.height
     }
 
     /// The maximum X value of this dimension.
+
     pub fn x_max(&self) -> u32 {
         self.width - 1
     }
 
     /// The maximum Y value of this dimension.
+
     pub fn y_max(&self) -> u32 {
         self.height - 1
     }
 
     /// Returns the center of the `Map` as a `Vec2` `Chunk` coordinate.
+
     pub fn center(&self) -> Point2 {
         Point2::new((self.width / 2) as i32, (self.height / 2) as i32)
     }
 
     /// Checks if a coordinate is valid and inbounds.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist in the dimensions, an error is returned.
+
     pub fn check_point(&self, point: Point2) -> DimensionResult<()> {
         if point.x > self.x_max() as i32 || point.y > self.y_max() as i32 {
             Err(ErrorKind::OutOfBounds.into())
@@ -86,6 +96,11 @@ impl Dimension2 {
     }
 
     /// Checks if an index is valid and inbounds.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist in the dimensions, an error is returned.
+
     pub fn check_index(&self, index: usize) -> DimensionResult<()> {
         if index > (self.width * self.height) as usize {
             Err(ErrorKind::OutOfBounds.into())
@@ -95,17 +110,24 @@ impl Dimension2 {
     }
 
     /// Encodes a coordinate and returns an index value, unchecked.
+
     pub fn encode_point_unchecked(&self, point: Point2) -> usize {
         ((point.y * self.width as i32) + point.x) as usize
     }
 
     /// Encodes a coordinate and returns an index value.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist in the dimensions, an error is returned.
+
     pub fn encode_point(&self, point: Point2) -> DimensionResult<usize> {
         self.check_point(point)?;
         Ok(self.encode_point_unchecked(point))
     }
 
     /// Decodes an index value and returns a coordinate, unchecked.
+
     pub fn decode_point_unchecked(&self, index: usize) -> Point2 {
         let y = index as i32 / self.height as i32;
         let x = index as i32 % self.width as i32;
@@ -113,6 +135,11 @@ impl Dimension2 {
     }
 
     /// Decodes an index value and returns a coordinate.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist in the dimensions, an error is returned.
+
     pub fn decode_point(&self, index: usize) -> DimensionResult<Point2> {
         self.check_index(index)?;
         Ok(self.decode_point_unchecked(index))
@@ -308,6 +335,7 @@ pub struct Dimension3 {
 
 impl Dimension3 {
     /// Constructs a new 2nd dimension.
+
     pub fn new(width: u32, height: u32, depth: u32) -> Dimension3 {
         Dimension3 {
             width,
@@ -317,21 +345,25 @@ impl Dimension3 {
     }
 
     /// The maximum X value of this dimension.
+
     pub fn x_max(&self) -> u32 {
         self.width - 1
     }
 
     /// The maximum Y value of this dimension.
+
     pub fn y_max(&self) -> u32 {
         self.height - 1
     }
 
     /// The maximum Z value of this dimension.
+
     pub fn z_max(&self) -> u32 {
         self.depth - 1
     }
 
     /// Returns the center as a `Vec3`.
+
     pub fn center(&self) -> Point3 {
         Point3::new(
             self.width as i32 / 2,
@@ -341,6 +373,11 @@ impl Dimension3 {
     }
 
     /// Checks if a given coordinate is within bounds of the `Chunk`.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist in the dimensions, an error is returned.
+
     pub fn check_point(&self, point: Point3) -> DimensionResult<()> {
         if point.x > self.width as i32
             || point.y > self.height as i32
@@ -353,6 +390,11 @@ impl Dimension3 {
     }
 
     /// Checks if a given index is within bounds of the `Chunk`.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist in the dimensions, an error is returned.
+
     pub fn check_index(&self, index: usize) -> DimensionResult<()> {
         if index > (self.width * self.height * self.depth) as usize {
             Err(ErrorKind::OutOfBounds.into())
@@ -362,6 +404,7 @@ impl Dimension3 {
     }
 
     /// Encodes a Vec3 coordinate to an usize index to use in the Tile vector, unchecked.
+
     pub fn encode_point_unchecked(&self, point: Point3) -> usize {
         ((point.z * self.width as i32 * self.height as i32)
             + (point.y * self.width as i32)
@@ -369,12 +412,22 @@ impl Dimension3 {
     }
 
     /// Encodes a `Vec3` coordinate to an `usize` index to use in the `Tile` vector.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist in the dimensions, an error is returned.
+
     pub fn encode_point(&self, point: Point3) -> DimensionResult<usize> {
         self.check_point(point)?;
         Ok(self.encode_point_unchecked(point))
     }
 
     /// Decodes a Tile index and returns the coordinates in the Chunk, unchecked.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist in the dimensions, an error is returned.
+
     pub fn decode_coord_unchecked(&self, index: usize) -> Point3 {
         let z = index as u32 / (self.width * self.height);
         let index = index as u32 - (z * self.width * self.height);
@@ -384,6 +437,11 @@ impl Dimension3 {
     }
 
     /// Decodes a `Tile` index and returns the coordinates in the `Chunk`.
+    ///
+    /// # Errors
+    ///
+    /// If the point does not exist in the dimensions, an error is returned.
+
     pub fn decode_coord(&self, index: usize) -> DimensionResult<Point3> {
         self.check_index(index)?;
         Ok(self.decode_coord_unchecked(index))

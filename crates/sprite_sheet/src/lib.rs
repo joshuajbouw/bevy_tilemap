@@ -3,15 +3,23 @@
 //! Library providing render pipeline, storage of sprite sheets,
 
 #![no_implicit_prelude]
+// rustc
+#![deny(dead_code, unused_imports)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
-// rustc
-#![deny(dead_code, missing_docs, unused_imports)]
-
-extern crate bevy;
-extern crate bevy_tilemap_types;
-extern crate rectangle_pack;
-extern crate std;
+#![warn(clippy::print_stdout, clippy::unwrap_in_result)]
+#![deny(
+    clippy::missing_docs_in_private_items,
+    clippy::missing_errors_doc,
+    clippy::decimal_literal_representation,
+    clippy::else_if_without_else,
+    // clippy::indexing_slicing,
+    clippy::let_underscore_must_use,
+    clippy::panic_in_result_fn,
+    clippy::cast_lossless,
+    clippy::redundant_pub_crate,
+    // clippy::missing_inline_in_public_items,
+)]
 
 pub mod prelude;
 /// Much like a texture atlas however everything is split into the same size of
@@ -32,37 +40,44 @@ impl Plugin for SpriteSheetPlugin {
 
 /// A custom prelude around all the types we need from `std`, `bevy`, and `serde`.
 mod lib {
+    pub extern crate bevy;
+    extern crate bevy_tilemap_types;
+    extern crate rectangle_pack;
+    pub extern crate std;
+
     // Having to add this is a bug which is fixed in next Bevy (v > 0.3)
-    pub(crate) use ::bevy;
-    use ::bevy::{
+    #[allow(unused_imports)]
+    use bevy::{
         app as bevy_app, asset as bevy_asset, math as bevy_math, render as bevy_render,
         sprite as bevy_sprite, type_registry as bevy_type_registry, utils as bevy_utils,
     };
 
-    pub(crate) use self::{
+    pub use self::{
         bevy_app::{AppBuilder, Plugin},
         bevy_asset::{AddAsset, Assets, Handle},
         bevy_math::Vec2,
         bevy_render::{
-            renderer::RenderResources,
+            renderer::{
+                RenderResource, RenderResourceHints, RenderResourceIterator, RenderResources,
+            },
             texture::{Texture, TextureFormat},
         },
         bevy_sprite::Rect,
-        bevy_type_registry::TypeUuid,
+        bevy_type_registry::{TypeUuid, Uuid},
         bevy_utils::HashMap,
     };
 
-    pub(crate) use ::bevy_tilemap_types::{
+    pub use bevy_tilemap_types::{
         dimension::{Dimension2, DimensionError},
         point::Point2,
     };
 
-    pub(crate) use ::rectangle_pack::{
+    pub use rectangle_pack::{
         contains_smallest_box, pack_rects, volume_heuristic, GroupedRectsToPlace, PackedLocation,
         RectToInsert, RectanglePackError, TargetBin,
     };
 
-    pub(crate) use ::std::{
+    pub use std::{
         boxed::Box,
         clone::Clone,
         collections::BTreeMap,
@@ -77,12 +92,12 @@ mod lib {
     };
 
     // Macros
-    pub(crate) use ::std::{assert, write};
+    pub use std::{assert, write};
 
     #[allow(unused_imports)]
-    pub(crate) use ::std::panic;
+    pub use std::panic;
 
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
-    pub(crate) use ::std::println;
+    pub use std::println;
 }

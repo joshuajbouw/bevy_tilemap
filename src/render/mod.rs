@@ -1,9 +1,11 @@
 use crate::{entity::ChunkDimensions, lib::*};
 
-pub const CHUNK_PIPELINE_HANDLE: Handle<PipelineDescriptor> =
+/// The constant render pipeline for a chunk.
+pub(crate) const CHUNK_PIPELINE_HANDLE: Handle<PipelineDescriptor> =
     Handle::weak_from_u64(PipelineDescriptor::TYPE_UUID, 2110840099625352487);
 
-pub fn build_chunk_pipeline(shaders: &mut Assets<Shader>) -> PipelineDescriptor {
+/// Builds the chunk render pipeline.
+fn build_chunk_pipeline(shaders: &mut Assets<Shader>) -> PipelineDescriptor {
     PipelineDescriptor {
         rasterization_state: Some(RasterizationStateDescriptor {
             front_face: FrontFace::Ccw,
@@ -51,11 +53,15 @@ pub fn build_chunk_pipeline(shaders: &mut Assets<Shader>) -> PipelineDescriptor 
     }
 }
 
-pub mod node {
+/// Node names.
+mod node {
+    /// Chunk dimensions node name.
     pub const CHUNK_DIMENSIONS: &str = "chunk_dimensions";
 }
 
+/// A trait which implements the tilemap graph to a render graph.
 pub trait TilemapRenderGraphBuilder {
+    /// Adds the tilemaps render graph.
     fn add_tilemap_graph(&mut self, resources: &Resources) -> &mut Self;
 }
 
@@ -74,4 +80,14 @@ impl TilemapRenderGraphBuilder for RenderGraph {
         pipelines.set_untracked(CHUNK_PIPELINE_HANDLE, build_chunk_pipeline(&mut shaders));
         self
     }
+}
+
+/// Prevents the traits in this module from being implemented outside the crate.
+mod private {
+    use super::RenderGraph;
+
+    /// Seals the type.
+    pub trait Sealed {}
+
+    impl Sealed for RenderGraph {}
 }
