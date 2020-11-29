@@ -48,7 +48,7 @@ pub mod v0 {
         entity::TilemapComponents,
         sprite_sheet::prelude::v0::*,
         tile::Tile,
-        tilemap::{Tilemap, TilemapBuilder},
+        tilemap::{GridTopology, Tilemap, TilemapBuilder},
         Tilemap2DPlugin,
     };
 }

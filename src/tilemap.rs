@@ -208,10 +208,36 @@ impl Default for AutoFlags {
     }
 }
 
+/// Topology of the tilemap grid (square or hex)
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum GridTopology {
+    /// Square grid
+    Square,
+    /// Hex grid with rows offset to the right (hexes with pointy top)
+    HexYRight,
+    /// Hex grid with rows offset to the left (hexes with pointy top)
+    HexYLeft,
+    /// Hex grid with columns offset to the right (hexes with flat top)
+    HexXRight,
+    /// Hex grid with columns offset to the left (hexes with flat top)
+    HexXLeft,
+    /// Hex grid with offset on even rows (hexes with pointy top)
+    HexEvenRows,
+    /// Hex grid with offset on odd rows (hexes with pointy top)
+    HexOddRows,
+    /// Hex grid with offset on even columns (hexes with flat top)
+    HexEvenCols,
+    /// Hex grid with offset on odd columns (hexes with flat top)
+    HexOddCols,
+}
+
 /// A Tilemap which maintains chunks and its tiles within.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct Tilemap {
+    /// The type of grid to use.
+    topology: GridTopology,
     /// An optional field which can contain the tilemaps dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// A chunks dimensions in tiles.
@@ -294,6 +320,8 @@ pub struct Tilemap {
 /// [`TilemapResult`]: TilemapResult
 #[derive(Clone, PartialEq, Debug)]
 pub struct TilemapBuilder {
+    /// The type of grid to use.
+    topology: GridTopology,
     /// An optional field which can contain the tilemaps dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// The chunks dimensions in tiles.
@@ -313,6 +341,7 @@ pub struct TilemapBuilder {
 impl Default for TilemapBuilder {
     fn default() -> Self {
         TilemapBuilder {
+            topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
             tile_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
@@ -351,6 +380,21 @@ impl TilemapBuilder {
     /// ```
     pub fn new() -> TilemapBuilder {
         TilemapBuilder::default()
+    }
+
+    /// Sets the topology of the tilemap.
+    ///
+    /// The default is a square grid. Use this if you want a hexagonal grid instead.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::prelude::*;
+    ///
+    /// let builder = TilemapBuilder::new().topology(GridTopology::HexRows);
+    /// ```
+    pub fn topology(mut self, topology: GridTopology) -> TilemapBuilder {
+        self.topology = topology;
+        self
     }
 
     /// Sets the dimensions of the tilemap.
@@ -547,6 +591,7 @@ impl TilemapBuilder {
         };
 
         let mut tilemap = Tilemap {
+            topology: self.topology,
             dimensions: self.dimensions,
             chunk_dimensions: self.chunk_dimensions,
             tile_dimensions: self.tile_dimensions,
@@ -575,6 +620,7 @@ impl TypeUuid for Tilemap {
 impl Default for Tilemap {
     fn default() -> Self {
         Tilemap {
+            topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
             tile_dimensions: DEFAULT_CHUNK_DIMENSIONS,
@@ -1526,6 +1572,11 @@ impl Tilemap {
     /// Gets a reference to a chunk.
     pub(crate) fn get_chunk(&self, point: &Point2) -> Option<&Chunk> {
         self.chunks.get(point)
+    }
+
+    /// The topology of the tilemap grid.
+    pub fn topology(&self) -> GridTopology {
+        self.topology
     }
 }
 
