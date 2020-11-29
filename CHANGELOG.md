@@ -11,6 +11,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 * Auto configuration of optimal chunk sizes to texture size as well as checks
 to ensure that the tiles are divisible into each other had been added.
+* Optional dimension 2D and 3D API.
+
+### Changed
+
+* The whole project was mostly refactored.
+* `ChunkTilesPlugin` is now `Tilemap2DPlugin`.
+* `TilemapBuilder::build()` is now `TilemapBuilder::finish()`
+* Point module was now made optional.
 
 ## [0.2.2] - 2020-11-23
 
