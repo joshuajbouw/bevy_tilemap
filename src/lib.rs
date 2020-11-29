@@ -39,14 +39,19 @@ extern crate std;
 
 /// The default plugin to be used in Bevy applications.
 pub mod default_plugin;
+/// Various dimension based traits.
+#[cfg(feature = "types")]
+pub mod dimension {
+    pub use crate::bevy_tilemap_types::dimension::*;
+}
 /// Similar to a texture atlas but splits everything into the same size tiles.
 pub mod sprite_sheet {
     pub use crate::bevy_tilemap_spritesheet::*;
 }
+/// Points used for helping with coordinates.
 #[cfg(feature = "types")]
-/// Common, but optional, types used across Bevy Tilemaps
-pub mod types {
-    pub use crate::bevy_tilemap_types::*;
+pub mod point {
+    pub use crate::bevy_tilemap_types::point::*;
 }
 // pub mod auto_tile;
 /// Chunk traits to implement for a custom chunk and a basic struct for use.
