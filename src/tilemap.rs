@@ -861,12 +861,16 @@ impl Tilemap {
     /// ```
 
     pub fn move_layer(&mut self, from_z: usize, to_z: usize) -> TilemapResult<()> {
-        if self.layers.get(to_z).is_some() {
-            return Err(ErrorKind::LayerExists(to_z).into());
+        if let Some(layer) = self.layers.get(to_z) {
+            if layer.is_some() {
+                return Err(ErrorKind::LayerExists(to_z).into());
+            }
         };
-        if self.layers.get(from_z).is_none() {
-            return Err(ErrorKind::LayerDoesNotExist(from_z).into());
-        };
+        if let Some(layer) = self.layers.get(from_z) {
+            if Some(layer).is_none() {
+                return Err(ErrorKind::LayerDoesNotExist(from_z).into());
+            }
+        }
 
         self.layers.swap(from_z, to_z);
 
