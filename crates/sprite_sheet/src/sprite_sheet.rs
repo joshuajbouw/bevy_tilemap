@@ -85,27 +85,23 @@ impl Default for SpriteSheetBuilder {
 impl SpriteSheetBuilder {
     /// Constructs a new sprite sheet builder then is consumed to create a new
     /// sprite sheet.
-
     pub fn new() -> SpriteSheetBuilder {
         SpriteSheetBuilder::default()
     }
 
     /// Sets the dimensions per sprite in pixels.
-
     pub fn sprite_dimensions<D: Into<Dimension2>>(mut self, sprite_size: D) -> SpriteSheetBuilder {
         self.sprite_size = sprite_size.into();
         self
     }
 
     /// Sets the maximum dimensions of the sprite sheet in pixels.
-
     pub fn max_dimensions<D: Into<Dimension2>>(mut self, max_size: D) -> SpriteSheetBuilder {
         self.max_size = max_size.into();
         self
     }
 
     /// Adds a sprite to the sprite sheet texture.
-
     pub fn add_sprite<D: Into<Dimension2>>(
         mut self,
         texture_handle: Handle<Texture>,
@@ -122,7 +118,6 @@ impl SpriteSheetBuilder {
 
     /// Adds multiple sprites already in a single texture or, can be used to
     /// combine multiple sprite sheets.
-
     pub fn add_sprites<D: Into<Dimension2>>(
         &mut self,
         texture_handle: Handle<Texture>,
@@ -185,7 +180,6 @@ impl SpriteSheetBuilder {
     ///
     /// If there is not enough space in the sprite sheet texture, an error will
     /// be returned. It is then recommended to make a larger sprite sheet.
-
     pub fn finish(mut self, textures: &mut Assets<Texture>) -> SpriteSheetResult<SpriteSheet> {
         let initial_width = self.sprite_size.width;
         let initial_height = self.sprite_size.height;
@@ -295,7 +289,6 @@ impl TypeUuid for SpriteSheet {
 
 impl SpriteSheet {
     /// Constructs a new sprite sheet with a single texture that has padding.
-
     pub fn with_padding<D: Into<Dimension2>>(
         texture: Handle<Texture>,
         tile_dimensions: D,
@@ -351,7 +344,6 @@ impl SpriteSheet {
     }
 
     /// Constructs a new sprite sheet.
-
     pub fn new<D: Into<Dimension2>>(
         texture: Handle<Texture>,
         tile_dimensions: D,
@@ -373,19 +365,16 @@ impl SpriteSheet {
     ///
     /// Use this if the aim is to combine multiple sprite sheets or to combine
     /// loose sprites.
-
     pub fn builder() -> SpriteSheetBuilder {
         SpriteSheetBuilder::default()
     }
 
     /// The number of the sprites in the sprite sheet, also known as the length.
-
     pub fn len(&self) -> usize {
         self.sprites.len()
     }
 
     /// If the sprite sheet contains sprites or not.
-
     pub fn is_empty(&self) -> bool {
         self.sprites.is_empty()
     }
@@ -398,7 +387,6 @@ impl SpriteSheet {
     /// [`SpriteSheetError`] is returned.
     ///
     /// [`SpriteSheetError`]: SpriteSheetError
-
     pub fn get_sprite_index<P: Into<Point2>>(
         &self,
         texture: &Handle<Texture>,

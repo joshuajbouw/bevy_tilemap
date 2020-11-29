@@ -260,7 +260,7 @@ fn main() {
         .init_resource::<TileSpriteHandles>()
         .init_resource::<GameState>()
         .add_plugins(DefaultPlugins)
-        .add_plugin(Tilemap2DPlugin::default())
+        .add_plugins(TilemapDefaultPlugins)
         .add_startup_system(setup.system())
         .add_system(load.system())
         .add_system(build_random_dungeon.system())

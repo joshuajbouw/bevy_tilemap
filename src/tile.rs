@@ -83,7 +83,6 @@ impl<P: Into<Point2>> Tile<P, Color> {
     ///
     /// [`Tile`]: Tile
     /// [`with_tint`]: Tile::with_tint
-
     pub fn new(point: P, sprite_index: usize) -> Tile<P, Color> {
         Tile {
             point,
@@ -94,7 +93,6 @@ impl<P: Into<Point2>> Tile<P, Color> {
     }
 
     /// Creates a new tile with a given Z order and sprite index at a point.
-
     pub fn with_z_order(point: P, sprite_index: usize, z_order: usize) -> Tile<P, Color> {
         Tile {
             point,
@@ -123,7 +121,6 @@ impl<P: Into<Point2>, C: Into<Color>> Tile<P, C> {
     /// ```
     ///
     /// [`Color`]: Bevy::render::color::Color
-
     pub fn with_tint(point: P, sprite_index: usize, tint: C) -> Tile<P, C> {
         Tile {
             point,
@@ -149,7 +146,6 @@ impl<P: Into<Point2>, C: Into<Color>> Tile<P, C> {
     ///
     /// let tile = Tile::with_z_order_and_tint(point, z_order, sprite_index, tint);
     /// ```
-
     pub fn with_z_order_and_tint(
         point: P,
         sprite_index: usize,

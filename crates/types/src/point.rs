@@ -1,3 +1,5 @@
+//! Points used for helping with coordinates.
+
 use crate::lib::*;
 
 /// A point which contains a X,Y coordinate.
