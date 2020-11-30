@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - bevy-nightly
+  pull_request:
+    branches:
+      - "*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  pr:
+    name: pull_request
+    if: "github.event_name == 'pull_request'"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+        toolchain:
+          - stable
+          - nightly
+          - 1.43.0
+    runs-on: ${{ matrix.os }}
+    needs: lint
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+      - name: install alsa
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
+      - name: install udev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libudev-dev
+      - name: check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+      - name: test
+        if: ${{ matrix.toolchain == 'stable' }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+  master:
+    name: push
+    if: "github.event_name == 'push'"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+          - windows-2019
+          - macos-11.0
+        toolchain:
+          - stable
+          - beta
+          - nightly
+          - 1.43.0
+    runs-on: ${{ matrix.os }}
+    needs: lint
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: install alsa
+        if: ${{ runner.os == 'Linux' }}
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
+      - name: install udev
+        if: ${{ runner.os == 'Linux' }}
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libudev-dev
+      - name: check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+      - name: test
+        if: ${{ matrix.toolchain == 'stable' }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+  lint:
+    name: lint
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+        toolchain:
+          - nightly
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+          components: rustfmt, clippy
+      - name: install alsa
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
+      - name: install udev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libudev-dev
+      - name: fmt
+        if: ${{ matrix.toolchain == 'nightly' }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+      - name: clippy
+        if: ${{ matrix.toolchain == 'nightly' }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-targets --all-features -- -D warnings -A clippy::type_complexity
