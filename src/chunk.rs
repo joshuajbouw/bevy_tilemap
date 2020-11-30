@@ -356,7 +356,7 @@ impl Chunk {
 /// The chunk update system that is used to set attributes of the tiles and
 /// tints if they need updating.
 pub(crate) fn chunk_update_system(
-    mut commands: Commands,
+    commands: &mut Commands,
     chunks: Res<Assets<Chunk>>,
     mut meshes: ResMut<Assets<Mesh>>,
     query: Query<(
@@ -375,8 +375,8 @@ pub(crate) fn chunk_update_system(
             .tiles_to_renderer_parts(dirty_layer.0, dimensions.dimensions)
             .expect("Tiles missing.");
 
-        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes.into());
-        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors.into());
+        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
+        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
 
         commands.remove_one::<DirtyLayer>(entity);
     }

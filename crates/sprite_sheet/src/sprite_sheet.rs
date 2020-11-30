@@ -149,18 +149,18 @@ impl SpriteSheetBuilder {
         texture: &Texture,
         packed_location: &PackedLocation,
     ) {
-        let rect_width = packed_location.width() as usize;
-        let rect_height = packed_location.height() as usize;
-        let rect_x = packed_location.x() as usize;
-        let rect_y = packed_location.y() as usize;
-        let atlas_width = atlas_texture.size.x() as usize;
-        let format_size = atlas_texture.format.pixel_size();
+        let rect_width = packed_location.width();
+        let rect_height = packed_location.height();
+        let rect_x = packed_location.x();
+        let rect_y = packed_location.y();
+        let atlas_width = atlas_texture.size.width;
+        let format_size = atlas_texture.format.pixel_size() as u32;
 
         for (texture_y, bound_y) in (rect_y..rect_y + rect_height).enumerate() {
-            let begin = (bound_y * atlas_width + rect_x) * format_size;
-            let end = begin + rect_width * format_size;
-            let texture_begin = texture_y * rect_width * format_size;
-            let texture_end = texture_begin + rect_width * format_size;
+            let begin = ((bound_y * atlas_width + rect_x) * format_size) as usize;
+            let end = begin + (rect_width * format_size) as usize;
+            let texture_begin = (texture_y as u32 * rect_width * format_size) as usize;
+            let texture_end = texture_begin + (rect_width * format_size) as usize;
             if let Some(slice_data) = atlas_texture.data.get_mut(begin..end) {
                 if let Some(texture_slice_data) = texture.data.get(texture_begin..texture_end) {
                     slice_data.copy_from_slice(&texture_slice_data);
@@ -199,7 +199,8 @@ impl SpriteSheetBuilder {
             let mut target_bins = BTreeMap::new();
             target_bins.insert(0, TargetBin::new(current_width, current_height, 1));
             atlas_texture = Texture::new_fill(
-                Vec2::new(current_width as f32, current_height as f32),
+                Extent3d::new(current_width, current_height, 0),
+                TextureDimension::D2,
                 &[0, 0, 0, 0],
                 TextureFormat::Rgba8UnormSrgb,
             );
@@ -248,8 +249,8 @@ impl SpriteSheetBuilder {
         Ok(SpriteSheet {
             size: atlas_texture.size.into(),
             dimensions: Dimension2::new(
-                atlas_texture.size.x() as u32 / self.sprite_size.width,
-                atlas_texture.size.y() as u32 / self.sprite_size.height,
+                atlas_texture.size.width / self.sprite_size.width,
+                atlas_texture.size.height / self.sprite_size.height,
             ),
             texture: textures.add(atlas_texture),
             sprites: texture_rects,
@@ -324,8 +325,8 @@ impl SpriteSheet {
                 sprites.push(Rect {
                     min: rect_min,
                     max: Vec2::new(
-                        rect_min.x() + tile_dimensions.width as f32,
-                        rect_min.y() + tile_dimensions.height as f32,
+                        rect_min.x + tile_dimensions.width as f32,
+                        rect_min.y + tile_dimensions.height as f32,
                     ),
                 });
             }

@@ -29,7 +29,7 @@ pub(crate) struct DirtyLayer(pub(crate) usize);
 
 /// A component bundle for `Chunk` entities.
 #[derive(Bundle)]
-pub(crate) struct ChunkComponents {
+pub(crate) struct ChunkBundle {
     /// The handle of the chunk.
     pub(crate) chunk: Handle<Chunk>,
     /// The handle for a TextureAtlas which contains multiple textures.
@@ -51,27 +51,10 @@ pub(crate) struct ChunkComponents {
     pub(crate) global_transform: GlobalTransform,
 }
 
-impl Default for ChunkComponents {
-    fn default() -> ChunkComponents {
-        let pipeline = RenderPipeline::specialized(
-            CHUNK_PIPELINE_HANDLE,
-            PipelineSpecialization {
-                dynamic_bindings: vec![
-                    // Transform
-                    DynamicBinding {
-                        bind_group: 2,
-                        binding: 0,
-                    },
-                    // Chunk
-                    DynamicBinding {
-                        bind_group: 2,
-                        binding: 1,
-                    },
-                ],
-                ..Default::default()
-            },
-        );
-        ChunkComponents {
+impl Default for ChunkBundle {
+    fn default() -> ChunkBundle {
+        let pipeline = RenderPipeline::new(CHUNK_PIPELINE_HANDLE);
+        ChunkBundle {
             chunk: Default::default(),
             texture_atlas: Default::default(),
             chunk_dimensions: Default::default(),
@@ -90,7 +73,7 @@ impl Default for ChunkComponents {
 
 /// A component bundle for `Tilemap` entities.
 #[derive(Debug, Bundle)]
-pub struct TilemapComponents {
+pub struct TilemapBundle {
     /// A `Tilemap` which maintains chunks and its tiles.
     pub tilemap: Tilemap,
     /// The transform location in a space for a component.

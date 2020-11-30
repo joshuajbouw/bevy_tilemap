@@ -96,7 +96,7 @@
 
 use crate::{
     chunk::{Chunk, LayerKind},
-    entity::{ChunkComponents, DirtyLayer},
+    entity::{ChunkBundle, DirtyLayer},
     lib::*,
     mesh::ChunkMesh,
     tile::{RawTile, Tile},
@@ -1586,7 +1586,7 @@ pub(crate) fn tilemap_auto_configure(
 /// 1. Despawn chunks
 /// 1. Remove chunks
 pub(crate) fn tilemap_system(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut chunks: ResMut<Assets<Chunk>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut query: Query<(Entity, &mut Tilemap)>,
@@ -1705,8 +1705,8 @@ pub(crate) fn tilemap_system(
                     } else {
                         continue;
                     };
-                mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes.into());
-                mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors.into());
+                mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
+                mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
                 let mesh_handle = meshes.add(mesh);
                 chunk.set_mesh(z, mesh_handle.clone());
 
@@ -1720,7 +1720,7 @@ pub(crate) fn tilemap_system(
                     z as f32,
                 );
                 let entity = commands
-                    .spawn(ChunkComponents {
+                    .spawn(ChunkBundle {
                         chunk: handle.clone_weak(),
                         texture_atlas: map.texture_atlas().clone_weak(),
                         chunk_dimensions: map.chunk_dimensions.into(),

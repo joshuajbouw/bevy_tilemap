@@ -149,13 +149,19 @@ impl From<Dimension2> for Vec2 {
     }
 }
 
+impl From<Extent3d> for Dimension2 {
+    fn from(ext: Extent3d) -> Dimension2 {
+        Dimension2::new(ext.width, ext.height)
+    }
+}
+
 macro_rules! dimension2_glam_impl {
     ($vec: ty) => {
         impl From<$vec> for Dimension2 {
             fn from(vec: $vec) -> Dimension2 {
                 Dimension2 {
-                    width: vec.x() as u32,
-                    height: vec.y() as u32,
+                    width: vec.x as u32,
+                    height: vec.y as u32,
                 }
             }
         }
@@ -451,14 +457,26 @@ impl From<Dimension3> for Dimension2 {
     }
 }
 
+impl From<Extent3d> for Dimension3 {
+    fn from(ext: Extent3d) -> Dimension3 {
+        Dimension3::new(ext.width, ext.height, ext.depth)
+    }
+}
+
+impl From<Dimension3> for Extent3d {
+    fn from(dim: Dimension3) -> Extent3d {
+        Extent3d::new(dim.width, dim.height, dim.depth)
+    }
+}
+
 macro_rules! dimension3_glam_impl {
     ($vec: ty) => {
         impl From<$vec> for Dimension3 {
             fn from(vec: $vec) -> Dimension3 {
                 Dimension3 {
-                    width: vec.x() as u32,
-                    height: vec.y() as u32,
-                    depth: vec.z() as u32,
+                    width: vec.x as u32,
+                    height: vec.y as u32,
+                    depth: vec.z as u32,
                 }
             }
         }

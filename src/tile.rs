@@ -163,7 +163,6 @@ impl Tile {
     }
 }
 
-// TODO: Fix both these renderer parts below to only include the current depth.
 /// A utility function that takes an array of `Tile`s and splits the indexes and
 /// colors and returns them as separate vectors for use in the renderer.
 pub(crate) fn dense_tiles_to_attributes(tiles: &[RawTile]) -> (Vec<f32>, Vec<[f32; 4]>) {
