@@ -18,7 +18,7 @@ defaults:
 
 jobs:
   pr:
-    name: PR
+    name: pull_request
     if: "github.event_name == 'pull_request'"
     strategy:
       matrix:
@@ -29,6 +29,7 @@ jobs:
           - nightly
           - 1.43.0
     runs-on: ${{ matrix.os }}
+    needs: lint
     steps:
       - name: checkout the source code
         uses: actions/checkout@v2
@@ -65,6 +66,7 @@ jobs:
           command: test
   master:
     name: push
+    if: "github.event_name == 'push'"
     strategy:
       matrix:
         os:
@@ -77,7 +79,7 @@ jobs:
           - nightly
           - 1.43.0
     runs-on: ${{ matrix.os }}
-    if: "github.event_name == 'push'"
+    needs: lint
     steps:
       - name: checkout the source code
         uses: actions/checkout@v2
@@ -112,3 +114,37 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+  lint:
+    name: lint
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+        toolchain:
+          - nightly
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+          components: rustfmt, clippy
+      - name: install alsa
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
+      - name: install udev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libudev-dev
+      - name: fmt
+        if: ${{ matrix.toolchain == 'nightly' }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+      - name: clippy
+        if: ${{ matrix.toolchain == 'nightly' }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-targets --all-features -- -D warnings -A clippy::type_complexity
