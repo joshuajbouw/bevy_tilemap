@@ -68,6 +68,8 @@ fn load(
         // them.
         let tilemap = Tilemap::builder()
             .dimensions(1, 1)
+            .chunk_dimensions(31, 31)
+            .auto_configure(false)
             .z_layers(2)
             .texture_atlas(atlas_handle)
             .finish()
@@ -126,10 +128,10 @@ fn build_random_dungeon(
             }
         }
 
-        // Then we push in all wall tiles on the X axis.
-        for x in (-width / 2)..(width / 2) {
+        for x in 0..width {
+            let x = x - width / 2;
             let tile_a = (x, -height / 2);
-            let tile_b = (x, height / 2 - 1);
+            let tile_b = (x, height / 2);
             tiles.push(Tile::new(tile_a, wall_idx));
             tiles.push(Tile::new(tile_b, wall_idx));
             game_state.collisions.insert(tile_a);
@@ -137,9 +139,10 @@ fn build_random_dungeon(
         }
 
         // Then the wall tiles on the Y axis.
-        for y in (-height / 2)..(height / 2) {
+        for y in 0..height {
+            let y = y - height / 2;
             let tile_a = (-width / 2, y);
-            let tile_b = (width / 2 - 1, y);
+            let tile_b = (width / 2, y);
             tiles.push(Tile::new(tile_a, wall_idx));
             tiles.push(Tile::new(tile_b, wall_idx));
             game_state.collisions.insert(tile_a);
@@ -253,7 +256,7 @@ fn main() {
             width: 1024,
             height: 1024,
             vsync: false,
-            resizable: false,
+            resizable: true,
             mode: WindowMode::Windowed,
             ..Default::default()
         })
