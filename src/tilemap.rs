@@ -102,7 +102,7 @@ use crate::{
     tile::{RawTile, Tile},
 };
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 /// The kinds of errors that can occur.
 enum ErrorKind {
     /// If the coordinate or index is out of bounds.
@@ -117,7 +117,7 @@ enum ErrorKind {
     ChunkDoesNotExist(Point2),
 }
 
-impl Debug for ErrorKind {
+impl Display for ErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         use ErrorKind::*;
         match self {
@@ -143,7 +143,7 @@ pub struct TilemapError(Box<ErrorKind>);
 
 impl Display for TilemapError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        self.0.fmt(f)
+        Display::fmt(&self.0, f)
     }
 }
 

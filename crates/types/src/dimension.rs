@@ -5,14 +5,14 @@ use crate::{
     point::{Point2, Point3},
 };
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 /// The kinds of errors that can occur for a `[DimensionError]`.
 pub(crate) enum ErrorKind {
     /// If the coordinate or index is out of bounds.
     OutOfBounds,
 }
 
-impl Debug for ErrorKind {
+impl Display for ErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         use ErrorKind::*;
         match *self {
@@ -27,7 +27,7 @@ pub struct DimensionError(Box<ErrorKind>);
 
 impl Display for DimensionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        self.0.fmt(f)
+        Display::fmt(&self.0, f)
     }
 }
 
