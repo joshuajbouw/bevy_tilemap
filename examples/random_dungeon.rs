@@ -10,22 +10,41 @@ struct TileSpriteHandles {
     atlas_loaded: bool,
 }
 
+#[derive(Default, Copy, Clone, PartialEq)]
+struct Position {
+    x: i32,
+    y: i32,
+}
+
+#[derive(Default)]
+struct Render {
+    sprite_index: usize,
+    z_order: usize,
+}
+
+#[derive(Default)]
+struct Player {}
+
+#[derive(Bundle)]
+struct PlayerBundle {
+    player: Player,
+    position: Position,
+    render: Render,
+}
+
 #[derive(Default, Clone)]
 struct GameState {
     map_loaded: bool,
     spawned: bool,
     collisions: HashSet<(i32, i32)>,
-    player: Tile<(i32, i32), Color>,
 }
 
 impl GameState {
-    fn move_player(&mut self, delta_xy: (i32, i32)) {
-        let new_pos = (
-            self.player.point.0 + delta_xy.0,
-            self.player.point.1 + delta_xy.1,
-        );
+    fn try_move_player(&mut self, position: &mut Position, delta_xy: (i32, i32)) {
+        let new_pos = (position.x + delta_xy.0, position.y + delta_xy.1);
         if !self.collisions.contains(&new_pos) {
-            self.player.point = new_pos;
+            position.x = new_pos.0;
+            position.y = new_pos.1;
         }
     }
 }
@@ -68,8 +87,7 @@ fn load(
         // them.
         let tilemap = Tilemap::builder()
             .dimensions(1, 1)
-            .chunk_dimensions(31, 31)
-            .auto_configure(false)
+            .chunk_dimensions(32, 32)
             .z_layers(2)
             .texture_atlas(atlas_handle)
             .finish()
@@ -90,6 +108,7 @@ fn load(
 }
 
 fn build_random_dungeon(
+    mut commands: Commands,
     mut game_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
@@ -131,7 +150,7 @@ fn build_random_dungeon(
         for x in 0..width {
             let x = x - width / 2;
             let tile_a = (x, -height / 2);
-            let tile_b = (x, height / 2);
+            let tile_b = (x, height / 2 - 1);
             tiles.push(Tile::new(tile_a, wall_idx));
             tiles.push(Tile::new(tile_b, wall_idx));
             game_state.collisions.insert(tile_a);
@@ -142,7 +161,7 @@ fn build_random_dungeon(
         for y in 0..height {
             let y = y - height / 2;
             let tile_a = (-width / 2, y);
-            let tile_b = (width / 2, y);
+            let tile_b = (width / 2 - 1, y);
             tiles.push(Tile::new(tile_a, wall_idx));
             tiles.push(Tile::new(tile_b, wall_idx));
             game_state.collisions.insert(tile_a);
@@ -173,14 +192,20 @@ fn build_random_dungeon(
 
         // Now lets add in a dwarf friend!
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf.png");
-        let dwarf_idx = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
-        let dwarf_start_pos = (0, 0);
+        let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         // We add in a Z order of 1 to place the tile above the background on Z
         // order 0.
-        let dwarf_tile = Tile::with_z_order(dwarf_start_pos, dwarf_idx, 1);
+        let dwarf_tile = Tile::with_z_order((0, 0), dwarf_sprite_index, 1);
         tiles.push(dwarf_tile);
 
-        game_state.player = dwarf_tile;
+        commands.spawn(PlayerBundle {
+            player: Player {},
+            position: Position { x: 0, y: 0 },
+            render: Render {
+                sprite_index: dwarf_sprite_index,
+                z_order: 1,
+            },
+        });
 
         // Now we pass all the tiles to our map.
         map.insert_tiles(tiles).unwrap();
@@ -193,58 +218,77 @@ fn build_random_dungeon(
     }
 }
 
+fn move_sprite(
+    map: &mut Tilemap,
+    previous_position: Position,
+    position: Position,
+    render: &Render,
+) {
+    // We need to first remove where we were prior.
+    map.remove_tile((previous_position.x, previous_position.y), 1)
+        .unwrap();
+    // We then need to update where we are going!
+    let tile = Tile::with_z_order(
+        (position.x, position.y),
+        render.sprite_index,
+        render.z_order,
+    );
+    map.insert_tile(tile).unwrap();
+}
+
 fn character_movement(
     mut game_state: ResMut<GameState>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Tilemap, &mut Timer)>,
+    mut map_query: Query<(&mut Tilemap, &mut Timer)>,
+    mut player_query: Query<(&mut Position, &Render, &Player)>,
 ) {
     if !game_state.map_loaded {
         return;
     }
 
-    for (mut map, timer) in query.iter_mut() {
+    for (mut map, timer) in map_query.iter_mut() {
         if !timer.finished {
             continue;
         }
 
-        for key in keyboard_input.get_pressed() {
-            // First we need to store our very current position.
-            let previous_point = game_state.player.point;
+        for (mut position, render, _player) in player_query.iter_mut() {
+            for key in keyboard_input.get_pressed() {
+                // First we need to store our very current position.
+                let previous_position = *position;
 
-            // Of course we need to control where we are going to move our
-            // dwarf friend.
-            use KeyCode::*;
-            match key {
-                W | Numpad8 | Up | K => {
-                    game_state.move_player((0, 1));
-                }
-                A | Numpad4 | Left | H => {
-                    game_state.move_player((-1, 0));
-                }
-                S | Numpad2 | Down | J => {
-                    game_state.move_player((0, -1));
-                }
-                D | Numpad6 | Right | L => {
-                    game_state.move_player((1, 0));
+                // Of course we need to control where we are going to move our
+                // dwarf friend.
+                use KeyCode::*;
+                match key {
+                    W | Numpad8 | Up | K => {
+                        game_state.try_move_player(&mut position, (0, 1));
+                    }
+                    A | Numpad4 | Left | H => {
+                        game_state.try_move_player(&mut position, (-1, 0));
+                    }
+                    S | Numpad2 | Down | J => {
+                        game_state.try_move_player(&mut position, (0, -1));
+                    }
+                    D | Numpad6 | Right | L => {
+                        game_state.try_move_player(&mut position, (1, 0));
+                    }
+
+                    Numpad9 | U => game_state.try_move_player(&mut position, (1, 1)),
+                    Numpad3 | M => game_state.try_move_player(&mut position, (1, -1)),
+                    Numpad1 | N => game_state.try_move_player(&mut position, (-1, -1)),
+                    Numpad7 | Y => game_state.try_move_player(&mut position, (-1, 1)),
+
+                    _ => {}
                 }
 
-                Numpad9 | U => game_state.move_player((1, 1)),
-                Numpad3 | M => game_state.move_player((1, -1)),
-                Numpad1 | N => game_state.move_player((-1, -1)),
-                Numpad7 | Y => game_state.move_player((-1, 1)),
+                // If we are standing still or hit something, don't do anything.
+                if previous_position == *position {
+                    continue;
+                }
 
-                _ => {}
+                // This is a helpful function to make it easier to do stuff!
+                move_sprite(&mut map, previous_position, *position, render);
             }
-
-            // If we are standing still, don't do anything.
-            if previous_point == game_state.player.point {
-                continue;
-            }
-
-            // We need to first remove where we were prior.
-            map.remove_tile(previous_point, 1).unwrap();
-            // We then need to update where we are going!
-            map.insert_tile(game_state.player).unwrap();
         }
     }
 }
