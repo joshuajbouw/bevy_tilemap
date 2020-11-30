@@ -13,6 +13,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 to ensure that the tiles are divisible into each other had been added.
 * Optional dimension 2D and 3D API.
 * `TilemapDefaultPlugins` was added.
+* `SpriteSheet` was added which is very much like `TextureAtlas` but it splits
+everything into tiles.
+* `point` and `dimension` modules were moved to `bevy_tilemap_types` crate but 
+still accessible as normal and optional.
+* `bevy_tilemap_spritesheet` sub-crate was added.
 
 ### Changed
 
@@ -20,6 +25,8 @@ to ensure that the tiles are divisible into each other had been added.
 * `ChunkTilesPlugin` is now `Tilemap2DPlugin`.
 * `TilemapBuilder::build()` is now `TilemapBuilder::finish()`
 * Point module was now made optional.
+* Changed the `random_dungeon` example to be more like an actual implementation.
+* `Tile` had all generics removed from it.
 
 ## [0.2.2] - 2020-11-23
 

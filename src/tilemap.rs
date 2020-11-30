@@ -198,7 +198,7 @@ pub(crate) enum TilemapEvent {
         /// The map index where the chunk needs to be stored.
         handle: Handle<Chunk>,
         /// The tiles that need to be set.
-        tiles: Vec<Tile<Point2, Color>>,
+        tiles: Vec<Tile>,
     },
     /// An event when a chunk is spawned.
     SpawnedChunk {
@@ -1149,16 +1149,14 @@ impl Tilemap {
     /// ```
     ///
     /// [`insert_tile`]: Tilemap::insert_tile
-    pub fn insert_tiles<P, C, I>(&mut self, tiles: I) -> TilemapResult<()>
+    pub fn insert_tiles<I>(&mut self, tiles: I) -> TilemapResult<()>
     where
-        P: Into<Point2>,
-        C: Into<Color>,
-        I: IntoIterator<Item = Tile<P, C>>,
+        I: IntoIterator<Item = Tile>,
     {
         let width = self.chunk_dimensions.width as i32;
         let height = self.chunk_dimensions.height as i32;
 
-        let mut chunk_map: HashMap<Point2, Vec<Tile<Point2, Color>>> = HashMap::default();
+        let mut chunk_map: HashMap<Point2, Vec<Tile>> = HashMap::default();
         for tile in tiles.into_iter() {
             let global_tile_point: Point2 = tile.point.into();
             let chunk_point: Point2 = self.tile_to_chunk_point(global_tile_point).into();
@@ -1176,7 +1174,7 @@ impl Tilemap {
                 global_tile_point.y - (height * chunk_point.y) + (width / 2),
             );
 
-            let chunk_tile: Tile<Point2, Color> = Tile {
+            let chunk_tile: Tile = Tile {
                 point: tile_point,
                 z_order: tile.z_order,
                 sprite_index: tile.sprite_index,
@@ -1243,11 +1241,7 @@ impl Tilemap {
     /// ```
     ///
     /// [`insert_tiles`]: Tilemap::insert_tiles
-    pub fn insert_tile<P, C>(&mut self, tile: Tile<P, C>) -> TilemapResult<()>
-    where
-        P: Into<Point2>,
-        C: Into<Color>,
-    {
+    pub fn insert_tile(&mut self, tile: Tile) -> TilemapResult<()> {
         let tiles = vec![tile];
         self.insert_tiles(tiles)
     }
