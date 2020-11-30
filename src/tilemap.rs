@@ -1158,7 +1158,7 @@ impl Tilemap {
 
         let mut chunk_map: HashMap<Point2, Vec<Tile>> = HashMap::default();
         for tile in tiles.into_iter() {
-            let global_tile_point: Point2 = tile.point.into();
+            let global_tile_point: Point2 = tile.point;
             let chunk_point: Point2 = self.tile_to_chunk_point(global_tile_point).into();
 
             if let Some(layer) = self.layers.get(tile.z_order as usize) {
@@ -1178,7 +1178,7 @@ impl Tilemap {
                 point: tile_point,
                 z_order: tile.z_order,
                 sprite_index: tile.sprite_index,
-                tint: tile.tint.into(),
+                tint: tile.tint,
             };
             if let Some(tiles) = chunk_map.get_mut(&chunk_point) {
                 tiles.push(chunk_tile);
