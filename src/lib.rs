@@ -58,7 +58,6 @@
 #![no_implicit_prelude]
 // rustc
 #![warn(
-    missing_crate_level_docs,
     missing_doc_code_examples,
     missing_docs,
     private_doc_tests
