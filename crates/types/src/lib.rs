@@ -4,22 +4,28 @@
 //! all contained here.
 
 #![no_implicit_prelude]
-// rustc
+// rustc / rustdoc
+#![warn(
+    missing_crate_level_docs,
+    missing_doc_code_examples,
+    missing_docs,
+    private_doc_tests
+)]
 #![deny(dead_code, unused_imports)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
-#![warn(clippy::print_stdout, clippy::unwrap_in_result)]
-#![deny(
-    clippy::missing_docs_in_private_items,
-    clippy::missing_errors_doc,
+#![warn(
+    clippy::cast_lossless,
     clippy::decimal_literal_representation,
     clippy::else_if_without_else,
-    // clippy::indexing_slicing,
+    // clippy::indexing_slicing, // TODO: Change back in when Bevy is updated.
     clippy::let_underscore_must_use,
+    clippy::missing_docs_in_private_items,
+    clippy::missing_errors_doc,
     clippy::panic_in_result_fn,
-    clippy::cast_lossless,
-    clippy::redundant_pub_crate,
-    // clippy::missing_inline_in_public_items,
+    clippy::print_stdout,
+    // clippy::redundant_pub_crate,
+    clippy::unwrap_in_result
 )]
 
 pub mod dimension;
