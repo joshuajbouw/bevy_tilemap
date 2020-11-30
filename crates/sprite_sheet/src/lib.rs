@@ -4,11 +4,7 @@
 
 #![no_implicit_prelude]
 // rustc
-#![warn(
-    missing_doc_code_examples,
-    missing_docs,
-    private_doc_tests
-)]
+#![warn(missing_doc_code_examples, missing_docs, private_doc_tests)]
 #![deny(dead_code, unused_imports)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
