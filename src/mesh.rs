@@ -23,23 +23,19 @@ impl From<&ChunkMesh> for Mesh {
     fn from(chunk_mesh: &ChunkMesh) -> Mesh {
         let chunk_width = chunk_mesh.dimensions.width as i32;
         let chunk_height = chunk_mesh.dimensions.height as i32;
-        let step_size_x = 1. / chunk_width as f32;
-        let step_size_y = 1. / chunk_height as f32;
-        let start_x = chunk_width as f32 * -0.5;
-        let start_y = chunk_height as f32 * -0.5;
+
         let mut vertices = Vec::with_capacity((chunk_width * chunk_height) as usize * 4);
         for y in 0..chunk_height {
             for x in 0..chunk_width {
-                let y = start_y + y as f32;
-                let x = start_x + x as f32;
-                vertices.push([x * step_size_x, y * step_size_y, 0.0]);
-                vertices.push([x * step_size_x, y * step_size_y + step_size_y, 0.0]);
-                vertices.push([
-                    x * step_size_x + step_size_x,
-                    y * step_size_y + step_size_y,
-                    0.0,
-                ]);
-                vertices.push([x * step_size_x + step_size_x, y * step_size_y, 0.0]);
+                let y0 = y as f32 / chunk_height as f32 - 0.5;
+                let y1 = (y + 1) as f32 / chunk_height as f32 - 0.5;
+                let x0 = x as f32 / chunk_width as f32 - 0.5;
+                let x1 = (x + 1) as f32 / chunk_width as f32 - 0.5;
+
+                vertices.push([x0, y0, 0.0]);
+                vertices.push([x0, y1, 0.0]);
+                vertices.push([x1, y1, 0.0]);
+                vertices.push([x1, y0, 0.0]);
             }
         }
 
