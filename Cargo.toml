@@ -12,6 +12,9 @@ readme = "README.md"
 documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap/"
 exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 
+[patch.crates-io]
+bevy = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+
 [package.metadata.docs.rs]
 features = ["serialize", "types"]
 default-target = "x86_64-pc-windows-msvc"

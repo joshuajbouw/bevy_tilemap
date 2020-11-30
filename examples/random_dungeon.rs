@@ -49,18 +49,18 @@ impl GameState {
     }
 }
 
-fn setup(
-    mut commands: Commands,
+fn setup_system(
+    commands: &mut Commands,
     mut tile_sprite_handles: ResMut<TileSpriteHandles>,
     asset_server: Res<AssetServer>,
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
 
-    commands.spawn(Camera2dComponents::default());
+    commands.spawn(Camera2dBundle::default());
 }
 
-fn load(
-    mut commands: Commands,
+fn load_system(
+    commands: &mut Commands,
     mut sprite_handles: ResMut<TileSpriteHandles>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Texture>>,
@@ -93,7 +93,7 @@ fn load(
             .finish()
             .unwrap();
 
-        let tilemap_components = TilemapComponents {
+        let tilemap_components = TilemapBundle {
             tilemap,
             transform: Default::default(),
             global_transform: Default::default(),
@@ -107,8 +107,8 @@ fn load(
     }
 }
 
-fn build_random_dungeon(
-    mut commands: Commands,
+fn build_random_dungeon_system(
+    commands: &mut Commands,
     mut game_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
@@ -236,9 +236,10 @@ fn move_sprite(
     map.insert_tile(tile).unwrap();
 }
 
-fn character_movement(
+fn character_movement_system(
     mut game_state: ResMut<GameState>,
     keyboard_input: Res<Input<KeyCode>>,
+    time: Res<Time>,
     mut map_query: Query<(&mut Tilemap, &mut Timer)>,
     mut player_query: Query<(&mut Position, &Render, &Player)>,
 ) {
@@ -246,8 +247,9 @@ fn character_movement(
         return;
     }
 
-    for (mut map, timer) in map_query.iter_mut() {
-        if !timer.finished {
+    for (mut map, mut timer) in map_query.iter_mut() {
+        timer.tick(time.delta_seconds());
+        if !timer.finished() {
             continue;
         }
 
@@ -308,9 +310,9 @@ fn main() {
         .init_resource::<GameState>()
         .add_plugins(DefaultPlugins)
         .add_plugins(TilemapDefaultPlugins)
-        .add_startup_system(setup.system())
-        .add_system(load.system())
-        .add_system(build_random_dungeon.system())
-        .add_system(character_movement.system())
+        .add_startup_system(setup_system)
+        .add_system(load_system)
+        .add_system(build_random_dungeon_system)
+        .add_system(character_movement_system)
         .run()
 }

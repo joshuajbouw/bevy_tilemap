@@ -34,9 +34,12 @@ mod lib {
     extern crate serde;
     extern crate std;
 
-    use bevy::math as bevy_math;
+    use bevy::{math as bevy_math, render as bevy_render};
 
-    pub use self::bevy_math::{Vec2, Vec3};
+    pub use self::{
+        bevy_math::{Vec2, Vec3},
+        bevy_render::texture::Extent3d,
+    };
 
     #[cfg(feature = "serde")]
     pub use serde::{Deserialize, Serialize};

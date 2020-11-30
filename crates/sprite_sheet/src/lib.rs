@@ -49,22 +49,22 @@ mod lib {
     // Having to add this is a bug which is fixed in next Bevy (v > 0.3)
     #[allow(unused_imports)]
     use bevy::{
-        app as bevy_app, asset as bevy_asset, math as bevy_math, render as bevy_render,
-        sprite as bevy_sprite, type_registry as bevy_type_registry, utils as bevy_utils,
+        app as bevy_app, asset as bevy_asset, math as bevy_math, reflect as bevy_reflect,
+        render as bevy_render, sprite as bevy_sprite, utils as bevy_utils,
     };
 
     pub use self::{
         bevy_app::{AppBuilder, Plugin},
         bevy_asset::{AddAsset, Assets, Handle},
         bevy_math::Vec2,
+        bevy_reflect::{TypeUuid, Uuid},
         bevy_render::{
             renderer::{
                 RenderResource, RenderResourceHints, RenderResourceIterator, RenderResources,
             },
-            texture::{Texture, TextureFormat},
+            texture::{Extent3d, Texture, TextureDimension, TextureFormat},
         },
         bevy_sprite::Rect,
-        bevy_type_registry::{TypeUuid, Uuid},
         bevy_utils::HashMap,
     };
 
