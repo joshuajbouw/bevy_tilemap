@@ -50,17 +50,17 @@ impl GameState {
 }
 
 fn setup(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut tile_sprite_handles: ResMut<SpriteHandles>,
     asset_server: Res<AssetServer>,
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
 
-    commands.spawn(Camera2dComponents::default());
+    commands.spawn(Camera2dBundle::default());
 }
 
 fn load(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut sprite_handles: ResMut<SpriteHandles>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Texture>>,
@@ -95,7 +95,7 @@ fn load(
             .finish()
             .unwrap();
 
-        let tilemap_components = TilemapComponents {
+        let tilemap_components = TilemapBundle {
             tilemap,
             transform: Default::default(),
             global_transform: Default::default(),
@@ -110,7 +110,7 @@ fn load(
 }
 
 fn build_random_world(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut game_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
@@ -262,6 +262,7 @@ fn move_sprite(
 
 fn character_movement(
     mut game_state: ResMut<GameState>,
+    time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     mut map_query: Query<(&mut Tilemap, &mut Timer)>,
     mut player_query: Query<(&mut Position, &Render, &Player)>,
@@ -270,8 +271,9 @@ fn character_movement(
         return;
     }
 
-    for (mut map, timer) in map_query.iter_mut() {
-        if !timer.finished {
+    for (mut map, mut timer) in map_query.iter_mut() {
+        timer.tick(time.delta_seconds());
+        if !timer.finished() {
             continue;
         }
 
@@ -361,9 +363,9 @@ fn main() {
         .init_resource::<GameState>()
         .add_plugins(DefaultPlugins)
         .add_plugins(TilemapDefaultPlugins)
-        .add_startup_system(setup.system())
-        .add_system(load.system())
-        .add_system(build_random_world.system())
-        .add_system(character_movement.system())
+        .add_startup_system(setup)
+        .add_system(load)
+        .add_system(build_random_world)
+        .add_system(character_movement)
         .run()
 }

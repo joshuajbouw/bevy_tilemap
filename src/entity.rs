@@ -1,13 +1,19 @@
 use crate::{lib::*, render::CHUNK_SQUARE_PIPELINE, Tilemap};
 
 /// A component that is used as a flag for dirty chunks that need updating.
-pub(crate) struct DirtyLayer(pub(crate) usize);
+#[derive(Default)]
+pub(crate) struct ModifiedLayer(pub(crate) usize);
+
+/// The Z Order of a layer in a chunk.
+pub(crate) struct ZOrder(pub(crate) usize);
 
 /// A component bundle for `Chunk` entities.
 #[derive(Bundle)]
-pub(crate) struct ChunkComponents {
+pub(crate) struct ChunkBundle {
     /// The point of the chunk.
     pub(crate) point: Point2,
+    /// The z order of the layer.
+    pub(crate) z_order: ZOrder,
     /// The handle for a TextureAtlas which contains multiple textures.
     pub(crate) texture_atlas: Handle<TextureAtlas>,
     /// A component that indicates how to draw a component.
@@ -23,25 +29,16 @@ pub(crate) struct ChunkComponents {
     pub(crate) transform: Transform,
     /// The global transform location in a space for a component.
     pub(crate) global_transform: GlobalTransform,
+    /// If a layer has been modified, all are set here.
+    pub(crate) modified_layer: ModifiedLayer,
 }
 
-impl Default for ChunkComponents {
-    fn default() -> ChunkComponents {
-        let pipeline = RenderPipeline::specialized(
-            CHUNK_SQUARE_PIPELINE,
-            PipelineSpecialization {
-                dynamic_bindings: vec![
-                    // Transform
-                    DynamicBinding {
-                        bind_group: 2,
-                        binding: 0,
-                    },
-                ],
-                ..Default::default()
-            },
-        );
-        ChunkComponents {
+impl Default for ChunkBundle {
+    fn default() -> ChunkBundle {
+        let pipeline = RenderPipeline::new(CHUNK_SQUARE_PIPELINE.typed());
+        ChunkBundle {
             point: Default::default(),
+            z_order: ZOrder(0),
             texture_atlas: Default::default(),
             mesh: Default::default(),
             transform: Default::default(),
@@ -52,13 +49,14 @@ impl Default for ChunkComponents {
             },
             main_pass: MainPass,
             global_transform: Default::default(),
+            modified_layer: Default::default(),
         }
     }
 }
 
 /// A component bundle for `Tilemap` entities.
 #[derive(Debug, Bundle)]
-pub struct TilemapComponents {
+pub struct TilemapBundle {
     /// A `Tilemap` which maintains chunks and its tiles.
     pub tilemap: Tilemap,
     /// The transform location in a space for a component.

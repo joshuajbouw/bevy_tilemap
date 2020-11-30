@@ -45,9 +45,8 @@ pub mod v0 {
     pub use crate::{
         chunk::LayerKind,
         default_plugin::TilemapDefaultPlugins,
-        entity::TilemapComponents,
+        entity::TilemapBundle,
         render::GridTopology,
-        sprite_sheet::prelude::v0::*,
         tile::Tile,
         tilemap::{Tilemap, TilemapBuilder},
         Tilemap2DPlugin,
