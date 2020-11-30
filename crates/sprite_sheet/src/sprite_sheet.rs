@@ -1,6 +1,6 @@
 use crate::lib::*;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 /// The kind of error that can happen for a sprite sheet.
 enum ErrorKind {
     /// Holds an inner dimension error.
@@ -13,7 +13,7 @@ enum ErrorKind {
     TextureNotExists,
 }
 
-impl Debug for ErrorKind {
+impl Display for ErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         use ErrorKind::*;
         match self {
@@ -34,7 +34,7 @@ pub struct SpriteSheetError(Box<ErrorKind>);
 
 impl Display for SpriteSheetError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        self.0.fmt(f)
+        Display::fmt(&self.0, f)
     }
 }
 
