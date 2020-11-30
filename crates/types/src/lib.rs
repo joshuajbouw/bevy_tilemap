@@ -22,9 +22,7 @@
     // clippy::missing_inline_in_public_items,
 )]
 
-/// Dimension helpers with encoding and decoding to and from indexes.
 pub mod dimension;
-/// Points used for helping with coordinates.
 pub mod point;
 pub mod prelude;
 

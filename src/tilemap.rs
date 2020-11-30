@@ -93,15 +93,6 @@
 //!     }
 //! }
 //! ```
-//!
-//! # Serde support
-//!
-//! Optionally serde is supported through the use of features.
-//!
-//! ```toml
-//! [dependencies]
-//! bevy_tilemap = { version = "0.2", features = ["serde"] }
-//! ```
 
 use crate::{
     chunk::{Chunk, LayerKind},
@@ -378,7 +369,6 @@ impl TilemapBuilder {
     ///
     /// let builder = Tilemap::builder();
     /// ```
-
     pub fn new() -> TilemapBuilder {
         TilemapBuilder::default()
     }
@@ -393,7 +383,6 @@ impl TilemapBuilder {
     ///
     /// let builder = TilemapBuilder::new().dimensions(5, 5);
     /// ```
-
     pub fn dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
         self.dimensions = Some(Dimension2::new(width, height));
         self
@@ -410,7 +399,6 @@ impl TilemapBuilder {
     ///
     /// let builder = TilemapBuilder::new().chunk_dimensions(32, 32);
     /// ```
-
     pub fn chunk_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
         self.chunk_dimensions = Dimension2::new(width, height);
         self
@@ -427,7 +415,6 @@ impl TilemapBuilder {
     ///
     /// let builder = TilemapBuilder::new().tile_dimensions(32, 32);
     /// ```
-
     pub fn tile_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
         self.tile_dimensions = Dimension2::new(width, height);
         self
@@ -443,7 +430,6 @@ impl TilemapBuilder {
     ///
     /// let builder = TilemapBuilder::new().z_layers(5);
     /// ```
-
     pub fn z_layers(mut self, layers: usize) -> TilemapBuilder {
         self.z_layers = layers;
         self
@@ -469,7 +455,6 @@ impl TilemapBuilder {
     /// ```
     ///
     /// [`LayerKind`]: crate::chunk::LayerKind
-
     pub fn add_layer(mut self, kind: LayerKind, z_layer: usize) -> TilemapBuilder {
         if let Some(layers) = &mut self.layers {
             layers.insert(z_layer, kind);
@@ -493,7 +478,6 @@ impl TilemapBuilder {
     ///
     /// let builder = TilemapBuilder::new().texture_atlas(texture_atlas_handle);
     /// ```
-
     pub fn texture_atlas(mut self, handle: Handle<TextureAtlas>) -> TilemapBuilder {
         self.texture_atlas = Some(handle);
         self
@@ -513,7 +497,6 @@ impl TilemapBuilder {
     ///
     /// let builder = TilemapBuilder::new().auto_configure(false);
     /// ```
-
     pub fn auto_configure(mut self, b: bool) -> TilemapBuilder {
         self.auto_configure = b;
         self
@@ -545,7 +528,6 @@ impl TilemapBuilder {
     /// [tilemap]: Tilemap
     /// [`TilemapError`]: TilemapError
     /// [`TilemapResult`]: TilemapResult
-
     pub fn finish(self) -> TilemapResult<Tilemap> {
         let texture_atlas = if let Some(atlas) = self.texture_atlas {
             atlas
@@ -625,7 +607,6 @@ impl Tilemap {
     /// ```
     ///
     /// [`default`]: Tilemap::default
-
     pub fn new(texture_atlas: Handle<TextureAtlas>) -> Tilemap {
         Tilemap {
             texture_atlas,
@@ -656,7 +637,6 @@ impl Tilemap {
     ///
     /// let builder = Tilemap::builder();
     /// ```
-
     pub fn builder() -> TilemapBuilder {
         TilemapBuilder::default()
     }
@@ -701,7 +681,6 @@ impl Tilemap {
     /// # let tilemap = Tilemap::new(texture_atlas_handle);
     /// let texture_atlas: &Handle<TextureAtlas> = tilemap.texture_atlas();
     /// ```
-
     pub fn texture_atlas(&self) -> &Handle<TextureAtlas> {
         &self.texture_atlas
     }
@@ -733,7 +712,6 @@ impl Tilemap {
     ///
     /// If the point does not exist in the tilemap, an error is returned. This
     /// can only be returned if you had set the dimensions on the tilemap.
-
     pub fn new_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
@@ -777,7 +755,6 @@ impl Tilemap {
     /// ```
     ///
     /// [`LayerKind`]: crate::chunk::LayerKind
-
     pub fn add_layer_with_kind(&mut self, kind: LayerKind, z_order: usize) -> TilemapResult<()> {
         if let Some(some_kind) = self.layers.get_mut(z_order) {
             if let Some(some_kind) = some_kind {
@@ -830,7 +807,6 @@ impl Tilemap {
     /// [`add_layer_with_kind`]: Tilemap::add_layer_with_kind
     /// [`LayerKind`]: crate::chunk::LayerKind;
     /// [`LayerKind::Sparse`]: crate::chunk::LayerKind::Sparse;
-
     pub fn add_layer(&mut self, z_layer: usize) -> TilemapResult<()> {
         self.add_layer_with_kind(LayerKind::Dense, z_layer)
     }
@@ -859,7 +835,6 @@ impl Tilemap {
     /// // If we moved this to layer 3, it would instead fail.
     /// tilemap.move_layer(0, 2).unwrap();
     /// ```
-
     pub fn move_layer(&mut self, from_z: usize, to_z: usize) -> TilemapResult<()> {
         if let Some(layer) = self.layers.get(to_z) {
             if layer.is_some() {
@@ -911,7 +886,6 @@ impl Tilemap {
     /// ```
     ///
     /// [`move_layer`]: Tilemap::move_layer
-
     pub fn remove_layer(&mut self, z: usize) {
         if let Some(layer) = self.layers.get_mut(z) {
             *layer = None;
@@ -947,7 +921,6 @@ impl Tilemap {
     ///
     /// tilemap.spawn_chunk((0, 0));
     /// ```
-
     pub fn spawn_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
@@ -993,7 +966,6 @@ impl Tilemap {
     ///
     /// tilemap.spawn_chunk_containing_point(point);
     /// ```
-
     pub fn spawn_chunk_containing_point<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point = self.tile_to_chunk_point(point);
         self.spawn_chunk(point)
@@ -1030,7 +1002,6 @@ impl Tilemap {
     ///
     /// tilemap.despawn_chunk((0, 0)).unwrap();
     /// ```
-
     pub fn despawn_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
@@ -1084,7 +1055,6 @@ impl Tilemap {
     /// tilemap.remove_chunk((1, 1)).unwrap();
     /// tilemap.remove_chunk((2, 2)).unwrap();
     /// ```
-
     pub fn remove_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
@@ -1136,7 +1106,6 @@ impl Tilemap {
     /// let chunk_point = tilemap.tile_to_chunk_point(tile_point);
     /// assert_eq!((-1, -1), chunk_point);
     /// ```
-
     pub fn tile_to_chunk_point<P: Into<Point2>>(&self, point: P) -> (i32, i32) {
         let point: Point2 = point.into();
         let width = self.chunk_dimensions.width as f32;
@@ -1180,7 +1149,6 @@ impl Tilemap {
     /// ```
     ///
     /// [`insert_tile`]: Tilemap::insert_tile
-
     pub fn insert_tiles<P, C, I>(&mut self, tiles: I) -> TilemapResult<()>
     where
         P: Into<Point2>,
@@ -1275,7 +1243,6 @@ impl Tilemap {
     /// ```
     ///
     /// [`insert_tiles`]: Tilemap::insert_tiles
-
     pub fn insert_tile<P, C>(&mut self, tile: Tile<P, C>) -> TilemapResult<()>
     where
         P: Into<Point2>,
@@ -1322,7 +1289,6 @@ impl Tilemap {
     ///
     /// An error can occure if the point is outside of the tilemap. This can
     /// only happen if the tilemap has dimensions.
-
     pub fn remove_tiles<P, I>(&mut self, points: I) -> TilemapResult<()>
     where
         P: Into<Point2>,
@@ -1369,7 +1335,6 @@ impl Tilemap {
     ///
     /// An error can occure if the point is outside of the tilemap. This can
     /// only happen if the tilemap has dimensions.
-
     pub fn remove_tile<P>(&mut self, point: P, z_order: usize) -> TilemapResult<()>
     where
         P: Into<Point2>,
@@ -1403,7 +1368,6 @@ impl Tilemap {
     /// // 32 * 32 / 2 = 512
     /// assert_eq!((512, 512), center);
     /// ```
-
     pub fn center_tile_coord(&self) -> Option<(i32, i32)> {
         self.dimensions.map(|dimensions| {
             (
@@ -1434,7 +1398,6 @@ impl Tilemap {
     ///
     /// assert_eq!(width, 32);
     /// ```
-
     pub fn width(&self) -> Option<u32> {
         self.dimensions.map(|dimensions| dimensions.width)
     }
@@ -1460,7 +1423,6 @@ impl Tilemap {
     ///
     /// assert_eq!(height, 32);
     /// ```
-
     pub fn height(&self) -> Option<u32> {
         self.dimensions.map(|dimensions| dimensions.height)
     }
@@ -1486,7 +1448,6 @@ impl Tilemap {
     ///
     /// assert_eq!(chunk_width, 32);
     /// ```
-
     pub fn chunk_width(&self) -> u32 {
         self.chunk_dimensions.width
     }
@@ -1512,7 +1473,6 @@ impl Tilemap {
     ///
     /// assert_eq!(chunk_height, 32);
     /// ```
-
     pub fn chunk_height(&self) -> u32 {
         self.chunk_dimensions.height
     }
@@ -1538,7 +1498,6 @@ impl Tilemap {
     ///
     /// assert_eq!(tile_width, 32);
     /// ```
-
     pub fn tile_width(&self) -> u32 {
         self.tile_dimensions.width
     }
@@ -1564,7 +1523,6 @@ impl Tilemap {
     ///
     /// assert_eq!(tile_height, 32);
     /// ```
-
     pub fn tile_height(&self) -> u32 {
         self.tile_dimensions.height
     }

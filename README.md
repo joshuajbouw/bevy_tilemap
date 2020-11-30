@@ -45,7 +45,7 @@ If you have API suggestions, now is the time to do it.
 * Batched rendering of many tiles.
 
 ## Design 
-This is not intended to be just another Tile Map. It is meant to be a framework 
+This is not intended to be just another Tilemap. It is meant to be a framework 
 and extensible by design, like Bevy. As well as work done to keep it as close to 
 Bevy API as possible while keeping in mind of Rust API best practices. It is not
 meant to be complicated and created to be simple to use but give enough 
@@ -107,7 +107,7 @@ depending on what the camera is viewing.
 - **Auto-configure**: Automatically configures the tilemap based on options 
 that it can figure out such as texture sizes and the right size of chunks.
 - **Tile import**: Imports tiles from a file from multiple formats.
-- **LayeredMap**: Multiple tile maps working together to create 3D slices that
+- **Tilemap3**: Multiple tilemaps working together to create 3D slices that
 work together and are aware of each other.
 
 # Building

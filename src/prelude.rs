@@ -3,25 +3,40 @@
 //! # Prelude contents
 //!
 //! The current version of this prelude (version 0) is located in
-//! [`bevy_tilemap_2d::prelude::v0`], and re-exports the following.
+//! [`bevy_tilemap::prelude::v0`], and re-exports the following.
 //!
-//! * [`bevy_tilemap_2d::chunk`]::[`LayerKind`], the only public part
+//! * [`bevy_tilemap::chunk`]::[`LayerKind`], the only public part
 //! of `chunk` module is the kind of layer you need to specify to create.
-//! * [`bevy_tilemap_2d::entity`]::[`TilemapComponents`], the components
+//! * [`bevy_tilemap::default_plugin`]::[`TilemapDefaultPlugins`], the
+//! default plugins for the library.
+//! * [`bevy_tilemap::entity`]::[`TilemapComponents`], the components
 //! for spawning with a Tilemap.
-//! * [`bevy_tilemap_2d::tilemap`]::{[`Tilemap`], [`TilemapBuilder`]},
-//! the core object that is used for virtually everything in this library.
-//! * [`bevy_tilemap_2d::tile`]::[`Tile`], a sprite tile which
+//! * [`bevy_tilemap::sprite_sheet`]::{[`SpriteSheet`], [`SpriteSheetBuilder`]},
+//! a sprite sheet and a builder both used to construct sprite sheets.
+//! * [`bevy_tilemap::tile`]::[`Tile`], a sprite tile which
 //! holds minimal amount of data for small data sizes.
-//! * [`bevy_tilemap_2d`]::[`Tilemap2DPlugin`], the main plugin with
+//! * [`bevy_tilemap::tilemap`]::{[`Tilemap`], [`TilemapBuilder`]},
+//! the core object that is used for virtually everything in this library.
+//! * [`bevy_tilemap`]::[`Tilemap2DPlugin`], the main plugin with
 //! a collection of systems, components and assets to be used in a Bevy app.
 //!
-//! [`bevy_tilemap_2d::prelude::v0`]: crate::prelude::v0
-//! [`bevy_tilemap_2d::chunk`]: crate::chunk
-//! [`bevy_tilemap_2d::entity`]: crate::entity
-//! [`bevy_tilemap_2d::tilemap`]: crate::tilemap
-//! [`bevy_tilemap_2d::tile`]: crate::tile
-//! [`bevy_tilemap_2d`]: crate
+//! If **"types"** feature is enabled it re-exports the following.
+//!
+//! * [`bevy_tilemap::dimension`]::{[`Dimension2`], [`Dimension3`]}
+//! common methods and helpers for dealing with dimensions.
+//! * [`bevy_tilemap::point`]::{[`Point2`], [`Point3`]} common methods
+//! and helpers for dealing with points of the 2nd and 3rd dimension.
+//!
+//! [`bevy_tilemap::prelude::v0`]: crate::prelude::v0
+//! [`bevy_tilemap::default_plugin`]: crate::default_plugin
+//! [`bevy_tilemap::chunk`]: crate::chunk
+//! [`bevy_tilemap::entity`]: crate::entity
+//! [`bevy_tilemap::sprite_sheet`]: crate::sprite_sheet
+//! [`bevy_tilemap::tile`]: crate::tile
+//! [`bevy_tilemap::tilemap`]: crate::tilemap
+//! [`bevy_tilemap::dimension`]: crate::dimension
+//! [`bevy_tilemap::point`]: crate::point
+//! [`bevy_tilemap`]: crate
 
 /// Version 0 prelude.
 pub mod v0 {
@@ -29,6 +44,7 @@ pub mod v0 {
     pub use crate::bevy_tilemap_types::prelude::v0::*;
     pub use crate::{
         chunk::LayerKind,
+        default_plugin::TilemapDefaultPlugins,
         entity::TilemapComponents,
         sprite_sheet::prelude::v0::*,
         tile::Tile,

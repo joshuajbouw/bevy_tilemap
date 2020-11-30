@@ -16,16 +16,47 @@
 //! * Batched rendering of many tiles.
 //!
 //! ## Design
-//! This is not intended to be just another Tile Map. It is meant to be a
+//! This is not intended to be just another Tilemap. It is meant to be a
 //! framework and extensible by design, like Bevy. As well as work done to keep
 //! it as close to Bevy API as possible while keeping in mind of Rust API best
 //! practices. It is not meant to be complicated and created to be simple to use
 //! but give enough functionality to advanced users.
 //!
 //! Less time fiddling, more time building.
+//!
+//! # Serde support
+//!
+//! Optionally serde is supported through the use of features.
+//!
+//! ```toml
+//! [dependencies]
+//! bevy_tilemap = { version = "0.2", features = ["serde"] }
+//! ```
+//!
+//! # Extra types feature
+//!
+//! Internally, the library uses [`Point2`], [`Point3`], [`Dimension2`] and
+//! [`Dimension3`] types. This is not part of the official Bevy library and
+//! multiple or alternative implementations of them may not be ideal, especially
+//! not in the prelude.
+//!
+//! It is quite important however to `impl Into<T>` for each of them for most
+//! public methods. It already has most basic implementations that make sense.
+//!
+//! However if you would like to use this, please do so.
+//!
+//! ```toml
+//! [dependencies]
+//! bevy_tilemap = { version = "0.2", features = ["types"] }
+//! ```
+//!
+//! [`Point2`]: crate::point::Point2
+//! [`Point3`]: crate::point::Point3
+//! [`Dimension2`]: crate::dimension::Dimension2
+//! [`Dimension3`]: crate::dimension::Dimension3
 #![no_implicit_prelude]
 // rustc
-#![deny(dead_code, unused_imports)]
+#![deny(dead_code, unused_imports, broken_intra_doc_links)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 #![warn(clippy::print_stdout, clippy::unwrap_in_result)]
@@ -42,24 +73,21 @@
     // clippy::missing_inline_in_public_items,
 )]
 
-/// The default plugin to be used in Bevy applications.
+pub extern crate bevy_tilemap_spritesheet;
+#[cfg(feature = "types")]
+pub extern crate bevy_tilemap_types;
+
+#[doc(inline)]
+pub use bevy_tilemap_spritesheet as sprite_sheet;
+#[cfg(feature = "types")]
+#[doc(inline)]
+pub use bevy_tilemap_types::dimension;
+#[cfg(feature = "types")]
+#[doc(inline)]
+pub use bevy_tilemap_types::point;
+
 pub mod default_plugin;
-/// Various dimension based traits.
-#[cfg(feature = "types")]
-pub mod dimension {
-    pub use crate::bevy_tilemap_types::dimension::*;
-}
-/// Similar to a texture atlas but splits everything into the same size tiles.
-pub mod sprite_sheet {
-    pub use crate::bevy_tilemap_spritesheet::*;
-}
-/// Points used for helping with coordinates.
-#[cfg(feature = "types")]
-pub mod point {
-    pub use crate::bevy_tilemap_types::point::*;
-}
 // pub mod auto_tile;
-/// Chunk traits to implement for a custom chunk and a basic struct for use.
 pub mod chunk;
 /// Bundles of components for spawning entities.
 pub mod entity;
@@ -101,7 +129,6 @@ impl Plugin for Tilemap2DPlugin {
 /// A custom prelude around everything that we only need to use.
 mod lib {
     pub extern crate bevy;
-    pub extern crate bevy_tilemap_spritesheet;
     pub extern crate bevy_tilemap_types;
     pub extern crate bitflags;
     #[cfg(feature = "serde")]

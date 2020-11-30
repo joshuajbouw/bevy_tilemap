@@ -1,3 +1,59 @@
+//! Tiles organised into chunks for efficiency and performance.
+//!
+//! Mostly everything in this module is private API and not intended to be used
+//! outside of this crate as a lot goes on under the hood that can cause issues.
+//! With that being said, everything that can be used with helping a chunk get
+//! created does live in here.
+//!
+//! These below examples have nothing to do with this library as all should be
+//! done through the [`Tilemap`]. These are just more specific examples which
+//! use the private API of this library.
+//!
+//! [`Tilemap`]: crate::tilemap::Tilemap
+//!
+//! # Simple chunk creation
+//! ```
+//! use bevy_tilemap::prelude::*;
+//! use bevy::asset::HandleId;
+//! use bevy::prelude::*;
+//!
+//! // This must be set in Asset<TextureAtlas>.
+//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+//!
+//! let mut tilemap = Tilemap::new(texture_atlas_handle);
+//!
+//! // There are two ways to create a new chunk. Either directly...
+//!
+//! tilemap.new_chunk((0, 0));
+//!
+//! // Or indirectly...
+//!
+//! let point = (0, 0);
+//! let sprite_index = 0;
+//! let tile = Tile::new(point.clone(), sprite_index);
+//! tilemap.insert_tile(tile);
+//!
+//! ```
+//!
+//! # Specifying what kind of chunk
+//! ```
+//! use bevy_tilemap::prelude::*;
+//! use bevy::asset::HandleId;
+//! use bevy::prelude::*;
+//!
+//! // This must be set in Asset<TextureAtlas>.
+//! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+//!
+//! let mut tilemap = Tilemap::new(texture_atlas_handle);
+//!
+//! tilemap.new_chunk((0, 0));
+//!
+//! let z_order = 0;
+//! tilemap.add_layer_with_kind(LayerKind::Dense, 0);
+//!
+//! let z_order = 1;
+//! tilemap.add_layer_with_kind(LayerKind::Sparse, 1);
+//! ```
 use crate::{
     entity::{ChunkDimensions, DirtyLayer},
     lib::*,
@@ -119,9 +175,9 @@ impl SparseLayer {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum LayerKind {
-    /// Specifies to construct a dense sprite layer.
+    /// Specifies the tilemap to add a dense sprite layer.
     Dense,
-    /// Specifies to construct a sparse sprite layer.
+    /// Specifies the tilemap to add a sparse sprite layer.
     Sparse,
 }
 
