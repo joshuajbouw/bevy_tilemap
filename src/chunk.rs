@@ -232,11 +232,21 @@ pub struct Chunk {
 
 impl Chunk {
     /// A newly constructed chunk from a point and the maximum number of layers.
-    pub(crate) fn new(point: Point2, max_layers: usize) -> Chunk {
-        Chunk {
+    pub(crate) fn new(
+        point: Point2,
+        layers: &[Option<LayerKind>],
+        dimensions: Dimension2,
+    ) -> Chunk {
+        let mut chunk = Chunk {
             point,
-            sprite_layers: vec![None; max_layers],
+            sprite_layers: vec![None; layers.len()],
+        };
+        for (z_order, kind) in layers.iter().enumerate() {
+            if let Some(kind) = kind {
+                chunk.add_layer(kind, z_order, dimensions)
+            }
         }
+        chunk
     }
 
     /// Adds a layer from a layer kind, the z layer, and dimensions of the
@@ -303,8 +313,12 @@ impl Chunk {
         if let Some(layer) = self.sprite_layers.get_mut(z_order) {
             if let Some(layer) = layer.as_mut() {
                 layer.inner.as_mut().set_raw_tile(index, raw_tile);
-            } // TODO: Bevy log error when implemented
-        } // TODO: Bevy log error when implemented
+            } else {
+                println!("else 1");
+            }
+        } else {
+            println!("else 2");
+        }
     }
 
     /// Adds an entity to a z layer, always when it is spawned.

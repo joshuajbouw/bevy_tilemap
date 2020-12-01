@@ -680,7 +680,7 @@ impl Tilemap {
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
-        let chunk = Chunk::new(point, self.layers.len());
+        let chunk = Chunk::new(point, &self.layers, self.chunk_dimensions);
         self.chunks.insert(point, chunk);
         Ok(())
     }
@@ -1129,11 +1129,16 @@ impl Tilemap {
         }
 
         for (point, tiles) in chunk_map.into_iter() {
-            let layers_len = self.layers.len();
+            // Is there a better way to do this? Clippy hates if I don't do it
+            // like this talking about constructing regardless yet, here it is,
+            // copying stuff regardless because it doesn't like self in the
+            // `FnOnce`.
+            let layers = self.layers.clone();
+            let chunk_dimensions = self.chunk_dimensions;
             let chunk = self
                 .chunks
                 .entry(point)
-                .or_insert_with(|| Chunk::new(point, layers_len));
+                .or_insert_with(|| Chunk::new(point, &layers, chunk_dimensions));
 
             let mut layers = HashMap::default();
             for tile in tiles.into_iter() {
@@ -1547,23 +1552,20 @@ pub(crate) fn tilemap_system(
         let mut modified_chunks = Vec::new();
         let mut spawned_chunks = Vec::new();
         let mut despawned_chunks = Vec::new();
-        {
-            let mut reader = map.events.get_reader();
-            for event in reader.iter(&map.events) {
-                use ChunkEvent::*;
-                match event {
-                    Modified { ref layers } => {
-                        modified_chunks.push(layers.clone());
-                    }
-                    Spawned { ref point } => {
-                        spawned_chunks.push(*point);
-                    }
-                    Despawned { ref entities } => {
-                        despawned_chunks.push(entities.clone());
-                    }
+        let mut reader = map.events.get_reader();
+        for event in reader.iter(&map.events) {
+            use ChunkEvent::*;
+            match event {
+                Modified { ref layers } => {
+                    modified_chunks.push(layers.clone());
+                }
+                Spawned { ref point } => {
+                    spawned_chunks.push(*point);
+                }
+                Despawned { ref entities } => {
+                    despawned_chunks.push(entities.clone());
                 }
             }
-            // drop(reader);
         }
 
         for layers in modified_chunks.into_iter() {

@@ -18,6 +18,7 @@ everything into tiles.
 * `point` and `dimension` modules were moved to `bevy_tilemap_types` crate but 
 still accessible as normal and optional.
 * `bevy_tilemap_spritesheet` sub-crate was added.
+* Example `stress_dwarves` has been added to benchmark and stress test.
 
 ### Changed
 
