@@ -113,8 +113,6 @@ enum ErrorKind {
     LayerDoesNotExist(usize),
     /// Texture atlas was not set
     MissingTextureAtlas,
-    /// Chunk does not exist at coordinate.
-    ChunkDoesNotExist(Point2),
 }
 
 impl Display for ErrorKind {
@@ -132,7 +130,6 @@ impl Display for ErrorKind {
                 f,
                 "texture atlas is missing, must use `TilemapBuilder::texture_atlas`"
             ),
-            ChunkDoesNotExist(p) => write!(f, "chunk {} does not exist, try `add_chunk` first", p),
         }
     }
 }
@@ -164,56 +161,23 @@ impl From<DimensionError> for TilemapError {
 /// A map result.
 pub type TilemapResult<T> = Result<T, TilemapError>;
 
-/// Events that happen on a chunk by index value.
-#[derive(Clone, PartialEq, Debug)]
-pub(crate) enum TilemapEvent {
-    /// To be used when a chunk is created.
-    CreatedChunk {
-        /// The index of the chunk.
+#[derive(Debug)]
+/// Events that can happen to chunks.
+enum ChunkEvent {
+    /// An event when a chunk needs to be spawned.
+    Spawned {
+        /// The point to get the correct chunk to spawn.
         point: Point2,
-        /// The Handle of the Chunk.
-        handle: Handle<Chunk>,
     },
-    /// An event when a layer is created for all chunks.
-    AddedLayer {
-        /// The *Z* order to add.
-        z_order: usize,
-        /// The `LayerKind` of the layer.
-        kind: LayerKind,
+    /// An event when a chunk has been modified and needs to reload its layer.
+    Modified {
+        /// The layers that had been modified.
+        layers: HashMap<usize, Entity>,
     },
-    /// An event when a layer is moved.
-    MovedLayer {
-        /// From which *Z* order.
-        from_z_order: usize,
-        /// To which *Z* order.
-        to_z_layer: usize,
-    },
-    /// An event when a layer is removed for all chunks.
-    RemovedLayer {
-        /// The *Z* order to remove.
-        z_order: usize,
-    },
-    /// An event when a chunk had been modified by changing tiles.
-    ModifiedChunk {
-        /// The map index where the chunk needs to be stored.
-        handle: Handle<Chunk>,
-        /// The tiles that need to be set.
-        tiles: Vec<Tile>,
-    },
-    /// An event when a chunk is spawned.
-    SpawnedChunk {
-        /// The handle of the chunk.
-        handle: Handle<Chunk>,
-    },
-    /// If the chunk needs to be despawned, this event is used.
-    DespawnedChunk {
-        /// The handle of the chunk that needs to be despawned.
-        handle: Handle<Chunk>,
-    },
-    /// If the chunk needs to be removed.
-    RemovedChunk {
-        /// The handle of the chunk that needs to be removed.
-        handle: Handle<Chunk>,
+    /// An even when a chunk needs to be despawned.
+    Despawned {
+        /// The entities that need to be despawned.
+        entities: Vec<Entity>,
     },
 }
 
@@ -244,15 +208,14 @@ pub struct Tilemap {
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The handle of the texture atlas.
     texture_atlas: Handle<TextureAtlas>,
-    #[cfg_attr(feature = "serde", serde(skip))]
     /// A map of all the chunks at points.
-    chunks: HashMap<Point2, Handle<Chunk>>,
+    chunks: HashMap<Point2, Chunk>,
     #[cfg_attr(feature = "serde", serde(skip))]
     /// A map of all currently spawned entities.
     entities: HashMap<usize, Vec<Entity>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The events of the tilemap.
-    events: Events<TilemapEvent>,
+    events: Events<ChunkEvent>,
 }
 
 /// Tilemap factory, which can be used to construct and configure new tilemaps.
@@ -703,26 +666,22 @@ impl Tilemap {
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
     /// // Add some chunks.
-    /// tilemap.new_chunk((0, 0)).unwrap();
-    /// tilemap.new_chunk((1, 1)).unwrap();
-    /// tilemap.new_chunk((2, 2)).unwrap();
+    /// tilemap.insert_chunk((0, 0)).unwrap();
+    /// tilemap.insert_chunk((1, 1)).unwrap();
+    /// tilemap.insert_chunk((2, 2)).unwrap();
     ///
     /// ```
     /// # Errors
     ///
     /// If the point does not exist in the tilemap, an error is returned. This
     /// can only be returned if you had set the dimensions on the tilemap.
-    pub fn new_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
+    pub fn insert_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
-
-        let handle: Handle<Chunk> = Handle::weak(HandleId::random::<Chunk>());
-        self.chunks.insert(point, handle.clone_weak());
-
-        self.events
-            .send(TilemapEvent::CreatedChunk { point, handle });
+        let chunk = Chunk::new(point, self.layers.len());
+        self.chunks.insert(point, chunk);
         Ok(())
     }
 
@@ -768,7 +727,9 @@ impl Tilemap {
             *some_kind = Some(kind);
         }
 
-        self.events.send(TilemapEvent::AddedLayer { z_order, kind });
+        for chunk in self.chunks.values_mut() {
+            chunk.add_layer(&kind, z_order, self.chunk_dimensions);
+        }
         Ok(())
     }
 
@@ -848,11 +809,9 @@ impl Tilemap {
         }
 
         self.layers.swap(from_z, to_z);
-
-        self.events.send(TilemapEvent::MovedLayer {
-            from_z_order: from_z,
-            to_z_layer: to_z,
-        });
+        for chunk in self.chunks.values_mut() {
+            chunk.move_layer(from_z, to_z);
+        }
 
         Ok(())
     }
@@ -893,15 +852,18 @@ impl Tilemap {
             return;
         }
 
-        self.events.send(TilemapEvent::RemovedLayer { z_order: z })
+        for chunk in self.chunks.values_mut() {
+            chunk.remove_layer(z);
+        }
     }
 
     /// Spawns a chunk at a given index or coordinate.
     ///
+    /// Does nothing if the chunk does not exist.
+    ///
     /// # Errors
     ///
-    /// If the coordinate or index is out of bounds or if the chunk does not
-    /// exist, an error will be returned.
+    /// If the coordinate or index is out of bounds.
     ///
     /// # Examples
     /// ```
@@ -914,7 +876,7 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// tilemap.new_chunk((0, 0));
+    /// tilemap.insert_chunk((0, 0));
     ///
     /// // Ideally you should want to set some tiles here else nothing will
     /// // display in the render...
@@ -926,18 +888,10 @@ impl Tilemap {
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
-        if !self.chunks.contains_key(&point) {
-            return Err(ErrorKind::ChunkDoesNotExist(point).into());
-        }
 
-        if let Some(handle) = self.chunks.get(&point) {
-            self.events.send(TilemapEvent::SpawnedChunk {
-                handle: handle.clone_weak(),
-            });
-            Ok(())
-        } else {
-            Err(ErrorKind::ChunkDoesNotExist(point).into())
-        }
+        self.events.send(ChunkEvent::Spawned { point });
+
+        Ok(())
     }
 
     /// Spawns a chunk at a given tile point.
@@ -978,7 +932,6 @@ impl Tilemap {
     /// # Errors
     ///
     /// If the coordinate or index is out of bounds, an error will be returned.
-    /// Also if the chunk that needs to spawn does not exist expect an error.
     ///
     /// # Examples
     /// ```
@@ -991,7 +944,7 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
-    /// tilemap.new_chunk((0, 0)).unwrap();
+    /// tilemap.insert_chunk((0, 0)).unwrap();
     ///
     /// // Ideally you should want to set some tiles here else nothing will
     /// // display in the render...
@@ -1007,30 +960,27 @@ impl Tilemap {
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
-        if !self.chunks.contains_key(&point) {
-            return Err(ErrorKind::ChunkDoesNotExist(point).into());
+
+        if let Some(chunk) = self.chunks.get_mut(&point) {
+            let entities = chunk.get_entities();
+            self.events.send(ChunkEvent::Despawned { entities })
         }
 
-        if let Some(handle) = self.chunks.get(&point) {
-            self.events.send(TilemapEvent::DespawnedChunk {
-                handle: handle.clone_weak(),
-            });
-            Ok(())
-        } else {
-            Err(ErrorKind::ChunkDoesNotExist(point).into())
-        }
+        Ok(())
     }
 
-    /// Destructively removes a chunk at a coordinate position.
+    /// Destructively removes a chunk at a coordinate position and despawns them
+    /// if needed.
     ///
     /// Internally, this sends an event to the tilemap's system flagging which
     /// chunks must be removed by index and entity. A chunk is not recoverable
     /// if this action is done.
     ///
+    /// Does nothing if the chunk does not exist.
+    ///
     /// # Errors
     ///
     /// If the coordinate or index is out of bounds, an error will be returned.
-    /// Also if the chunk that needs to spawn does not exist expect an error.
     ///
     /// # Examples
     /// ```
@@ -1044,9 +994,9 @@ impl Tilemap {
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
     /// // Add some chunks.
-    /// tilemap.new_chunk((0, 0)).unwrap();
-    /// tilemap.new_chunk((1, 1)).unwrap();
-    /// tilemap.new_chunk((2, 2)).unwrap();
+    /// tilemap.insert_chunk((0, 0)).unwrap();
+    /// tilemap.insert_chunk((1, 1)).unwrap();
+    /// tilemap.insert_chunk((2, 2)).unwrap();
     ///
     /// // Remove the same chunks in the same frame. Do note that adding then
     /// // removing in the same frame will prevent the entity from spawning at
@@ -1056,22 +1006,12 @@ impl Tilemap {
     /// tilemap.remove_chunk((2, 2)).unwrap();
     /// ```
     pub fn remove_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
-        let point: Point2 = point.into();
-        if let Some(dimensions) = &self.dimensions {
-            dimensions.check_point(point)?;
-        }
-        if !self.chunks.contains_key(&point) {
-            return Err(ErrorKind::ChunkDoesNotExist(point).into());
-        }
+        let point = point.into();
+        self.despawn_chunk(point)?;
 
-        if let Some(handle) = self.chunks.get(&point) {
-            self.events.send(TilemapEvent::RemovedChunk {
-                handle: handle.clone_weak(),
-            });
-            Ok(())
-        } else {
-            Err(ErrorKind::ChunkDoesNotExist(point).into())
-        }
+        self.chunks.remove(&point);
+
+        Ok(())
     }
 
     /// Takes a tile point and changes it into a chunk point.
@@ -1188,23 +1128,29 @@ impl Tilemap {
             }
         }
 
-        for (chunk_point, tiles) in chunk_map {
-            let handle = if let Some(handle) = self.chunks.get(&chunk_point) {
-                handle.clone_weak()
-            } else {
-                let handle: Handle<Chunk> = Handle::weak(HandleId::random::<Chunk>());
-                self.chunks.insert(chunk_point, handle.clone_weak());
+        for (point, tiles) in chunk_map.into_iter() {
+            let layers_len = self.layers.len();
+            let chunk = self
+                .chunks
+                .entry(point)
+                .or_insert_with(|| Chunk::new(point, layers_len));
 
-                self.events.send(TilemapEvent::CreatedChunk {
-                    point: chunk_point,
-                    handle: handle.clone_weak(),
-                });
-                handle
-            };
+            let mut layers = HashMap::default();
+            for tile in tiles.into_iter() {
+                let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
+                let raw_tile = RawTile {
+                    index: tile.sprite_index,
+                    color: tile.tint,
+                };
+                chunk.set_raw_tile(tile.z_order, index, raw_tile);
+                if let Some(entity) = chunk.get_entity(tile.z_order) {
+                    layers.entry(tile.z_order).or_insert(entity);
+                }
+            }
 
-            self.events
-                .send(TilemapEvent::ModifiedChunk { handle, tiles })
+            self.events.send(ChunkEvent::Modified { layers });
         }
+
         Ok(())
     }
 
@@ -1520,6 +1466,11 @@ impl Tilemap {
     pub fn tile_height(&self) -> u32 {
         self.tile_dimensions.height
     }
+
+    /// Gets a reference to a chunk.
+    pub(crate) fn get_chunk(&self, point: &Point2) -> Option<&Chunk> {
+        self.chunks.get(point)
+    }
 }
 
 /// Automatically configures all tilemaps that need to be configured.
@@ -1587,120 +1538,52 @@ pub(crate) fn tilemap_auto_configure(
 /// 1. Remove chunks
 pub(crate) fn tilemap_system(
     mut commands: Commands,
-    mut chunks: ResMut<Assets<Chunk>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut query: Query<(Entity, &mut Tilemap)>,
 ) {
     for (map_entity, mut map) in query.iter_mut() {
         map.events.update();
 
-        let mut new_chunks = Vec::new();
-        let mut added_layers = Vec::new();
-        let mut moved_layers = Vec::new();
-        let mut removed_layers = Vec::new();
         let mut modified_chunks = Vec::new();
         let mut spawned_chunks = Vec::new();
         let mut despawned_chunks = Vec::new();
-        let mut removed_chunks = Vec::new();
-        let mut reader = map.events.get_reader();
-        for event in reader.iter(&map.events) {
-            use TilemapEvent::*;
-            match event {
-                CreatedChunk {
-                    ref point,
-                    ref handle,
-                } => {
-                    new_chunks.push((*point, handle.clone_weak()));
-                }
-                AddedLayer {
-                    z_order: ref z,
-                    ref kind,
-                } => {
-                    added_layers.push((*z, *kind));
-                }
-                MovedLayer {
-                    from_z_order: ref from_z,
-                    to_z_layer: ref to_z,
-                } => {
-                    moved_layers.push((*from_z, *to_z));
-                }
-                RemovedLayer { z_order: ref z } => {
-                    removed_layers.push(*z);
-                }
-                ModifiedChunk {
-                    ref handle,
-                    tiles: ref setter,
-                } => {
-                    modified_chunks.push((handle.clone_weak(), setter.clone()));
-                }
-                SpawnedChunk { ref handle } => {
-                    spawned_chunks.push(handle.clone_weak());
-                }
-                DespawnedChunk { ref handle } => {
-                    despawned_chunks.push(handle.clone_weak());
-                }
-                RemovedChunk { ref handle } => {
-                    removed_chunks.push(handle.clone_weak());
+        {
+            let mut reader = map.events.get_reader();
+            for event in reader.iter(&map.events) {
+                use ChunkEvent::*;
+                match event {
+                    Modified { ref layers } => {
+                        modified_chunks.push(layers.clone());
+                    }
+                    Spawned { ref point } => {
+                        spawned_chunks.push(*point);
+                    }
+                    Despawned { ref entities } => {
+                        despawned_chunks.push(entities.clone());
+                    }
                 }
             }
+            // drop(reader);
         }
 
-        for (point, handle) in new_chunks.into_iter() {
-            let chunk = Chunk::new(point, map.layers.len());
-            let handle = chunks.set(handle.clone_weak(), chunk);
-            map.chunks.insert(point, handle);
-        }
-
-        for (z, kind) in added_layers.into_iter() {
-            for handle in map.chunks.values() {
-                let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-                chunk.add_layer(&kind, z, map.chunk_dimensions);
-            }
-        }
-
-        for (from_z, to_z) in moved_layers.into_iter() {
-            for handle in map.chunks.values() {
-                let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-                chunk.move_layer(from_z, to_z);
-            }
-        }
-
-        for z in removed_layers.into_iter() {
-            for handle in map.chunks.values() {
-                let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-                chunk.remove_layer(z);
-            }
-        }
-
-        for (handle, tiles) in modified_chunks.into_iter() {
-            let chunk = chunks.get_mut(&handle).expect("`Chunk` is missing.");
-
-            let mut entities = HashMap::default();
-            for tile in tiles.into_iter() {
-                let index = map.chunk_dimensions.encode_point_unchecked(tile.point);
-                let raw_tile = RawTile {
-                    index: tile.sprite_index,
-                    color: tile.tint,
-                };
-                chunk.set_raw_tile(tile.z_order, index, raw_tile);
-                if let Some(entity) = chunk.get_entity(tile.z_order) {
-                    entities.entry(tile.z_order).or_insert(entity);
-                }
-            }
-
-            for (layer, entity) in entities.into_iter() {
+        for layers in modified_chunks.into_iter() {
+            for (layer, entity) in layers.into_iter() {
                 commands.insert_one(entity, DirtyLayer(layer));
             }
         }
 
         let capacity = spawned_chunks.len();
-        for handle in spawned_chunks.into_iter() {
-            let chunk = chunks.get_mut(&handle).expect("`Chunk` is missing.");
+        for point in spawned_chunks.into_iter() {
+            let layers_len = map.layers.len();
+            let chunk_dimensions = map.chunk_dimensions;
+            let tile_dimensions = map.tile_dimensions;
+            let texture_atlas = map.texture_atlas().clone_weak();
+            let chunk = map.chunks.get_mut(&point).expect("`Chunk` is missing.");
             let mut entities = Vec::with_capacity(capacity);
-            for z in 0..map.layers.len() {
-                let mut mesh = Mesh::from(&ChunkMesh::new(map.chunk_dimensions));
+            for z in 0..layers_len {
+                let mut mesh = Mesh::from(&ChunkMesh::new(chunk_dimensions));
                 let (indexes, colors) =
-                    if let Some(parts) = chunk.tiles_to_renderer_parts(z, map.chunk_dimensions) {
+                    if let Some(parts) = chunk.tiles_to_renderer_parts(z, chunk_dimensions) {
                         parts
                     } else {
                         continue;
@@ -1711,19 +1594,18 @@ pub(crate) fn tilemap_system(
                 chunk.set_mesh(z, mesh_handle.clone());
 
                 let translation = Vec3::new(
-                    (chunk.point().x
-                        * map.tile_dimensions.width as i32
-                        * map.chunk_dimensions.width as i32) as f32,
+                    (chunk.point().x * tile_dimensions.width as i32 * chunk_dimensions.width as i32)
+                        as f32,
                     (chunk.point().y
-                        * map.tile_dimensions.height as i32
-                        * map.chunk_dimensions.height as i32) as f32,
+                        * tile_dimensions.height as i32
+                        * chunk_dimensions.height as i32) as f32,
                     z as f32,
                 );
                 let entity = commands
                     .spawn(ChunkComponents {
-                        chunk: handle.clone_weak(),
-                        texture_atlas: map.texture_atlas().clone_weak(),
-                        chunk_dimensions: map.chunk_dimensions.into(),
+                        point,
+                        texture_atlas: texture_atlas.clone_weak(),
+                        chunk_dimensions: chunk_dimensions.into(),
                         mesh: mesh_handle.clone_weak(),
                         transform: Transform::from_translation(translation),
                         ..Default::default()
@@ -1737,19 +1619,10 @@ pub(crate) fn tilemap_system(
             commands.push_children(map_entity, &entities);
         }
 
-        for handle in despawned_chunks.into_iter() {
-            let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-            for entity in chunk.get_entities() {
+        for entities in despawned_chunks.into_iter() {
+            for entity in entities {
                 commands.despawn(entity);
             }
-        }
-
-        for handle in removed_chunks.into_iter() {
-            let chunk = chunks.get_mut(handle).expect("`Chunk` is missing.");
-            for entity in chunk.get_entities() {
-                commands.despawn(entity);
-            }
-            map.chunks.remove(&chunk.point());
         }
     }
 }

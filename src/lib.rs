@@ -103,7 +103,7 @@ pub mod tile;
 /// Map traits to implement for a custom map and a basic struct for use.
 pub mod tilemap;
 
-use crate::{chunk::Chunk, lib::*, render::TilemapRenderGraphBuilder, tilemap::Tilemap};
+use crate::{lib::*, render::TilemapRenderGraphBuilder, tilemap::Tilemap};
 
 /// The Bevy Tilemap 2D main plugin.
 #[derive(Default)]
@@ -112,7 +112,6 @@ pub struct Tilemap2DPlugin;
 impl Plugin for Tilemap2DPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
-            .add_asset::<Chunk>()
             .add_system_to_stage(
                 "post_update",
                 crate::tilemap::tilemap_auto_configure.system(),
@@ -170,7 +169,7 @@ mod lib {
         },
         bevy_sprite::TextureAtlas,
         bevy_transform::{
-            components::{GlobalTransform, Transform},
+            components::{GlobalTransform, Parent, Transform},
             hierarchy::BuildChildren,
         },
         bevy_type_registry::{TypeUuid, Uuid},

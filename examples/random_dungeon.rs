@@ -121,7 +121,7 @@ fn build_random_dungeon(
     for mut map in query.iter_mut() {
         for y in 0..map.height().unwrap() as i32 {
             for x in 0..map.height().unwrap() as i32 {
-                map.new_chunk((x, y)).unwrap();
+                map.insert_chunk((x, y)).unwrap();
             }
         }
 
