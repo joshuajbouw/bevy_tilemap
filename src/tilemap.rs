@@ -167,17 +167,17 @@ enum ChunkEvent {
     /// An event when a chunk needs to be spawned.
     Spawned {
         /// The point to get the correct chunk to spawn.
-        point: Point2
+        point: Point2,
     },
     /// An event when a chunk has been modified and needs to reload its layer.
     Modified {
         /// The layers that had been modified.
-        layers: HashMap<usize, Entity>
+        layers: HashMap<usize, Entity>,
     },
     /// An even when a chunk needs to be despawned.
     Despawned {
         /// The entities that need to be despawned.
-        entities: Vec<Entity>
+        entities: Vec<Entity>,
     },
 }
 
