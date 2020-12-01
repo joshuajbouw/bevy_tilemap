@@ -1129,11 +1129,15 @@ impl Tilemap {
         }
 
         for (point, tiles) in chunk_map.into_iter() {
-            let chunk = self.chunks.entry(point).or_insert(Chunk::new(
-                point,
-                &self.layers,
-                self.chunk_dimensions,
-            ));
+            /// Is there a better way to do this? Clippy hates if I don't do it
+            /// like this talking about constructing regardless yet, here it is,
+            /// copying stuff regardless because it doesn't like self in the
+            /// `FnOnce`.
+            let layers = self.layers.clone();
+            let chunk_dimensions = self.chunk_dimensions.clone();
+            let chunk = self.chunks.entry(point).or_insert_with(|| {
+                Chunk::new(point, &layers, chunk_dimensions)
+            });
 
             let mut layers = HashMap::default();
             for tile in tiles.into_iter() {
