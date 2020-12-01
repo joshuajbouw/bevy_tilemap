@@ -1135,9 +1135,10 @@ impl Tilemap {
             /// `FnOnce`.
             let layers = self.layers.clone();
             let chunk_dimensions = self.chunk_dimensions.clone();
-            let chunk = self.chunks.entry(point).or_insert_with(|| {
-                Chunk::new(point, &layers, chunk_dimensions)
-            });
+            let chunk = self
+                .chunks
+                .entry(point)
+                .or_insert_with(|| Chunk::new(point, &layers, chunk_dimensions));
 
             let mut layers = HashMap::default();
             for tile in tiles.into_iter() {
