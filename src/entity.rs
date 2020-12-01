@@ -1,4 +1,4 @@
-use crate::{chunk::Chunk, lib::*, render::CHUNK_PIPELINE_HANDLE, Tilemap};
+use crate::{lib::*, render::CHUNK_PIPELINE_HANDLE, Tilemap};
 
 /// A component that stores the dimensions of the Chunk for the renderer.
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, RenderResources, RenderResource)]
@@ -30,8 +30,8 @@ pub(crate) struct DirtyLayer(pub(crate) usize);
 /// A component bundle for `Chunk` entities.
 #[derive(Bundle)]
 pub(crate) struct ChunkComponents {
-    /// The handle of the chunk.
-    pub(crate) chunk: Handle<Chunk>,
+    /// The point of the chunk.
+    pub(crate) point: Point2,
     /// The handle for a TextureAtlas which contains multiple textures.
     pub(crate) texture_atlas: Handle<TextureAtlas>,
     /// The chunk's dimensions which are passed to the renderer.
@@ -72,7 +72,7 @@ impl Default for ChunkComponents {
             },
         );
         ChunkComponents {
-            chunk: Default::default(),
+            point: Default::default(),
             texture_atlas: Default::default(),
             chunk_dimensions: Default::default(),
             mesh: Default::default(),

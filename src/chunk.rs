@@ -24,7 +24,7 @@
 //!
 //! // There are two ways to create a new chunk. Either directly...
 //!
-//! tilemap.new_chunk((0, 0));
+//! tilemap.insert_chunk((0, 0));
 //!
 //! // Or indirectly...
 //!
@@ -46,7 +46,7 @@
 //!
 //! let mut tilemap = Tilemap::new(texture_atlas_handle);
 //!
-//! tilemap.new_chunk((0, 0));
+//! tilemap.insert_chunk((0, 0));
 //!
 //! let z_order = 0;
 //! tilemap.add_layer_with_kind(LayerKind::Dense, 0);
@@ -59,6 +59,7 @@ use crate::{
     lib::*,
     mesh::ChunkMesh,
     tile::RawTile,
+    tilemap::Tilemap,
 };
 
 /// Common methods for layers in a chunk.
@@ -357,18 +358,20 @@ impl Chunk {
 /// tints if they need updating.
 pub(crate) fn chunk_update_system(
     mut commands: Commands,
-    chunks: Res<Assets<Chunk>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    query: Query<(
+    map_query: Query<&Tilemap>,
+    chunk_query: Query<(
         Entity,
+        &Parent,
         &ChunkDimensions,
-        &Handle<Chunk>,
+        &Point2,
         &Handle<Mesh>,
         &DirtyLayer,
     )>,
 ) {
-    for (entity, dimensions, chunk_handle, mesh_handle, dirty_layer) in query.iter() {
-        let chunk = chunks.get(chunk_handle).expect("`Chunk` is missing");
+    for (entity, parent, dimensions, point, mesh_handle, dirty_layer) in chunk_query.iter() {
+        let tilemap = map_query.get(**parent).expect("`Tilemap` missing");
+        let chunk = tilemap.get_chunk(point).expect("`Chunk` is missing");
         let mesh = meshes.get_mut(mesh_handle).expect("`Mesh` is missing");
 
         let (indexes, colors) = chunk
