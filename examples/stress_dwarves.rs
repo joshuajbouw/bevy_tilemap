@@ -1,8 +1,12 @@
 use bevy::{
-    asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, utils::HashSet, window::WindowMode,
+    asset::LoadState, ecs::bevy_utils::HashSet, prelude::*, sprite::TextureAtlasBuilder,
+    window::WindowMode,
 };
 use bevy_tilemap::prelude::*;
 use rand::Rng;
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, Diagnostics};
+
+const DWARF_COUNT: usize = 10000;
 
 #[derive(Default, Clone)]
 struct TileSpriteHandles {
@@ -22,25 +26,21 @@ struct Render {
     z_order: usize,
 }
 
-#[derive(Default)]
-struct Player {}
-
 #[derive(Bundle)]
-struct PlayerBundle {
-    player: Player,
+struct StressDwarfBundle {
     position: Position,
     render: Render,
 }
 
 #[derive(Default, Clone)]
-struct GameState {
+struct State {
     map_loaded: bool,
     spawned: bool,
     collisions: HashSet<(i32, i32)>,
 }
 
-impl GameState {
-    fn try_move_player(&mut self, position: &mut Position, delta_xy: (i32, i32)) {
+impl State {
+    fn try_stumble(&mut self, position: &mut Position, delta_xy: (i32, i32)) {
         let new_pos = (position.x + delta_xy.0, position.y + delta_xy.1);
         if !self.collisions.contains(&new_pos) {
             position.x = new_pos.0;
@@ -56,7 +56,8 @@ fn setup(
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
 
-    commands.spawn(Camera2dComponents::default());
+    commands
+        .spawn(Camera2dComponents::default());
 }
 
 fn load(
@@ -86,7 +87,7 @@ fn load(
         // These are fairly advanced configurations just to quickly showcase
         // them.
         let tilemap = Tilemap::builder()
-            .dimensions(1, 1)
+            .dimensions(3, 3)
             .chunk_dimensions(32, 32)
             .z_layers(2)
             .texture_atlas(atlas_handle)
@@ -99,43 +100,46 @@ fn load(
             global_transform: Default::default(),
         };
 
-        commands
-            .spawn(tilemap_components)
-            .with(Timer::from_seconds(0.075, true));
+        commands.spawn(tilemap_components).with(Timer::from_seconds(0.1, true));
 
         sprite_handles.atlas_loaded = true;
     }
 }
 
-fn build_random_dungeon(
+fn build_map(
     mut commands: Commands,
-    mut game_state: ResMut<GameState>,
+    mut state: ResMut<State>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
     mut query: Query<&mut Tilemap>,
 ) {
-    if game_state.map_loaded {
+    if state.map_loaded {
         return;
     }
 
     for mut map in query.iter_mut() {
+        let width = map.width().unwrap() as i32;
+        let height = map.height().unwrap() as i32;
+        for y in 0..height as i32 {
+            for x in 0..width as i32 {
+                let x = x - width as i32 / 2;
+                let y = y - height as i32 / 2;
+                map.insert_chunk((x, y)).unwrap();
+            }
+        }
+
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
 
-        // Then we need to find out what the handles were to our textures we are going to use.
         let floor_sprite: Handle<Texture> = asset_server.get_handle("textures/tile_floor.png");
         let wall_sprite: Handle<Texture> = asset_server.get_handle("textures/tile_wall.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let floor_idx = texture_atlas.get_texture_index(&floor_sprite).unwrap();
         let wall_idx = texture_atlas.get_texture_index(&wall_sprite).unwrap();
 
-        // Now we fill the entire space with floors.
         let mut tiles = Vec::new();
         for y in (-chunk_height / 2)..(chunk_height / 2) {
             for x in (-chunk_width / 2)..(chunk_width / 2) {
-                // By default tile sets the Z order at 0. Lower means that tile
-                // will render lower than others. 0 is the absolute bottom
-                // level which is perfect for backgrounds.
                 let tile = Tile::new((x, y), floor_idx);
                 tiles.push(tile);
             }
@@ -147,8 +151,8 @@ fn build_random_dungeon(
             let tile_b = (x, chunk_height / 2 - 1);
             tiles.push(Tile::new(tile_a, wall_idx));
             tiles.push(Tile::new(tile_b, wall_idx));
-            game_state.collisions.insert(tile_a);
-            game_state.collisions.insert(tile_b);
+            state.collisions.insert(tile_a);
+            state.collisions.insert(tile_b);
         }
 
         // Then the wall tiles on the Y axis.
@@ -158,10 +162,10 @@ fn build_random_dungeon(
             let tile_b = (chunk_width / 2 - 1, y);
             tiles.push(Tile::new(tile_a, wall_idx));
             tiles.push(Tile::new(tile_b, wall_idx));
-            game_state.collisions.insert(tile_a);
-            game_state.collisions.insert(tile_b);
+            state.collisions.insert(tile_a);
+            state.collisions.insert(tile_b);
         }
-        // Lets just generate some random walls to sparsely place around the dungeon!
+
         let range = (chunk_width * chunk_height) as usize / 5;
         let mut rng = rand::thread_rng();
         for _ in 0..range {
@@ -170,45 +174,46 @@ fn build_random_dungeon(
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
                 tiles.push(Tile::new((x, y), wall_idx));
-                game_state.collisions.insert((x, y));
+                state.collisions.insert((x, y));
             }
         }
 
-        // The above should give us a neat little randomized dungeon! However,
-        // we are missing a hero! First, we need to add a layer. We must make
-        // this layer `Sparse` else we will lose efficiency with our data!
-        //
-        // You might've noticed that we didn't create a layer for z_layer 0 but
-        // yet it still works and exists. By default if a layer doesn't exist
-        // and tiles need to be written there then a Dense layer is created
-        // automatically.
         map.add_layer_with_kind(LayerKind::Sparse, 1).unwrap();
 
-        // Now lets add in a dwarf friend!
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf.png");
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
-        // We add in a Z order of 1 to place the tile above the background on Z
-        // order 0.
-        let dwarf_tile = Tile::with_z_order((0, 0), dwarf_sprite_index, 1);
-        tiles.push(dwarf_tile);
+        let mut rng = rand::thread_rng();
+        println!("Spawning drunken dwarves.");
+        for _ in 0..DWARF_COUNT {
+            let position = Position {
+                x: rng.gen_range(-chunk_width / 2 + 1, chunk_width / 2 - 1),
+                y: rng.gen_range(-chunk_height / 2 + 1, chunk_height / 2 - 1),
+            };
 
-        commands.spawn(PlayerBundle {
-            player: Player {},
-            position: Position { x: 0, y: 0 },
-            render: Render {
-                sprite_index: dwarf_sprite_index,
-                z_order: 1,
-            },
-        });
+            commands.spawn(StressDwarfBundle {
+                position,
+                render: Render {
+                    sprite_index: dwarf_sprite_index,
+                    z_order: 1,
+                },
+            });
 
-        // Now we pass all the tiles to our map.
+            let dwarf_tile = Tile::with_z_order((position.x, position.y), dwarf_sprite_index, 1);
+            tiles.push(dwarf_tile);
+        }
+        println!("{} drunken dwarves spawned.", DWARF_COUNT);
+
         map.insert_tiles(tiles).unwrap();
-
-        // Finally we spawn the chunk! In actual use this should be done in a
-        // spawn system.
         map.spawn_chunk((0, 0)).unwrap();
-
-        game_state.map_loaded = true;
+        map.spawn_chunk((0, 1)).unwrap();
+        map.spawn_chunk((1, 1)).unwrap();
+        map.spawn_chunk((1, 0)).unwrap();
+        map.spawn_chunk((1, -1)).unwrap();
+        map.spawn_chunk((0, -1)).unwrap();
+        map.spawn_chunk((-1, -1)).unwrap();
+        map.spawn_chunk((-1, 0)).unwrap();
+        map.spawn_chunk((-1, 1)).unwrap();
+        state.map_loaded = true;
     }
 }
 
@@ -218,10 +223,8 @@ fn move_sprite(
     position: Position,
     render: &Render,
 ) {
-    // We need to first remove where we were prior.
     map.remove_tile((previous_position.x, previous_position.y), 1)
         .unwrap();
-    // We then need to update where we are going!
     let tile = Tile::with_z_order(
         (position.x, position.y),
         render.sprite_index,
@@ -230,58 +233,36 @@ fn move_sprite(
     map.insert_tile(tile).unwrap();
 }
 
-fn character_movement(
-    mut game_state: ResMut<GameState>,
-    keyboard_input: Res<Input<KeyCode>>,
-    mut map_query: Query<(&mut Tilemap, &mut Timer)>,
-    mut player_query: Query<(&mut Position, &Render, &Player)>,
+fn drunk_stumbles(
+    mut state: ResMut<State>,
+    mut map_query: Query<&mut Tilemap>,
+    mut drunk_query: Query<(&mut Position, &Render)>,
 ) {
-    if !game_state.map_loaded {
+    if !state.map_loaded {
         return;
     }
 
-    for (mut map, timer) in map_query.iter_mut() {
-        if !timer.finished {
-            continue;
+    for mut map in map_query.iter_mut() {
+        for (mut position, render) in drunk_query.iter_mut() {
+            let previous_position = *position;
+            let mut rng = rand::thread_rng();
+            state.try_stumble(&mut position, (rng.gen_range(-1, 2), rng.gen_range(-1, 2)));
+            if previous_position == *position {
+                continue;
+            }
+            move_sprite(&mut map, previous_position, *position, render);
         }
+    }
+}
 
-        for (mut position, render, _player) in player_query.iter_mut() {
-            for key in keyboard_input.get_pressed() {
-                // First we need to store our very current position.
-                let previous_position = *position;
-
-                // Of course we need to control where we are going to move our
-                // dwarf friend.
-                use KeyCode::*;
-                match key {
-                    W | Numpad8 | Up | K => {
-                        game_state.try_move_player(&mut position, (0, 1));
-                    }
-                    A | Numpad4 | Left | H => {
-                        game_state.try_move_player(&mut position, (-1, 0));
-                    }
-                    S | Numpad2 | Down | J => {
-                        game_state.try_move_player(&mut position, (0, -1));
-                    }
-                    D | Numpad6 | Right | L => {
-                        game_state.try_move_player(&mut position, (1, 0));
-                    }
-
-                    Numpad9 | U => game_state.try_move_player(&mut position, (1, 1)),
-                    Numpad3 | M => game_state.try_move_player(&mut position, (1, -1)),
-                    Numpad1 | N => game_state.try_move_player(&mut position, (-1, -1)),
-                    Numpad7 | Y => game_state.try_move_player(&mut position, (-1, 1)),
-
-                    _ => {}
-                }
-
-                // If we are standing still or hit something, don't do anything.
-                if previous_position == *position {
-                    continue;
-                }
-
-                // This is a helpful function to make it easier to do stuff!
-                move_sprite(&mut map, previous_position, *position, render);
+fn counter(diagnostics: Res<Diagnostics>, query: Query<&Timer>) {
+    if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
+        for timer in query.iter() {
+            if !timer.finished {
+                return;
+            }
+            if let Some(average) = fps.average() {
+                println!("fps average: {:.2}", average);
             }
         }
     }
@@ -290,7 +271,7 @@ fn character_movement(
 fn main() {
     App::build()
         .add_resource(WindowDescriptor {
-            title: "Random Tile Dungeon".to_string(),
+            title: "Drunk Stressed Dwarves".to_string(),
             width: 1024,
             height: 1024,
             vsync: false,
@@ -299,12 +280,14 @@ fn main() {
             ..Default::default()
         })
         .init_resource::<TileSpriteHandles>()
-        .init_resource::<GameState>()
+        .init_resource::<State>()
         .add_plugins(DefaultPlugins)
         .add_plugins(TilemapDefaultPlugins)
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_startup_system(setup.system())
         .add_system(load.system())
-        .add_system(build_random_dungeon.system())
-        .add_system(character_movement.system())
+        .add_system(build_map.system())
+        .add_system(drunk_stumbles.system())
+        .add_system(counter.system())
         .run()
 }
