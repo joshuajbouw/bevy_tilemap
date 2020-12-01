@@ -1134,7 +1134,7 @@ impl Tilemap {
             // copying stuff regardless because it doesn't like self in the
             // `FnOnce`.
             let layers = self.layers.clone();
-            let chunk_dimensions = self.chunk_dimensions.clone();
+            let chunk_dimensions = self.chunk_dimensions;
             let chunk = self
                 .chunks
                 .entry(point)
