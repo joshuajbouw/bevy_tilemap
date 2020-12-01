@@ -27,6 +27,8 @@ still accessible as normal and optional.
 * Point module was now made optional.
 * Changed the `random_dungeon` example to be more like an actual implementation.
 * `Tile` had all generics removed from it.
+* `Tilemap::new_chunk` is now `Tilemap::insert_chunk` to reflect the storage
+internally.
 
 ## [0.2.2] - 2020-11-23
 
