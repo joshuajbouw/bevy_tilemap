@@ -1,10 +1,13 @@
 use bevy::{
-    asset::LoadState, ecs::bevy_utils::HashSet, prelude::*, sprite::TextureAtlasBuilder,
+    asset::LoadState,
+    diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
+    ecs::bevy_utils::HashSet,
+    prelude::*,
+    sprite::TextureAtlasBuilder,
     window::WindowMode,
 };
 use bevy_tilemap::prelude::*;
 use rand::Rng;
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, Diagnostics};
 
 const DWARF_COUNT: usize = 10000;
 
@@ -56,8 +59,7 @@ fn setup(
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
 
-    commands
-        .spawn(Camera2dComponents::default());
+    commands.spawn(Camera2dComponents::default());
 }
 
 fn load(
@@ -100,7 +102,9 @@ fn load(
             global_transform: Default::default(),
         };
 
-        commands.spawn(tilemap_components).with(Timer::from_seconds(0.1, true));
+        commands
+            .spawn(tilemap_components)
+            .with(Timer::from_seconds(0.1, true));
 
         sprite_handles.atlas_loaded = true;
     }

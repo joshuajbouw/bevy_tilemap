@@ -1129,9 +1129,11 @@ impl Tilemap {
         }
 
         for (point, tiles) in chunk_map.into_iter() {
-            let chunk = self.chunks.entry(point).or_insert({
-                Chunk::new(point, &self.layers, self.chunk_dimensions)
-            });
+            let chunk = self.chunks.entry(point).or_insert(Chunk::new(
+                point,
+                &self.layers,
+                self.chunk_dimensions,
+            ));
 
             let mut layers = HashMap::default();
             for tile in tiles.into_iter() {

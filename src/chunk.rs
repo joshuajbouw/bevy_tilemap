@@ -232,7 +232,11 @@ pub struct Chunk {
 
 impl Chunk {
     /// A newly constructed chunk from a point and the maximum number of layers.
-    pub(crate) fn new(point: Point2, layers: &[Option<LayerKind>], dimensions: Dimension2) -> Chunk {
+    pub(crate) fn new(
+        point: Point2,
+        layers: &[Option<LayerKind>],
+        dimensions: Dimension2,
+    ) -> Chunk {
         let mut chunk = Chunk {
             point,
             sprite_layers: vec![None; layers.len()],
