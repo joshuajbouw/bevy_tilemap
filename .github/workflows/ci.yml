@@ -43,7 +43,7 @@ jobs:
         with:
           path: |
             target
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}
       - name: install alsa
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
       - name: install udev
@@ -86,7 +86,7 @@ jobs:
         with:
           path: |
             target
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}
       - name: install alsa
         if: ${{ runner.os == 'Linux' }}
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
@@ -125,7 +125,7 @@ jobs:
         with:
           path: |
             target
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}
       - name: install alsa
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
       - name: install udev
