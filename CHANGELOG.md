@@ -10,7 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 * Auto configuration of optimal chunk sizes to texture size as well as checks
-to ensure that the tiles are divisible into each other had been added.
+to ensure that the tiles are divisible into each other had been added. This can
+be enabled in the `TilemapBuilder` with `auto_configure`.
+* Auto chunk which will create new chunks automatically if you push a tile into
+it. This can be enabled in the `TilemapBuilder` with `auto_chunk`
 * Optional dimension 2D and 3D API.
 * `TilemapDefaultPlugins` was added.
 * `SpriteSheet` was added which is very much like `TextureAtlas` but it splits
@@ -30,6 +33,8 @@ still accessible as normal and optional.
 * `Tile` had all generics removed from it.
 * `Tilemap::new_chunk` is now `Tilemap::insert_chunk` to reflect the storage
 internally.
+* It is now required to specify if chunks are to be auto created in the 
+`TilemapBuilder` with `auto_chunk` method.
 
 ## [0.2.2] - 2020-11-23
 

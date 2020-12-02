@@ -36,3 +36,7 @@ rand = "0.7"
 [[example]]
 name = "random_dungeon"
 path = "examples/random_dungeon.rs"
+
+[[example]]
+name = "stress_dwarves"
+path = "examples/stress_dwarves.rs"
