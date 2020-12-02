@@ -1,4 +1,4 @@
-use crate::{Tilemap, lib::*, render::CHUNK_SQUARE_PIPELINE};
+use crate::{lib::*, render::CHUNK_SQUARE_PIPELINE, Tilemap};
 
 /// A component that stores the dimensions of the Chunk for the renderer.
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, RenderResources, RenderResource)]

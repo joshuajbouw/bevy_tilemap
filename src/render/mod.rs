@@ -43,10 +43,8 @@ macro_rules! build_chunk_pipeline {
                     },
                 }),
                 ..PipelineDescriptor::new(ShaderStages {
-                    vertex: shaders.add(Shader::from_glsl(
-                        ShaderStage::Vertex,
-                        include_str!($file),
-                    )),
+                    vertex: shaders
+                        .add(Shader::from_glsl(ShaderStage::Vertex, include_str!($file))),
                     fragment: Some(shaders.add(Shader::from_glsl(
                         ShaderStage::Fragment,
                         include_str!("tilemap.frag"),
@@ -54,16 +52,51 @@ macro_rules! build_chunk_pipeline {
                 })
             }
         }
-    }
+    };
 }
 
-build_chunk_pipeline!(CHUNK_SQUARE_PIPELINE, 2110840099625352487, build_chunk_square_pipeline, "tilemap-square.vert");
-build_chunk_pipeline!(CHUNK_HEX_X_PIPELINE, 7038597873061171051, build_chunk_hex_x, "tilemap-hex-x.vert");
-build_chunk_pipeline!(CHUNK_HEX_Y_PIPELINE, 4304966217182648108, build_chunk_hex_y, "tilemap-hex-y.vert");
-build_chunk_pipeline!(CHUNK_HEXCOLS_EVEN_PIPELINE, 7604280309043018950, build_chunk_hexcols_even, "tilemap-hexcols-even.vert");
-build_chunk_pipeline!(CHUNK_HEXCOLS_ODD_PIPELINE, 3111565682159860869, build_chunk_hexcols_odd, "tilemap-hexcols-odd.vert");
-build_chunk_pipeline!(CHUNK_HEXROWS_EVEN_PIPELINE, 1670470246078408352, build_chunk_hexrows_even, "tilemap-hexrows-even.vert");
-build_chunk_pipeline!(CHUNK_HEXROWS_ODD_PIPELINE, 8160067835497533408, build_chunk_hexrows_odd, "tilemap-hexrows-odd.vert");
+build_chunk_pipeline!(
+    CHUNK_SQUARE_PIPELINE,
+    2110840099625352487,
+    build_chunk_square_pipeline,
+    "tilemap-square.vert"
+);
+build_chunk_pipeline!(
+    CHUNK_HEX_X_PIPELINE,
+    7038597873061171051,
+    build_chunk_hex_x,
+    "tilemap-hex-x.vert"
+);
+build_chunk_pipeline!(
+    CHUNK_HEX_Y_PIPELINE,
+    4304966217182648108,
+    build_chunk_hex_y,
+    "tilemap-hex-y.vert"
+);
+build_chunk_pipeline!(
+    CHUNK_HEXCOLS_EVEN_PIPELINE,
+    7604280309043018950,
+    build_chunk_hexcols_even,
+    "tilemap-hexcols-even.vert"
+);
+build_chunk_pipeline!(
+    CHUNK_HEXCOLS_ODD_PIPELINE,
+    3111565682159860869,
+    build_chunk_hexcols_odd,
+    "tilemap-hexcols-odd.vert"
+);
+build_chunk_pipeline!(
+    CHUNK_HEXROWS_EVEN_PIPELINE,
+    1670470246078408352,
+    build_chunk_hexrows_even,
+    "tilemap-hexrows-even.vert"
+);
+build_chunk_pipeline!(
+    CHUNK_HEXROWS_ODD_PIPELINE,
+    8160067835497533408,
+    build_chunk_hexrows_odd,
+    "tilemap-hexrows-odd.vert"
+);
 
 /// Topology of the tilemap grid (square or hex)
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -126,13 +159,28 @@ impl TilemapRenderGraphBuilder for RenderGraph {
             .get_mut::<Assets<Shader>>()
             .expect("`Shader` is missing.");
 
-        pipelines.set_untracked(CHUNK_SQUARE_PIPELINE, build_chunk_square_pipeline(&mut shaders));
+        pipelines.set_untracked(
+            CHUNK_SQUARE_PIPELINE,
+            build_chunk_square_pipeline(&mut shaders),
+        );
         pipelines.set_untracked(CHUNK_HEX_X_PIPELINE, build_chunk_hex_x(&mut shaders));
         pipelines.set_untracked(CHUNK_HEX_Y_PIPELINE, build_chunk_hex_y(&mut shaders));
-        pipelines.set_untracked(CHUNK_HEXCOLS_EVEN_PIPELINE, build_chunk_hexcols_even(&mut shaders));
-        pipelines.set_untracked(CHUNK_HEXCOLS_ODD_PIPELINE, build_chunk_hexcols_odd(&mut shaders));
-        pipelines.set_untracked(CHUNK_HEXROWS_EVEN_PIPELINE, build_chunk_hexrows_even(&mut shaders));
-        pipelines.set_untracked(CHUNK_HEXROWS_ODD_PIPELINE, build_chunk_hexrows_odd(&mut shaders));
+        pipelines.set_untracked(
+            CHUNK_HEXCOLS_EVEN_PIPELINE,
+            build_chunk_hexcols_even(&mut shaders),
+        );
+        pipelines.set_untracked(
+            CHUNK_HEXCOLS_ODD_PIPELINE,
+            build_chunk_hexcols_odd(&mut shaders),
+        );
+        pipelines.set_untracked(
+            CHUNK_HEXROWS_EVEN_PIPELINE,
+            build_chunk_hexrows_even(&mut shaders),
+        );
+        pipelines.set_untracked(
+            CHUNK_HEXROWS_ODD_PIPELINE,
+            build_chunk_hexrows_odd(&mut shaders),
+        );
 
         self
     }
