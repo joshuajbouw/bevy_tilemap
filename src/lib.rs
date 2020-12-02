@@ -181,6 +181,8 @@ mod lib {
         point::Point2,
     };
 
+    pub use crate::bitflags::*;
+
     #[cfg(feature = "serde")]
     pub use serde::{Deserialize, Serialize};
 

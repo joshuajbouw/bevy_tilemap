@@ -113,6 +113,8 @@ enum ErrorKind {
     LayerDoesNotExist(usize),
     /// Texture atlas was not set
     MissingTextureAtlas,
+    /// The chunk does not exist.
+    MissingChunk,
 }
 
 impl Display for ErrorKind {
@@ -130,6 +132,7 @@ impl Display for ErrorKind {
                 f,
                 "texture atlas is missing, must use `TilemapBuilder::texture_atlas`"
             ),
+            MissingChunk => write!(f, "the chunk does not exist, try `add_chunk` first")
         }
     }
 }
@@ -181,14 +184,28 @@ enum ChunkEvent {
     },
 }
 
+bitflags! {
+    struct AutoFlags: u16 {
+        const NONE = 0b0;
+        const AUTO_CONFIGURE = 0b0000_0000_0000_0001;
+        const AUTO_CHUNK = 0b0000_0000_0000_0010;
+    }
+}
+
 /// The default texture dimensions in chunks.
 const DEFAULT_TEXTURE_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
 /// The default chunk dimensions in tiles.
 const DEFAULT_CHUNK_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
 /// The default z layers.
 const DEFAULT_Z_LAYERS: usize = 5;
-/// The default auto configure setting.
-const DEFAULT_AUTO_CONFIGURE: bool = true;
+/// The default auto flags.
+const DEFAULT_AUTO_FLAGS: AutoFlags = AutoFlags::NONE;
+
+impl Default for AutoFlags {
+    fn default() -> Self {
+        DEFAULT_AUTO_FLAGS
+    }
+}
 
 /// A Tilemap which maintains chunks and its tiles within.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -203,8 +220,8 @@ pub struct Tilemap {
     /// The layers that are currently set in the tilemap in order from lowest
     /// to heighest.
     layers: Vec<Option<LayerKind>>,
-    /// A flag if auto configure is enabled or not.
-    auto_configure: bool,
+    /// Auto flags used for different automated features.
+    auto_flags: AutoFlags,
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The handle of the texture atlas.
     texture_atlas: Handle<TextureAtlas>,
@@ -289,8 +306,7 @@ pub struct TilemapBuilder {
     /// If the tilemap currently has a sprite sheet handle on it or not.
     texture_atlas: Option<Handle<TextureAtlas>>,
     /// True if this tilemap will automatically configure.
-    auto_configure: bool,
-    // auto_tile: Option<HashMap<usize, AutoTileFlags>>,
+    auto_flags: AutoFlags,
 }
 
 impl Default for TilemapBuilder {
@@ -302,7 +318,7 @@ impl Default for TilemapBuilder {
             z_layers: DEFAULT_Z_LAYERS,
             layers: None,
             texture_atlas: None,
-            auto_configure: DEFAULT_AUTO_CONFIGURE,
+            auto_flags: AutoFlags::NONE,
             // auto_tile: None,
         }
     }
@@ -451,7 +467,7 @@ impl TilemapBuilder {
     /// This is useful and meant as a shortcut if you want the tilemap to
     /// figure out the size of the textures and optimal chunk sizes on its own.
     ///
-    /// By default this is set to true.
+    /// By default this is not enabled.
     ///
     /// # Examples
     /// ```
@@ -460,8 +476,29 @@ impl TilemapBuilder {
     ///
     /// let builder = TilemapBuilder::new().auto_configure(false);
     /// ```
-    pub fn auto_configure(mut self, b: bool) -> TilemapBuilder {
-        self.auto_configure = b;
+    pub fn auto_configure(mut self) -> TilemapBuilder {
+        self.auto_flags.toggle(AutoFlags::AUTO_CONFIGURE);
+        self
+    }
+
+    /// Sets if you want the tilemap to automatically spawn new chunks.
+    /// 
+    /// This is useful if the tilemap map is meant to be endless or nearly 
+    /// endless with a defined size. Otherwise, it probably is better to spawn
+    /// chunks directly or creating a system that can automatically spawn and 
+    /// despawn them given context.
+    /// 
+    /// By default this is not enabled.
+    /// 
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::prelude::*;
+    /// use bevy::prelude::*;
+    /// 
+    /// let builder = TilemapBuilder::new().auto_configure(false);
+    /// ```
+    pub fn auto_chunk(mut self) -> Self {
+        self.auto_flags.toggle(AutoFlags::AUTO_CHUNK);
         self
     }
 
@@ -513,7 +550,7 @@ impl TilemapBuilder {
             chunk_dimensions: self.chunk_dimensions,
             tile_dimensions: self.tile_dimensions,
             layers: vec![None; z_layers],
-            auto_configure: self.auto_configure,
+            auto_flags: self.auto_flags,
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
@@ -541,7 +578,7 @@ impl Default for Tilemap {
             chunk_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
             tile_dimensions: DEFAULT_CHUNK_DIMENSIONS,
             layers: vec![None; DEFAULT_Z_LAYERS],
-            auto_configure: DEFAULT_AUTO_CONFIGURE,
+            auto_flags: AutoFlags::NONE,
             texture_atlas: Handle::default(),
             chunks: Default::default(),
             entities: Default::default(),
@@ -622,7 +659,6 @@ impl Tilemap {
     ///
     /// tilemap.set_texture_atlas(texture_atlas_handle);
     /// ```
-
     pub fn set_texture_atlas(&mut self, handle: Handle<TextureAtlas>) {
         self.texture_atlas = handle;
     }
@@ -1135,10 +1171,17 @@ impl Tilemap {
             // `FnOnce`.
             let layers = self.layers.clone();
             let chunk_dimensions = self.chunk_dimensions;
-            let chunk = self
+            let chunk = if self.auto_flags.contains(AutoFlags::AUTO_CHUNK) {
+                self
                 .chunks
                 .entry(point)
-                .or_insert_with(|| Chunk::new(point, &layers, chunk_dimensions));
+                .or_insert_with(|| Chunk::new(point, &layers, chunk_dimensions))
+            } else {
+                match self.chunks.get_mut(&point) {
+                    Some(c) => c,
+                    None => return Err(ErrorKind::MissingChunk.into()),
+                }
+            };
 
             let mut layers = HashMap::default();
             for tile in tiles.into_iter() {
@@ -1484,7 +1527,7 @@ pub(crate) fn tilemap_auto_configure(
     mut query: Query<&mut Tilemap>,
 ) {
     for mut map in query.iter_mut() {
-        if !map.auto_configure {
+        if !map.auto_flags.contains(AutoFlags::AUTO_CONFIGURE) {
             return;
         }
 
@@ -1523,7 +1566,7 @@ pub(crate) fn tilemap_auto_configure(
 
         map.tile_dimensions = tile_dimensions;
         map.chunk_dimensions = chunk_dimensions;
-        map.auto_configure = false;
+        map.auto_flags.toggle(AutoFlags::AUTO_CONFIGURE);
     }
 }
 
