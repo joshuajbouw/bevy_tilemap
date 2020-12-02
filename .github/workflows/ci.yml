@@ -120,6 +120,12 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           override: true
           components: rustfmt, clippy
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            target
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
       - name: install alsa
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
       - name: install udev
