@@ -1115,6 +1115,8 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
+    /// tilemap.insert_chunk((0, 0)).unwrap();
+    ///
     /// let mut tiles = vec![
     ///     Tile::new((1, 1), 0),
     ///     Tile::new((2, 2), 0),
@@ -1226,6 +1228,8 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
+    /// tilemap.insert_chunk((0, 0)).unwrap();
+    ///
     /// let point = (9, 3);
     /// let sprite_index = 3;
     /// let tile = Tile::new(point, sprite_index);
@@ -1253,6 +1257,8 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
+    /// tilemap.insert_chunk((0, 0)).unwrap();
+    ///
     /// let mut tiles = vec![
     ///     Tile::new((1, 1), 0),
     ///     Tile::new((2, 2), 0),
@@ -1308,6 +1314,8 @@ impl Tilemap {
     /// #
     /// # let mut tilemap = Tilemap::new(texture_atlas_handle);
     /// #
+    /// tilemap.insert_chunk((0, 0)).unwrap();
+    ///
     /// let point = (9, 3);
     /// let sprite_index = 3;
     /// let tile = Tile::new(point, sprite_index);
