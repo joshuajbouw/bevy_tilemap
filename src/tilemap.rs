@@ -185,6 +185,7 @@ enum ChunkEvent {
 }
 
 bitflags! {
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     struct AutoFlags: u16 {
         const NONE = 0b0;
         const AUTO_CONFIGURE = 0b0000_0000_0000_0001;
