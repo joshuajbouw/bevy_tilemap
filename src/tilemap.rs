@@ -367,7 +367,7 @@ impl TilemapBuilder {
     /// ```
     /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = TilemapBuilder::new().topology(GridTopology::HexRows);
+    /// let builder = TilemapBuilder::new().topology(GridTopology::HexY);
     /// ```
     pub fn topology(mut self, topology: GridTopology) -> TilemapBuilder {
         self.topology = topology;
