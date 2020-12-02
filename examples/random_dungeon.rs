@@ -121,7 +121,7 @@ fn build_random_dungeon(
     for mut map in query.iter_mut() {
         // Since we did not `toggle_auto_tile` in the builder, we must manually
         // insert a chunk. This will then communicate with us if we accidentally
-        // insert a tile in a chunk we may not want. Also, we only expect to 
+        // insert a tile in a chunk we may not want. Also, we only expect to
         // have just 1 chunk.
         map.insert_chunk((0, 0)).unwrap();
 

@@ -132,7 +132,7 @@ impl Display for ErrorKind {
                 f,
                 "texture atlas is missing, must use `TilemapBuilder::texture_atlas`"
             ),
-            MissingChunk => write!(f, "the chunk does not exist, try `add_chunk` first")
+            MissingChunk => write!(f, "the chunk does not exist, try `add_chunk` first"),
         }
     }
 }
@@ -482,19 +482,19 @@ impl TilemapBuilder {
     }
 
     /// Sets if you want the tilemap to automatically spawn new chunks.
-    /// 
-    /// This is useful if the tilemap map is meant to be endless or nearly 
+    ///
+    /// This is useful if the tilemap map is meant to be endless or nearly
     /// endless with a defined size. Otherwise, it probably is better to spawn
-    /// chunks directly or creating a system that can automatically spawn and 
+    /// chunks directly or creating a system that can automatically spawn and
     /// despawn them given context.
-    /// 
+    ///
     /// By default this is not enabled.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use bevy_tilemap::prelude::*;
     /// use bevy::prelude::*;
-    /// 
+    ///
     /// let builder = TilemapBuilder::new().auto_configure(false);
     /// ```
     pub fn auto_chunk(mut self) -> Self {
@@ -1172,10 +1172,9 @@ impl Tilemap {
             let layers = self.layers.clone();
             let chunk_dimensions = self.chunk_dimensions;
             let chunk = if self.auto_flags.contains(AutoFlags::AUTO_CHUNK) {
-                self
-                .chunks
-                .entry(point)
-                .or_insert_with(|| Chunk::new(point, &layers, chunk_dimensions))
+                self.chunks
+                    .entry(point)
+                    .or_insert_with(|| Chunk::new(point, &layers, chunk_dimensions))
             } else {
                 match self.chunks.get_mut(&point) {
                     Some(c) => c,
