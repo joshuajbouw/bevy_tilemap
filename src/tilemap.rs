@@ -475,7 +475,7 @@ impl TilemapBuilder {
     /// use bevy_tilemap::prelude::*;
     /// use bevy::prelude::*;
     ///
-    /// let builder = TilemapBuilder::new().auto_configure(false);
+    /// let builder = TilemapBuilder::new().auto_configure();
     /// ```
     pub fn auto_configure(mut self) -> TilemapBuilder {
         self.auto_flags.toggle(AutoFlags::AUTO_CONFIGURE);
@@ -496,7 +496,7 @@ impl TilemapBuilder {
     /// use bevy_tilemap::prelude::*;
     /// use bevy::prelude::*;
     ///
-    /// let builder = TilemapBuilder::new().auto_configure(false);
+    /// let builder = TilemapBuilder::new().auto_chunk();
     /// ```
     pub fn auto_chunk(mut self) -> Self {
         self.auto_flags.toggle(AutoFlags::AUTO_CHUNK);
