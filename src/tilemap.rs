@@ -99,6 +99,7 @@ use crate::{
     entity::{ChunkComponents, DirtyLayer},
     lib::*,
     mesh::ChunkMesh,
+    prelude::GridTopology,
     tile::{RawTile, Tile},
 };
 
@@ -208,30 +209,6 @@ impl Default for AutoFlags {
     }
 }
 
-/// Topology of the tilemap grid (square or hex)
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum GridTopology {
-    /// Square grid
-    Square,
-    /// Hex grid with rows offset to the right (hexes with pointy top)
-    HexYRight,
-    /// Hex grid with rows offset to the left (hexes with pointy top)
-    HexYLeft,
-    /// Hex grid with columns offset to the right (hexes with flat top)
-    HexXRight,
-    /// Hex grid with columns offset to the left (hexes with flat top)
-    HexXLeft,
-    /// Hex grid with offset on even rows (hexes with pointy top)
-    HexEvenRows,
-    /// Hex grid with offset on odd rows (hexes with pointy top)
-    HexOddRows,
-    /// Hex grid with offset on even columns (hexes with flat top)
-    HexEvenCols,
-    /// Hex grid with offset on odd columns (hexes with flat top)
-    HexOddCols,
-}
-
 /// A Tilemap which maintains chunks and its tiles within.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
@@ -245,7 +222,7 @@ pub struct Tilemap {
     /// A tiles dimensions in pixels.
     tile_dimensions: Dimension2,
     /// The layers that are currently set in the tilemap in order from lowest
-    /// to heighest.
+    /// to highest.
     layers: Vec<Option<LayerKind>>,
     /// Auto flags used for different automated features.
     auto_flags: AutoFlags,
@@ -1682,6 +1659,7 @@ pub(crate) fn tilemap_system(
             let chunk_dimensions = map.chunk_dimensions;
             let tile_dimensions = map.tile_dimensions;
             let texture_atlas = map.texture_atlas().clone_weak();
+            let pipeline_handle = map.topology.to_pipeline_handle();
             let chunk = map.chunks.get_mut(&point).expect("`Chunk` is missing.");
             let mut entities = Vec::with_capacity(capacity);
             for z in 0..layers_len {
@@ -1705,6 +1683,24 @@ pub(crate) fn tilemap_system(
                         * chunk_dimensions.height as i32) as f32,
                     z as f32,
                 );
+                let pipeline = RenderPipeline::specialized(
+                    pipeline_handle.clone_weak(),
+                    PipelineSpecialization {
+                        dynamic_bindings: vec![
+                            // Transform
+                            DynamicBinding {
+                                bind_group: 2,
+                                binding: 0,
+                            },
+                            // Chunk
+                            DynamicBinding {
+                                bind_group: 2,
+                                binding: 1,
+                            },
+                        ],
+                        ..Default::default()
+                    },
+                );
                 let entity = commands
                     .spawn(ChunkComponents {
                         point,
@@ -1712,6 +1708,7 @@ pub(crate) fn tilemap_system(
                         chunk_dimensions: chunk_dimensions.into(),
                         mesh: mesh_handle.clone_weak(),
                         transform: Transform::from_translation(translation),
+                        render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),
                         ..Default::default()
                     })
                     .current_entity()

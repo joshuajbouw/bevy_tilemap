@@ -46,9 +46,10 @@ pub mod v0 {
         chunk::LayerKind,
         default_plugin::TilemapDefaultPlugins,
         entity::TilemapComponents,
+        render::GridTopology,
         sprite_sheet::prelude::v0::*,
         tile::Tile,
-        tilemap::{GridTopology, Tilemap, TilemapBuilder},
+        tilemap::{Tilemap, TilemapBuilder},
         Tilemap2DPlugin,
     };
 }
