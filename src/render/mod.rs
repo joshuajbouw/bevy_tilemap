@@ -104,9 +104,9 @@ build_chunk_pipeline!(
 pub enum GridTopology {
     /// Square grid
     Square,
-    /// Hex grid with rows offset to the right (hexes with pointy top).
+    /// Hex grid with rows offset (hexes with pointy top).
     HexY,
-    /// Hex grid with columns offset to the right (hexes with flat top).
+    /// Hex grid with columns offset (hexes with flat top).
     HexX,
     /// Hex grid with offset on even rows (hexes with pointy top).
     HexEvenRows,

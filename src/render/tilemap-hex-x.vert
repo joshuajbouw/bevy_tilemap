@@ -31,10 +31,6 @@ layout(set = 2, binding = 0) uniform Transform {
     mat4 ChunkTransform;
 };
 
-layout(set = 2, binding = 1) uniform ChunkDimensions {
-    vec3 Dimensions;
-};
-
 void main() {
     Rect sprite_rect = Textures[int(Vertex_Tile_Index)];
     vec2 sprite_dimensions = sprite_rect.end - sprite_rect.begin;
@@ -42,25 +38,22 @@ void main() {
     int local_index = gl_VertexIndex % 4;
 
     vec3 vertex_position = vec3(
-        Vertex_Position.xy * sprite_dimensions * Dimensions.xy,
+        Vertex_Position.xy * sprite_dimensions,
         0.0
     );
 
     // get the current col; use the index to disambiguate coordinates
-    int col = int((Vertex_Position.x + 0.501) * Dimensions.x);
+    int col = int(floor(Vertex_Position.x + 0.01));
     if (local_index == 0 || local_index == 1) {
         col += 1;
     }
 
-    // col was relative to y=0, ccol is relative to center
-    float ccol = float(col) - 0.5 - Dimensions.x * 0.5;
-
     // offset cols
     float yoffset = floor(0.5 * sprite_dimensions.y);
-    vertex_position.y += yoffset * ccol;
+    vertex_position.y += yoffset * (float(col) - 0.5);
 
     // compact (remove gaps between cols)
-    vertex_position.x -= ccol * ceil(0.25 * sprite_dimensions.x);
+    vertex_position.x -= (float(col) - 0.5) * ceil(0.25 * sprite_dimensions.x);
 
     vec2 atlas_positions[4] = vec2[](
         vec2(sprite_rect.begin.x, sprite_rect.end.y),
