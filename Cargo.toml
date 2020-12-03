@@ -14,6 +14,7 @@ exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 
 [patch.crates-io]
 bevy = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
 
 [package.metadata.docs.rs]
 features = ["serialize", "types"]
