@@ -11,8 +11,6 @@
 //! default plugins for the library.
 //! * [`bevy_tilemap::entity`]::[`TilemapComponents`], the components
 //! for spawning with a Tilemap.
-//! * [`bevy_tilemap::sprite_sheet`]::{[`SpriteSheet`], [`SpriteSheetBuilder`]},
-//! a sprite sheet and a builder both used to construct sprite sheets.
 //! * [`bevy_tilemap::tile`]::[`Tile`], a sprite tile which
 //! holds minimal amount of data for small data sizes.
 //! * [`bevy_tilemap::tilemap`]::{[`Tilemap`], [`TilemapBuilder`]},
@@ -31,7 +29,6 @@
 //! [`bevy_tilemap::default_plugin`]: crate::default_plugin
 //! [`bevy_tilemap::chunk`]: crate::chunk
 //! [`bevy_tilemap::entity`]: crate::entity
-//! [`bevy_tilemap::sprite_sheet`]: crate::sprite_sheet
 //! [`bevy_tilemap::tile`]: crate::tile
 //! [`bevy_tilemap::tilemap`]: crate::tilemap
 //! [`bevy_tilemap::dimension`]: crate::dimension

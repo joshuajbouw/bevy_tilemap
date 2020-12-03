@@ -16,6 +16,9 @@ exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 features = ["serialize", "types"]
 default-target = "x86_64-pc-windows-msvc"
 
+[patch.crates-io]
+bevy = { git = "https://github.com/joshuajbouw/bevy.git", branch = "v0.3.0-texture_atlas_patch" }
+
 [features]
 serialize = ["bevy_tilemap_types/serialize", "serde"]
 types = []
@@ -25,7 +28,6 @@ members = ["library/*"]
 
 [dependencies]
 bevy = "0.3"
-bevy_tilemap_spritesheet = { path = "library/spritesheet" }
 bevy_tilemap_types = { path = "library/types" }
 bitflags = "1.2.1"
 serde = { version = "1.0", features = ["derive"], optional = true }

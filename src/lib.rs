@@ -75,12 +75,9 @@
     clippy::unwrap_in_result
 )]
 
-pub extern crate bevy_tilemap_spritesheet;
 #[cfg(feature = "types")]
 pub extern crate bevy_tilemap_types;
 
-#[doc(inline)]
-pub use bevy_tilemap_spritesheet as sprite_sheet;
 #[cfg(feature = "types")]
 #[doc(inline)]
 pub use bevy_tilemap_types::dimension;
