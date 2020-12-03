@@ -10,7 +10,7 @@
     <a href="https://github.com/joshuajbouw/bevy_tilemap" alt="github">
         <img src="https://img.shields.io/badge/github-joshuajbouw/bevy__tilemap-8da0cb?style=for-the-badge&logo=github" height="20"/></a>
     <a href="https://blog.rust-lang.org/2020/04/23/Rust-1.43.0.html" alt="rust msrv">
-        <img src="https://img.shields.io/badge/MSRV-%3E%3D%201.43-green?style=for-the-badge&logo=rust" height="20"/></a>
+        <img src="https://img.shields.io/badge/MSRV-^1.43.0-blue?style=for-the-badge&logo=rust" height="20"/></a>
     <a href="https://crates.io/crates/bevy_tilemap" alt="crates.io">
         <img src="https://img.shields.io/crates/v/bevy_tilemap.svg?style=for-the-badge" height="20"/></a>
     <a href="https://docs.rs/bevy_tilemap" alt="docs.rs">

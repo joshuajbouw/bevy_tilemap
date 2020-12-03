@@ -9,7 +9,7 @@ use bevy::{
 use bevy_tilemap::prelude::*;
 use rand::Rng;
 
-const DWARF_COUNT: usize = 10000;
+const DWARF_COUNT: usize = 10_000;
 
 #[derive(Default, Clone)]
 struct TileSpriteHandles {
