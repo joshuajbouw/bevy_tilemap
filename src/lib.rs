@@ -113,9 +113,10 @@ impl Plugin for Tilemap2DPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
             .add_asset::<Chunk>()
-            .add_system_to_stage("post_update", crate::tilemap::tilemap_auto_configure)
-            .add_system_to_stage("post_update", crate::tilemap::tilemap_system)
-            .add_system_to_stage("post_update", crate::chunk::chunk_update_system);
+            .add_stage_after("update", "tilemaps")
+            .add_system_to_stage("tilemaps", crate::tilemap::tilemap_auto_configure)
+            .add_system_to_stage("tilemaps", crate::tilemap::tilemap_system)
+            .add_system_to_stage("tilemaps", crate::chunk::chunk_update_system);
 
         let resources = app.resources_mut();
         let mut render_graph = resources
