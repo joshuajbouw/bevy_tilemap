@@ -137,8 +137,10 @@ fn build_random_dungeon(
 
         // Now we fill the entire space with floors.
         let mut tiles = Vec::new();
-        for y in (-chunk_height / 2)..(chunk_height / 2) {
-            for x in (-chunk_width / 2)..(chunk_width / 2) {
+        for y in 0..chunk_height {
+            for x in 0..chunk_width {
+                let y = y - chunk_height / 2;
+                let x = x - chunk_width / 2;
                 // By default tile sets the Z order at 0. Lower means that tile
                 // will render lower than others. 0 is the absolute bottom
                 // level which is perfect for backgrounds.

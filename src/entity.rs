@@ -62,11 +62,6 @@ impl Default for ChunkComponents {
                         bind_group: 2,
                         binding: 0,
                     },
-                    // Chunk
-                    DynamicBinding {
-                        bind_group: 2,
-                        binding: 1,
-                    },
                 ],
                 ..Default::default()
             },
