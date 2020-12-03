@@ -98,6 +98,11 @@ mod mesh;
 pub mod prelude;
 /// Files and helpers for rendering.
 pub mod render;
+/// The stages for the tilemap in the bevy app.
+pub mod stage {
+    /// The tilemap stage, set to run before `POST_UPDATE` stage.
+    pub const TILEMAP: &str = "tilemap";
+}
 /// Tile traits to implement for a custom tile.
 pub mod tile;
 /// Map traits to implement for a custom map and a basic struct for use.
@@ -112,12 +117,16 @@ pub struct Tilemap2DPlugin;
 impl Plugin for Tilemap2DPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
+            .add_stage_before(bevy::app::stage::POST_UPDATE, stage::TILEMAP)
             .add_system_to_stage(
-                "post_update",
+                stage::TILEMAP,
                 crate::tilemap::tilemap_auto_configure.system(),
             )
-            .add_system_to_stage("post_update", crate::tilemap::tilemap_system.system())
-            .add_system_to_stage("post_update", crate::chunk::chunk_update_system.system());
+            .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap_system.system())
+            .add_system_to_stage(
+                bevy::render::stage::DRAW,
+                crate::chunk::chunk_update_system.system(),
+            );
 
         let resources = app.resources_mut();
         let mut render_graph = resources
