@@ -27,10 +27,10 @@ impl From<&ChunkMesh> for Mesh {
         let mut vertices = Vec::with_capacity((chunk_width * chunk_height) as usize * 4);
         for y in 0..chunk_height {
             for x in 0..chunk_width {
-                let y0 = y as f32 / chunk_height as f32 - 0.5;
-                let y1 = (y + 1) as f32 / chunk_height as f32 - 0.5;
-                let x0 = x as f32 / chunk_width as f32 - 0.5;
-                let x1 = (x + 1) as f32 / chunk_width as f32 - 0.5;
+                let y0 = y as f32 - chunk_height as f32 / 2.0;
+                let y1 = (y + 1) as f32 - chunk_height as f32 / 2.0;
+                let x0 = x as f32 - chunk_width as f32 / 2.0;
+                let x1 = (x + 1) as f32 - chunk_width as f32 / 2.0;
 
                 vertices.push([x0, y0, 0.0]);
                 vertices.push([x0, y1, 0.0]);
