@@ -1150,7 +1150,7 @@ impl Tilemap {
 
             let tile_point = Point2::new(
                 global_tile_point.x - (width * chunk_point.x) + (width / 2),
-                global_tile_point.y - (height * chunk_point.y) + (width / 2),
+                global_tile_point.y - (height * chunk_point.y) + (height / 2),
             );
 
             let chunk_tile: Tile = Tile {
