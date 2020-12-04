@@ -99,6 +99,7 @@ use crate::{
     entity::{ChunkComponents, DirtyLayer},
     lib::*,
     mesh::ChunkMesh,
+    prelude::GridTopology,
     tile::{RawTile, Tile},
 };
 
@@ -212,6 +213,8 @@ impl Default for AutoFlags {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct Tilemap {
+    /// The type of grid to use.
+    topology: GridTopology,
     /// An optional field which can contain the tilemaps dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// A chunks dimensions in tiles.
@@ -219,7 +222,7 @@ pub struct Tilemap {
     /// A tiles dimensions in pixels.
     tile_dimensions: Dimension2,
     /// The layers that are currently set in the tilemap in order from lowest
-    /// to heighest.
+    /// to highest.
     layers: Vec<Option<LayerKind>>,
     /// Auto flags used for different automated features.
     auto_flags: AutoFlags,
@@ -294,6 +297,8 @@ pub struct Tilemap {
 /// [`TilemapResult`]: TilemapResult
 #[derive(Clone, PartialEq, Debug)]
 pub struct TilemapBuilder {
+    /// The type of grid to use.
+    topology: GridTopology,
     /// An optional field which can contain the tilemaps dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// The chunks dimensions in tiles.
@@ -313,6 +318,7 @@ pub struct TilemapBuilder {
 impl Default for TilemapBuilder {
     fn default() -> Self {
         TilemapBuilder {
+            topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
             tile_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
@@ -351,6 +357,21 @@ impl TilemapBuilder {
     /// ```
     pub fn new() -> TilemapBuilder {
         TilemapBuilder::default()
+    }
+
+    /// Sets the topology of the tilemap.
+    ///
+    /// The default is a square grid. Use this if you want a hexagonal grid instead.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::prelude::*;
+    ///
+    /// let builder = TilemapBuilder::new().topology(GridTopology::HexY);
+    /// ```
+    pub fn topology(mut self, topology: GridTopology) -> TilemapBuilder {
+        self.topology = topology;
+        self
     }
 
     /// Sets the dimensions of the tilemap.
@@ -547,6 +568,7 @@ impl TilemapBuilder {
         };
 
         let mut tilemap = Tilemap {
+            topology: self.topology,
             dimensions: self.dimensions,
             chunk_dimensions: self.chunk_dimensions,
             tile_dimensions: self.tile_dimensions,
@@ -575,6 +597,7 @@ impl TypeUuid for Tilemap {
 impl Default for Tilemap {
     fn default() -> Self {
         Tilemap {
+            topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
             tile_dimensions: DEFAULT_CHUNK_DIMENSIONS,
@@ -1527,6 +1550,11 @@ impl Tilemap {
     pub(crate) fn get_chunk(&self, point: &Point2) -> Option<&Chunk> {
         self.chunks.get(point)
     }
+
+    /// The topology of the tilemap grid.
+    pub fn topology(&self) -> GridTopology {
+        self.topology
+    }
 }
 
 /// Automatically configures all tilemaps that need to be configured.
@@ -1631,6 +1659,7 @@ pub(crate) fn tilemap_system(
             let chunk_dimensions = map.chunk_dimensions;
             let tile_dimensions = map.tile_dimensions;
             let texture_atlas = map.texture_atlas().clone_weak();
+            let pipeline_handle = map.topology.to_pipeline_handle();
             let chunk = map.chunks.get_mut(&point).expect("`Chunk` is missing.");
             let mut entities = Vec::with_capacity(capacity);
             for z in 0..layers_len {
@@ -1654,6 +1683,24 @@ pub(crate) fn tilemap_system(
                         * chunk_dimensions.height as i32) as f32,
                     z as f32,
                 );
+                let pipeline = RenderPipeline::specialized(
+                    pipeline_handle.clone_weak(),
+                    PipelineSpecialization {
+                        dynamic_bindings: vec![
+                            // Transform
+                            DynamicBinding {
+                                bind_group: 2,
+                                binding: 0,
+                            },
+                            // Chunk
+                            DynamicBinding {
+                                bind_group: 2,
+                                binding: 1,
+                            },
+                        ],
+                        ..Default::default()
+                    },
+                );
                 let entity = commands
                     .spawn(ChunkComponents {
                         point,
@@ -1661,6 +1708,7 @@ pub(crate) fn tilemap_system(
                         chunk_dimensions: chunk_dimensions.into(),
                         mesh: mesh_handle.clone_weak(),
                         transform: Transform::from_translation(translation),
+                        render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),
                         ..Default::default()
                     })
                     .current_entity()

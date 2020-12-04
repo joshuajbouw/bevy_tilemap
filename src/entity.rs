@@ -1,4 +1,4 @@
-use crate::{lib::*, render::CHUNK_PIPELINE_HANDLE, Tilemap};
+use crate::{lib::*, render::CHUNK_SQUARE_PIPELINE, Tilemap};
 
 /// A component that stores the dimensions of the Chunk for the renderer.
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, RenderResources, RenderResource)]
@@ -54,7 +54,7 @@ pub(crate) struct ChunkComponents {
 impl Default for ChunkComponents {
     fn default() -> ChunkComponents {
         let pipeline = RenderPipeline::specialized(
-            CHUNK_PIPELINE_HANDLE,
+            CHUNK_SQUARE_PIPELINE,
             PipelineSpecialization {
                 dynamic_bindings: vec![
                     // Transform
