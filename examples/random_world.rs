@@ -1,4 +1,6 @@
-use bevy::{asset::LoadState, window::WindowMode, prelude::*, sprite::TextureAtlasBuilder,  utils::HashSet};
+use bevy::{
+    asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, utils::HashSet, window::WindowMode,
+};
 use bevy_tilemap::prelude::*;
 use rand::Rng;
 
@@ -211,7 +213,6 @@ fn build_random_world(
         map.add_layer_with_kind(LayerKind::Sparse, 1).unwrap();
         // Create a sparse layer for our player.
         map.add_layer_with_kind(LayerKind::Sparse, 2).unwrap();
-        
 
         // Now lets add in a dwarf friend!
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/hex_dwarf.png");
@@ -307,7 +308,6 @@ fn character_movement(
 
                         _ => {}
                     }
-                    
                 } else {
                     match key {
                         W | Numpad8 | Up | E | Numpad9 => {
