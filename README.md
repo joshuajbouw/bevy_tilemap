@@ -9,8 +9,6 @@
 <p align="center">
     <a href="https://github.com/joshuajbouw/bevy_tilemap" alt="github">
         <img src="https://img.shields.io/badge/github-joshuajbouw/bevy__tilemap-8da0cb?style=for-the-badge&logo=github" height="20"/></a>
-    <a href="https://blog.rust-lang.org/2020/04/23/Rust-1.43.0.html" alt="rust msrv">
-        <img src="https://img.shields.io/badge/MSRV-^1.43.0-blue?style=for-the-badge&logo=rust" height="20"/></a>
     <a href="https://crates.io/crates/bevy_tilemap" alt="crates.io">
         <img src="https://img.shields.io/crates/v/bevy_tilemap.svg?style=for-the-badge" height="20"/></a>
     <a href="https://docs.rs/bevy_tilemap" alt="docs.rs">
@@ -112,8 +110,8 @@ work together and are aware of each other.
 
 # Building
 
-Bevy Tilemap requires Rust 1.43 or later to build as it is the minimum supported
-Rust version or MSRV.
+`bevy_tilemap` is only guranteed to work from stable Rust toolchain and up. This
+is to be inline with the rest of Bevy engine.
 
 Once you have a development environment, Bevy Tilemap can be fetched using git:
 
