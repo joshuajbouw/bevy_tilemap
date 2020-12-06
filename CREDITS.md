@@ -6,6 +6,4 @@
 * Asesprite: for pixel art
 * Tilesetter: for wangs and blobs
 ## Sprites
-* dwarf_idle.png © Joshua J. Bouw 2020, used with permission.
-* tile_floor.png © Joshua J. Bouw 2020, used with permission.
-* tile_wall.png © Joshua J. Bouw 2020, used with permission.
+* All sprites in assets/textures © Joshua J. Bouw 2020, used with permission for all forks and derivatives that are not commercial.
