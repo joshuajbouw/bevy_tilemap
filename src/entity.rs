@@ -1,29 +1,5 @@
 use crate::{lib::*, render::CHUNK_SQUARE_PIPELINE, Tilemap};
 
-/// A component that stores the dimensions of the Chunk for the renderer.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, RenderResources, RenderResource)]
-#[render_resources(from_self)]
-pub(crate) struct ChunkDimensions {
-    /// The chunk dimensions.
-    pub dimensions: Vec2,
-}
-
-unsafe impl Byteable for ChunkDimensions {}
-
-impl From<Dimension2> for ChunkDimensions {
-    fn from(dimensions: Dimension2) -> ChunkDimensions {
-        ChunkDimensions {
-            dimensions: dimensions.into(),
-        }
-    }
-}
-
-impl From<Vec2> for ChunkDimensions {
-    fn from(vec: Vec2) -> ChunkDimensions {
-        ChunkDimensions { dimensions: vec }
-    }
-}
-
 /// A component that is used as a flag for dirty chunks that need updating.
 pub(crate) struct DirtyLayer(pub(crate) usize);
 
@@ -34,8 +10,6 @@ pub(crate) struct ChunkComponents {
     pub(crate) point: Point2,
     /// The handle for a TextureAtlas which contains multiple textures.
     pub(crate) texture_atlas: Handle<TextureAtlas>,
-    /// The chunk's dimensions which are passed to the renderer.
-    pub(crate) chunk_dimensions: ChunkDimensions,
     /// A component that indicates how to draw a component.
     pub(crate) draw: Draw,
     /// The pipeline for the renderer.
@@ -69,7 +43,6 @@ impl Default for ChunkComponents {
         ChunkComponents {
             point: Default::default(),
             texture_atlas: Default::default(),
-            chunk_dimensions: Default::default(),
             mesh: Default::default(),
             transform: Default::default(),
             render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),

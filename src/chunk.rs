@@ -55,7 +55,7 @@
 //! tilemap.add_layer_with_kind(LayerKind::Sparse, 1);
 //! ```
 use crate::{
-    entity::{ChunkDimensions, DirtyLayer},
+    entity::DirtyLayer,
     lib::*,
     mesh::ChunkMesh,
     tile::RawTile,
@@ -354,12 +354,11 @@ impl Chunk {
     /// the renderer using the given dimensions.
     ///
     /// Easier to pass in the dimensions opposed to storing it everywhere.
-    pub(crate) fn tiles_to_renderer_parts<D: Into<Dimension2>>(
+    pub(crate) fn tiles_to_renderer_parts(
         &self,
         z: usize,
-        dimensions: D,
+        dimensions: Dimension2,
     ) -> Option<(Vec<f32>, Vec<[f32; 4]>)> {
-        let dimensions = dimensions.into();
         let area = dimensions.area() as usize;
         self.sprite_layers.get(z).and_then(|o| {
             o.as_ref()
@@ -377,19 +376,18 @@ pub(crate) fn chunk_update_system(
     chunk_query: Query<(
         Entity,
         &Parent,
-        &ChunkDimensions,
         &Point2,
         &Handle<Mesh>,
         &DirtyLayer,
     )>,
 ) {
-    for (entity, parent, dimensions, point, mesh_handle, dirty_layer) in chunk_query.iter() {
+    for (entity, parent, point, mesh_handle, dirty_layer) in chunk_query.iter() {
         let tilemap = map_query.get(**parent).expect("`Tilemap` missing");
         let chunk = tilemap.get_chunk(point).expect("`Chunk` is missing");
         let mesh = meshes.get_mut(mesh_handle).expect("`Mesh` is missing");
 
         let (indexes, colors) = chunk
-            .tiles_to_renderer_parts(dirty_layer.0, dimensions.dimensions)
+            .tiles_to_renderer_parts(dirty_layer.0, tilemap.chunk_dimensions())
             .expect("Tiles missing.");
 
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes.into());

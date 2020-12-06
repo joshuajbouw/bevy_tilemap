@@ -1,4 +1,4 @@
-use crate::{entity::ChunkDimensions, lib::*};
+use crate::lib::*;
 
 macro_rules! build_chunk_pipeline {
     ($handle: ident, $id: expr, $name: ident, $file: expr) => {
@@ -134,12 +134,6 @@ impl GridTopology {
     }
 }
 
-/// Node names.
-mod node {
-    /// Chunk dimensions node name.
-    pub const CHUNK_DIMENSIONS: &str = "chunk_dimensions";
-}
-
 /// A trait which implements the tilemap graph to a render graph.
 pub trait TilemapRenderGraphBuilder {
     /// Adds the tilemaps render graph.
@@ -148,10 +142,6 @@ pub trait TilemapRenderGraphBuilder {
 
 impl TilemapRenderGraphBuilder for RenderGraph {
     fn add_tilemap_graph(&mut self, resources: &Resources) -> &mut Self {
-        self.add_system_node(
-            node::CHUNK_DIMENSIONS,
-            RenderResourcesNode::<ChunkDimensions>::new(true),
-        );
         let mut pipelines = resources
             .get_mut::<Assets<PipelineDescriptor>>()
             .expect("`PipelineDescriptor` is missing.");
