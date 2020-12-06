@@ -8,7 +8,7 @@ brief as I can as they are meant to really just streamline the Pull Request proc
 1. [Process](#process)
     1. [Questions](#questions?)
     1. [How to Request New Features](#how-to-request-new-features)
-    1. [How to Report a Bug][#how-to-report-a-bug]
+    1. [How to Report a Bug](#how-to-report-a-bug)
     1. [Submitting a Pull Request](#submitting-a-pull-request)
 1. [Contributing Code](#contributing-code)
     1. [How to Setup the Development Environment](#how-to-setup-the-development-environment)
@@ -72,8 +72,8 @@ In-case of impending Bevy release with new features or is API breaking this will
 There may be pre-release versions tagged on this branch for others to use. 
 
 ### Style Guidelines
-All (Rust API guidelines)[https://rust-lang.github.io/api-guidelines/] do apply. Do note that every
-once in a bit, before a release, the (Rust API Guidelines checklist)[https://rust-lang.github.io/api-guidelines/checklist.html] 
+All [Rust API guidelines](https://rust-lang.github.io/api-guidelines/) do apply. Do note that every
+once in a bit, before a release, the [Rust API Guidelines checklist](https://rust-lang.github.io/api-guidelines/checklist.html) 
 will be done to ensure code quality fits. DO NOTE that this will NOT be entirely a factor in 
 approving a pull request and will only save the maintainers time before a release. Please follow as 
 a courtesy.
