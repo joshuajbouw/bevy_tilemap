@@ -1555,6 +1555,11 @@ impl Tilemap {
     pub fn topology(&self) -> GridTopology {
         self.topology
     }
+
+    /// Returns a copy of the chunk's dimensions.
+    pub(crate) fn chunk_dimensions(&self) -> Dimension2 {
+        self.chunk_dimensions
+    }
 }
 
 /// Automatically configures all tilemaps that need to be configured.
@@ -1705,7 +1710,6 @@ pub(crate) fn tilemap_system(
                     .spawn(ChunkComponents {
                         point,
                         texture_atlas: texture_atlas.clone_weak(),
-                        chunk_dimensions: chunk_dimensions.into(),
                         mesh: mesh_handle.clone_weak(),
                         transform: Transform::from_translation(translation),
                         render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),
