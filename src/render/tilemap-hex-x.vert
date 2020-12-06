@@ -61,7 +61,7 @@ void main() {
         vec2(sprite_rect.end.x, sprite_rect.begin.y),
         sprite_rect.end
     );
-    v_Uv = (atlas_positions[local_index]) / AtlasSize;
+    v_Uv = floor(atlas_positions[local_index]) / AtlasSize;
     v_Color = Vertex_Tile_Color;
     gl_Position = ViewProj * ChunkTransform * vec4(ceil(vertex_position), 1.0);
 }
