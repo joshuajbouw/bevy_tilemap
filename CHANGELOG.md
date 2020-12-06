@@ -22,6 +22,9 @@ everything into tiles.
 still accessible as normal and optional.
 * `bevy_tilemap_spritesheet` sub-crate was added.
 * Example `stress_dwarves` has been added to benchmark and stress test.
+* Various hex orientations were added (thanks @jamadazi!).
+* A hex example `random_world` was added to showcase one of the hex 
+orientations.
 
 ### Changed
 

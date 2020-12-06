@@ -38,5 +38,9 @@ name = "random_dungeon"
 path = "examples/random_dungeon.rs"
 
 [[example]]
+name = "random_world"
+path = "examples/random_world.rs"
+
+[[example]]
 name = "stress_dwarves"
 path = "examples/stress_dwarves.rs"
