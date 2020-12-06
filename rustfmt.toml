@@ -2,4 +2,4 @@ merge_imports = true
 use_field_init_shorthand = true
 reorder_imports = true
 reorder_modules = true
-newline_style = "Unix"
+# newline_style = "Unix"
