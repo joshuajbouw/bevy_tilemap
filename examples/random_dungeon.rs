@@ -227,7 +227,7 @@ fn move_sprite(
     render: &Render,
 ) {
     // We need to first remove where we were prior.
-    map.remove_tile((previous_position.x, previous_position.y), 1)
+    map.clear_tile((previous_position.x, previous_position.y), 1)
         .unwrap();
     // We then need to update where we are going!
     let tile = Tile::with_z_order(

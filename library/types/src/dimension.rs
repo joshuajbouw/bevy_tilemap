@@ -63,14 +63,24 @@ impl Dimension2 {
         self.width * self.height
     }
 
+    /// The minimum X value of this dimension.
+    pub fn x_min(&self) -> i32 {
+        -(self.width as i32) / 2
+    }
+
+    /// The minimum Y value of this dimension.
+    pub fn y_min(&self) -> i32 {
+        -(self.height as i32) / 2
+    }
+
     /// The maximum X value of this dimension.
-    pub fn x_max(&self) -> u32 {
-        self.width - 1
+    pub fn x_max(&self) -> i32 {
+        self.width as i32 / 2
     }
 
     /// The maximum Y value of this dimension.
-    pub fn y_max(&self) -> u32 {
-        self.height - 1
+    pub fn y_max(&self) -> i32 {
+        self.height as i32 / 2
     }
 
     /// Returns the center of the `Map` as a `Vec2` `Chunk` coordinate.
@@ -84,7 +94,11 @@ impl Dimension2 {
     ///
     /// If the point does not exist in the dimensions, an error is returned.
     pub fn check_point(&self, point: Point2) -> DimensionResult<()> {
-        if point.x > self.x_max() as i32 || point.y > self.y_max() as i32 {
+        if point.x > self.x_max()
+            || point.y > self.y_max()
+            || point.x < self.x_min()
+            || point.y < self.y_min()
+        {
             Err(ErrorKind::OutOfBounds.into())
         } else {
             Ok(())

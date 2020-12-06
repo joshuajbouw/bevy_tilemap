@@ -25,6 +25,12 @@ still accessible as normal and optional.
 * Various hex orientations were added (thanks @jamadazi!).
 * A hex example `random_world` was added to showcase one of the hex 
 orientations.
+* `Tilemap::get_tile` method was added to get a reference to a tile.
+* `Tilemap::get_tile_mut` method was added to get a mutable reference to a tile.
+This should make it easier to do animations.
+* `Tilemap::tile_to_chunk_point` method is now `point_to_chunk_point`.
+* `tile:RawTile` is now public API but not included in the prelude as it is not
+meant to be constructed.
 
 ### Changed
 
@@ -38,6 +44,11 @@ orientations.
 internally.
 * It is now required to specify if chunks are to be auto created in the 
 `TilemapBuilder` with `auto_chunk` method.
+* `Tilemap::remove_tile` was renamed to `clear_tile`. This makes more sense as 
+it *may* be deleted if it is a sparse tile, else it is simply cleared if it is
+dense.
+* `Tilemap::contains_chunk` method was added to check if the tilemap contains a
+chunk or not already.
 
 ## [0.2.2] - 2020-11-23
 

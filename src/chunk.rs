@@ -67,6 +67,12 @@ pub(crate) trait Layer: 'static {
     /// Sets a raw tile for a layer at an index.
     fn set_raw_tile(&mut self, index: usize, tile: RawTile);
 
+    /// Gets a tile by an index.
+    fn get_tile(&self, index: usize) -> Option<&RawTile>;
+
+    /// Gets a tile with a mutable reference by an index.
+    fn get_tile_mut(&mut self, index: usize) -> Option<&mut RawTile>;
+
     /// Takes all the tiles in the layer and returns attributes for the renderer.
     fn tiles_to_attributes(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>);
 }
@@ -95,9 +101,30 @@ impl Layer for DenseLayer {
     }
 
     fn set_raw_tile(&mut self, index: usize, tile: RawTile) {
+        println!("setting raw tile: {}", index);
         if let Some(inner_tile) = self.tiles.get_mut(index) {
             *inner_tile = tile;
         } // TODO: Else statement with an ERR log when released
+    }
+
+    fn get_tile(&self, index: usize) -> Option<&RawTile> {
+        self.tiles.get(index).and_then(|tile| {
+            if tile.color.a() == 0.0 {
+                None
+            } else {
+                Some(tile)
+            }
+        })
+    }
+
+    fn get_tile_mut(&mut self, index: usize) -> Option<&mut RawTile> {
+        self.tiles.get_mut(index).and_then(|tile| {
+            if tile.color.a() == 0.0 {
+                None
+            } else {
+                Some(tile)
+            }
+        })
     }
 
     fn tiles_to_attributes(&self, _area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
@@ -140,6 +167,14 @@ impl Layer for SparseLayer {
             self.tiles.remove(&index);
         }
         self.tiles.insert(index, tile);
+    }
+
+    fn get_tile(&self, index: usize) -> Option<&RawTile> {
+        self.tiles.get(&index)
+    }
+
+    fn get_tile_mut(&mut self, index: usize) -> Option<&mut RawTile> {
+        self.tiles.get_mut(&index)
     }
 
     fn tiles_to_attributes(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
@@ -308,10 +343,10 @@ impl Chunk {
             if let Some(layer) = layer.as_mut() {
                 layer.inner.as_mut().set_raw_tile(index, raw_tile);
             } else {
-                println!("else 1");
+                // println!("else 1");
             }
         } else {
-            println!("else 2");
+            // println!("else 2");
         }
     }
 
@@ -342,6 +377,24 @@ impl Chunk {
             }
         }
         entities
+    }
+
+    /// Gets a reference to a tile from a provided z order and index.
+    pub(crate) fn get_tile(&self, z_order: usize, index: usize) -> Option<&RawTile> {
+        self.sprite_layers.get(z_order).and_then(|layer| {
+            layer
+                .as_ref()
+                .and_then(|layer| layer.inner.as_ref().get_tile(index))
+        })
+    }
+
+    /// Gets a mutable reference to a tile from a provided z order and index.
+    pub(crate) fn get_tile_mut(&mut self, z_order: usize, index: usize) -> Option<&mut RawTile> {
+        self.sprite_layers.get_mut(z_order).and_then(|layer| {
+            layer
+                .as_mut()
+                .and_then(|layer| layer.inner.as_mut().get_tile_mut(index))
+        })
     }
 
     /// At the given z layer, changes the tiles into attributes for use with
