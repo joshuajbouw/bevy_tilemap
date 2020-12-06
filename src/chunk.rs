@@ -54,13 +54,7 @@
 //! let z_order = 1;
 //! tilemap.add_layer_with_kind(LayerKind::Sparse, 1);
 //! ```
-use crate::{
-    entity::DirtyLayer,
-    lib::*,
-    mesh::ChunkMesh,
-    tile::RawTile,
-    tilemap::Tilemap,
-};
+use crate::{entity::DirtyLayer, lib::*, mesh::ChunkMesh, tile::RawTile, tilemap::Tilemap};
 
 /// Common methods for layers in a chunk.
 pub(crate) trait Layer: 'static {
@@ -373,13 +367,7 @@ pub(crate) fn chunk_update_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     map_query: Query<&Tilemap>,
-    chunk_query: Query<(
-        Entity,
-        &Parent,
-        &Point2,
-        &Handle<Mesh>,
-        &DirtyLayer,
-    )>,
+    chunk_query: Query<(Entity, &Parent, &Point2, &Handle<Mesh>, &DirtyLayer)>,
 ) {
     for (entity, parent, point, mesh_handle, dirty_layer) in chunk_query.iter() {
         let tilemap = map_query.get(**parent).expect("`Tilemap` missing");
