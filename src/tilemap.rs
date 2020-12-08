@@ -1305,7 +1305,7 @@ impl Tilemap {
     /// event. With bulk tiles, it creates 1 event for all.
     ///
     /// If the chunk does not yet exist, it will create a new one automatically.
-    /// 
+    ///
     /// [`insert_tiles`]: Tilemap::insert_tiles
     ///
     /// # Examples
@@ -1314,12 +1314,12 @@ impl Tilemap {
     /// use bevy_tilemap::tile::RawTile;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
-    /// 
+    ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    /// 
+    ///
     /// let mut tilemap = Tilemap::new(texture_atlas_handle);
-    /// 
+    ///
     /// tilemap.insert_chunk((0, 0)).unwrap();
     ///
     /// let point = (9, 3);
@@ -1329,7 +1329,7 @@ impl Tilemap {
     /// assert!(tilemap.insert_tile(tile).is_ok());
     /// assert_eq!(tilemap.get_tile((9, 3), 0), Some(&RawTile { index: 3, color: Color::WHITE }))
     /// ```
-    /// 
+    ///
     /// # Errors
     ///
     /// Returns an error if the given coordinate or index is out of bounds.
@@ -1346,12 +1346,12 @@ impl Tilemap {
     /// use bevy_tilemap::tile::RawTile;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
-    /// 
+    ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    /// 
+    ///
     /// let mut tilemap = Tilemap::new(texture_atlas_handle);
-    /// 
+    ///
     /// assert!(tilemap.insert_chunk((0, 0)).is_ok());
     ///
     /// let mut tiles = vec![
@@ -1417,12 +1417,12 @@ impl Tilemap {
     /// use bevy_tilemap::tile::RawTile;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
-    /// 
+    ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    /// 
+    ///
     /// let mut tilemap = Tilemap::new(texture_atlas_handle);
-    /// 
+    ///
     /// assert!(tilemap.insert_chunk((0, 0)).is_ok());
     ///
     /// let point = (3, 1);
@@ -1455,19 +1455,19 @@ impl Tilemap {
     /// contains the sprite index and the tint.
     ///
     /// [`Tile`]: crate::tile::Tile
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use bevy_tilemap::prelude::*;
     /// use bevy_tilemap::tile::RawTile;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
-    /// 
+    ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    /// 
+    ///
     /// let mut tilemap = Tilemap::new(texture_atlas_handle);
-    /// 
+    ///
     /// tilemap.insert_chunk((0, 0)).unwrap();
     ///
     /// let point = (9, 3);
@@ -1496,19 +1496,19 @@ impl Tilemap {
     /// contains the sprite index and the tint.
     ///
     /// [`Tile`]: crate::tile::Tile
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use bevy_tilemap::prelude::*;
     /// use bevy_tilemap::tile::RawTile;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
-    /// 
+    ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    /// 
+    ///
     /// let mut tilemap = Tilemap::new(texture_atlas_handle);
-    /// 
+    ///
     /// tilemap.insert_chunk((0, 0)).unwrap();
     ///
     /// let point = (2, 5);
@@ -1555,11 +1555,11 @@ impl Tilemap {
     ///
     /// // 32 * 32 / 2 = 512
     /// assert_eq!(center, Some((512, 512)));
-    /// 
+    ///
     /// let mut tilemap = Tilemap::new(texture_atlas_handle);
-    /// 
+    ///
     /// let center = tilemap.center_tile_coord();
-    /// 
+    ///
     /// assert_eq!(center, None);
     /// ```
     pub fn center_tile_coord(&self) -> Option<(i32, i32)> {
@@ -1591,11 +1591,11 @@ impl Tilemap {
     /// let width = tilemap.width();
     ///
     /// assert_eq!(width, Some(32));
-    /// 
+    ///
     /// let tilemap = Tilemap::new(texture_atlas_handle);
-    /// 
+    ///
     /// let width = tilemap.width();
-    /// 
+    ///
     /// assert_eq!(width, None);
     /// ```
     pub fn width(&self) -> Option<u32> {
@@ -1622,11 +1622,11 @@ impl Tilemap {
     /// let height = tilemap.height();
     ///
     /// assert_eq!(height, Some(64));
-    /// 
+    ///
     /// let tilemap = Tilemap::new(texture_atlas_handle);
-    /// 
+    ///
     /// let height = tilemap.height();
-    /// 
+    ///
     /// assert_eq!(height, None);
     /// ```
     pub fn height(&self) -> Option<u32> {
@@ -1739,22 +1739,22 @@ impl Tilemap {
     }
 
     /// The topology of the tilemap grid.
-    /// 
+    ///
     /// Currently there are 7 topologies which are set with [`GridTopology`]. By
     /// default this is square as it is the most common topology.
-    /// 
+    ///
     /// Typically, for most situations squares are used for local maps and hex
     /// is used for war games or world maps. It is easier to define structures
     /// with walls and floors with square but not impossible with hex.
-    /// 
+    ///
     /// [`GridTopology`]: crate::render::GridTopology
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use bevy_tilemap::prelude::*;
     /// use bevy::asset::HandleId;
     /// use bevy::prelude::*;
-    /// 
+    ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
@@ -1763,7 +1763,7 @@ impl Tilemap {
     ///     .topology(GridTopology::HexX)
     ///     .finish()
     ///     .unwrap();
-    /// 
+    ///
     /// assert_eq!(tilemap.topology(), GridTopology::HexX);
     /// ```
     pub fn topology(&self) -> GridTopology {
