@@ -3,7 +3,7 @@ use crate::lib::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, PartialEq, Debug)]
 /// A raw tile composed of simply an index and a color.
-pub(crate) struct RawTile {
+pub struct RawTile {
     /// The index of the tile in the sprite sheet.
     pub index: usize,
     /// The color, or tint, of the tile.

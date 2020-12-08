@@ -156,7 +156,9 @@ mod lib {
         bevy_app::{AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder},
         bevy_asset::{AddAsset, Assets, Handle, HandleId},
         bevy_core::{Byteable, Bytes},
-        bevy_ecs::{Bundle, Commands, Entity, IntoQuerySystem, Query, Res, ResMut, Resources},
+        bevy_ecs::{
+            Bundle, Changed, Commands, Entity, IntoQuerySystem, Query, Res, ResMut, Resources,
+        },
         bevy_math::{Vec2, Vec3},
         bevy_render::{
             color::Color,
