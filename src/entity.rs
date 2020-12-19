@@ -18,6 +18,8 @@ pub(crate) struct ChunkBundle {
     pub(crate) texture_atlas: Handle<TextureAtlas>,
     /// A component that indicates how to draw a component.
     pub(crate) draw: Draw,
+    /// A component that indicates if the component is visible.
+    pub(crate) visible: Visible,
     /// The pipeline for the renderer.
     pub(crate) render_pipelines: RenderPipelines,
     /// A component that indicates that an entity should be drawn in the
@@ -43,8 +45,9 @@ impl Default for ChunkBundle {
             mesh: Default::default(),
             transform: Default::default(),
             render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),
-            draw: Draw {
-                is_transparent: true,
+            draw: Default::default(),
+            visible: Visible {
+                is_transparent: false,
                 ..Default::default()
             },
             main_pass: MainPass,

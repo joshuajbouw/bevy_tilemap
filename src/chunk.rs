@@ -420,7 +420,7 @@ impl Chunk {
 
 /// The chunk update system that is used to set attributes of the tiles and
 /// tints if they need updating.
-pub(crate) fn chunk_update_system(
+pub(crate) fn chunk_update(
     mut meshes: ResMut<Assets<Mesh>>,
     map_query: Query<&Tilemap>,
     mut chunk_query: Query<(&Parent, &Point2, &ZOrder, &Handle<Mesh>), Changed<ModifiedLayer>>,
