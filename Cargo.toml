@@ -24,7 +24,7 @@ types = []
 members = ["library/*"]
 
 [dependencies]
-bevy = "0.3"
+bevy = "0.4"
 bevy_tilemap_spritesheet = { path = "library/spritesheet" }
 bevy_tilemap_types = { path = "library/types" }
 bitflags = "1.2.1"
