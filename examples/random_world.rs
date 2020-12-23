@@ -181,8 +181,8 @@ fn build_random_world(
         let range = (chunk_width * chunk_height) as usize / 5;
         let mut rng = rand::thread_rng();
         for _ in 0..range {
-            let x = rng.gen_range(-chunk_width / 2, chunk_width / 2);
-            let y = rng.gen_range(-chunk_height / 2, chunk_height / 2);
+            let x = rng.gen_range((-chunk_width / 2)..(chunk_width / 2));
+            let y = rng.gen_range((-chunk_height / 2)..(chunk_height / 2));
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
                 if rng.gen_bool(0.5) {
@@ -195,8 +195,8 @@ fn build_random_world(
         }
         // Lets finally vary it up and add some dirt patches.
         for _ in 0..range {
-            let x = rng.gen_range(-chunk_width / 2, chunk_width / 2);
-            let y = rng.gen_range(-chunk_height / 2, chunk_height / 2);
+            let x = rng.gen_range((-chunk_width / 2)..(chunk_width / 2));
+            let y = rng.gen_range((-chunk_height / 2)..(chunk_height / 2));
             tiles.push(Tile::with_z_order((x, y), dirt_index, 0));
         }
 

@@ -173,8 +173,8 @@ fn build_random_dungeon(
         let range = (chunk_width * chunk_height) as usize / 5;
         let mut rng = rand::thread_rng();
         for _ in 0..range {
-            let x = rng.gen_range(-chunk_width / 2, chunk_width / 2);
-            let y = rng.gen_range(-chunk_height / 2, chunk_height / 2);
+            let x = rng.gen_range((-chunk_width / 2)..(chunk_width / 2));
+            let y = rng.gen_range((-chunk_height / 2)..(chunk_height / 2));
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
                 tiles.push(Tile::new((x, y), wall_idx));
