@@ -39,7 +39,7 @@ If you have API suggestions, now is the time to do it.
 ## Features
 * Perfect for game jams.
 * Easy to use and *mostly* stable API with thorough documentation.
-* Endless or constrained tilemaps.
+* Endless or constrained dimension tilemaps.
 * Batched rendering of many tiles.
 
 ## Design 
@@ -56,7 +56,7 @@ Add to your `Cargo.toml` file:
 ```toml
 [dependencies]
 bevy = 0.3
-bevy_tilemap = 0.1
+bevy_tilemap = 0.3
 ```
 
 ## Simple tilemap construction
@@ -102,8 +102,6 @@ while now. The next release is focused on added automated methods and system.
 - **Auto-tile**: Picks the right tile based around the neighbours of the tile.
 - **Auto-spawn**: Automatically handles spawning and despawning of chunks
 depending on what the camera is viewing.
-- **Auto-configure**: Automatically configures the tilemap based on options 
-that it can figure out such as texture sizes and the right size of chunks.
 - **Tile import**: Imports tiles from a file from multiple formats.
 - **Tilemap3**: Multiple tilemaps working together to create 3D slices that
 work together and are aware of each other.

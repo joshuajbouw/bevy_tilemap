@@ -55,6 +55,7 @@
 //! [`Dimension2`]: crate::dimension::Dimension2
 //! [`Dimension3`]: crate::dimension::Dimension3
 
+#![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.3.0")]
 // This was broken even further and no longer will work at all with the previous
 // workaround. There is a fix, might be sometime for it to be included though.
 // Even then, it is just a warning. For now, including it per module seems to
@@ -63,7 +64,7 @@
 // #![no_implicit_prelude]
 
 // rustc / rustdoc
-#![warn(missing_docs, private_doc_tests)]
+#![warn(missing_doc_code_examples, missing_docs, private_doc_tests)]
 #![deny(dead_code, unused_imports)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]

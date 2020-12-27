@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.0] - 2020-11-23
+
 ### Added
 
 * Auto configuration of optimal chunk sizes to texture size as well as checks
