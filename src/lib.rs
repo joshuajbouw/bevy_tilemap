@@ -114,10 +114,17 @@ pub struct Tilemap2DPlugin;
 impl Plugin for Tilemap2DPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
-            .add_stage_before(bevy::app::stage::POST_UPDATE, stage::TILEMAP)
-            .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap_auto_configure)
-            .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap_system)
-            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_update_system);
+            .add_stage_before(
+                bevy::app::stage::POST_UPDATE,
+                stage::TILEMAP,
+                SystemStage::parallel(),
+            )
+            .add_system_to_stage(
+                stage::TILEMAP,
+                crate::tilemap::tilemap_auto_configure.system(),
+            )
+            .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap.system())
+            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_update.system());
 
         let resources = app.resources_mut();
         let mut render_graph = resources
@@ -136,6 +143,8 @@ mod lib {
     pub extern crate serde;
     pub extern crate std;
 
+    pub use bevy::prelude::*;
+
     // Having to add this is a bug which is fixed in next Bevy (v > 0.3)
     use bevy::{
         app as bevy_app, asset as bevy_asset, core as bevy_core, ecs as bevy_ecs,
@@ -152,7 +161,7 @@ mod lib {
         bevy_reflect::{TypeUuid, Uuid},
         bevy_render::{
             color::Color,
-            draw::Draw,
+            draw::{Draw, Visible},
             mesh::{Indices, Mesh},
             pipeline::{
                 BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,

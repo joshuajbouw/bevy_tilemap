@@ -352,8 +352,8 @@ fn main() {
     App::build()
         .add_resource(WindowDescriptor {
             title: "Random Hex World".to_string(),
-            width: 1036,
-            height: 1036,
+            width: 1036.,
+            height: 1036.,
             vsync: false,
             resizable: false,
             mode: WindowMode::Windowed,
@@ -363,9 +363,9 @@ fn main() {
         .init_resource::<GameState>()
         .add_plugins(DefaultPlugins)
         .add_plugins(TilemapDefaultPlugins)
-        .add_startup_system(setup)
-        .add_system(load)
-        .add_system(build_random_world)
-        .add_system(character_movement)
+        .add_startup_system(setup.system())
+        .add_system(load.system())
+        .add_system(build_random_world.system())
+        .add_system(character_movement.system())
         .run()
 }

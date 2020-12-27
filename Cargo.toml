@@ -12,10 +12,6 @@ readme = "README.md"
 documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap/"
 exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 
-[patch.crates-io]
-bevy = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
-
 [package.metadata.docs.rs]
 features = ["serialize", "types"]
 default-target = "x86_64-pc-windows-msvc"
@@ -28,7 +24,8 @@ types = []
 members = ["library/*"]
 
 [dependencies]
-bevy = "0.3"
+bevy = "0.4"
+hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
 bevy_tilemap_types = { path = "library/types" }
 bitflags = "1.2.1"
 serde = { version = "1.0", features = ["derive"], optional = true }
