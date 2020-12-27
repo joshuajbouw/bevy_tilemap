@@ -49,6 +49,9 @@ it *may* be deleted if it is a sparse tile, else it is simply cleared if it is
 dense.
 * `Tilemap::contains_chunk` method was added to check if the tilemap contains a
 chunk or not already.
+* `TilemapComponents` renamed to `TilemapBundle` to stay inline with Bevy API.
+* `ChunkComponents` renamed to `ChunkBundle` to stay inline with Bevy API.
+* All examples were updated for latest bevy.
 
 ## [0.2.2] - 2020-11-23
 

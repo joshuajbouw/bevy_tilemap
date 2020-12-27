@@ -24,8 +24,8 @@ types = []
 members = ["library/*"]
 
 [dependencies]
-bevy = "0.3"
-bevy_tilemap_spritesheet = { path = "library/spritesheet" }
+bevy = "0.4"
+hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
 bevy_tilemap_types = { path = "library/types" }
 bitflags = "1.2.1"
 serde = { version = "1.0", features = ["derive"], optional = true }

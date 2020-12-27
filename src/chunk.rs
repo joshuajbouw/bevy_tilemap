@@ -54,7 +54,13 @@
 //! let z_order = 1;
 //! tilemap.add_layer_with_kind(LayerKind::Sparse, 1);
 //! ```
-use crate::{entity::DirtyLayer, lib::*, mesh::ChunkMesh, tile::RawTile, tilemap::Tilemap};
+use crate::{
+    entity::{ModifiedLayer, ZOrder},
+    lib::*,
+    mesh::ChunkMesh,
+    tile::RawTile,
+    tilemap::Tilemap,
+};
 
 /// Common methods for layers in a chunk.
 pub(crate) trait Layer: 'static {
@@ -101,7 +107,6 @@ impl Layer for DenseLayer {
     }
 
     fn set_raw_tile(&mut self, index: usize, tile: RawTile) {
-        println!("setting raw tile: {}", index);
         if let Some(inner_tile) = self.tiles.get_mut(index) {
             *inner_tile = tile;
         } // TODO: Else statement with an ERR log when released
@@ -251,8 +256,7 @@ pub(crate) struct SpriteLayer {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, PartialEq, Debug, TypeUuid)]
-#[uuid = "47691827-0b89-4474-a14e-f2ea3c88320f"]
+#[derive(Clone, PartialEq, Debug)]
 #[doc(hidden)]
 pub struct Chunk {
     point: Point2,
@@ -416,24 +420,21 @@ impl Chunk {
 
 /// The chunk update system that is used to set attributes of the tiles and
 /// tints if they need updating.
-pub(crate) fn chunk_update_system(
-    mut commands: Commands,
+pub(crate) fn chunk_update(
     mut meshes: ResMut<Assets<Mesh>>,
     map_query: Query<&Tilemap>,
-    chunk_query: Query<(Entity, &Parent, &Point2, &Handle<Mesh>, &DirtyLayer)>,
+    mut chunk_query: Query<(&Parent, &Point2, &ZOrder, &Handle<Mesh>), Changed<ModifiedLayer>>,
 ) {
-    for (entity, parent, point, mesh_handle, dirty_layer) in chunk_query.iter() {
+    for (parent, point, z_order, mesh_handle) in chunk_query.iter_mut() {
         let tilemap = map_query.get(**parent).expect("`Tilemap` missing");
         let chunk = tilemap.get_chunk(point).expect("`Chunk` is missing");
         let mesh = meshes.get_mut(mesh_handle).expect("`Mesh` is missing");
 
         let (indexes, colors) = chunk
-            .tiles_to_renderer_parts(dirty_layer.0, tilemap.chunk_dimensions())
+            .tiles_to_renderer_parts(z_order.0, tilemap.chunk_dimensions())
             .expect("Tiles missing.");
 
-        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes.into());
-        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors.into());
-
-        commands.remove_one::<DirtyLayer>(entity);
+        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
+        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
     }
 }

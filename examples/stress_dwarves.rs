@@ -52,18 +52,18 @@ impl State {
     }
 }
 
-fn setup(
-    mut commands: Commands,
+fn setup_system(
+    commands: &mut Commands,
     mut tile_sprite_handles: ResMut<TileSpriteHandles>,
     asset_server: Res<AssetServer>,
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
 
-    commands.spawn(Camera2dComponents::default());
+    commands.spawn(Camera2dBundle::default());
 }
 
 fn load(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut sprite_handles: ResMut<TileSpriteHandles>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Texture>>,
@@ -96,7 +96,7 @@ fn load(
             .finish()
             .unwrap();
 
-        let tilemap_components = TilemapComponents {
+        let tilemap_components = TilemapBundle {
             tilemap,
             transform: Default::default(),
             global_transform: Default::default(),
@@ -111,7 +111,7 @@ fn load(
 }
 
 fn build_map(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut state: ResMut<State>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
@@ -259,10 +259,11 @@ fn drunk_stumbles(
     }
 }
 
-fn counter(diagnostics: Res<Diagnostics>, query: Query<&Timer>) {
+fn counter(diagnostics: Res<Diagnostics>, time: Res<Time>, mut query: Query<&mut Timer>) {
     if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
-        for timer in query.iter() {
-            if !timer.finished {
+        for mut timer in query.iter_mut() {
+            timer.tick(time.delta_seconds());
+            if !timer.finished() {
                 return;
             }
             if let Some(average) = fps.average() {
@@ -276,8 +277,8 @@ fn main() {
     App::build()
         .add_resource(WindowDescriptor {
             title: "Drunk Stressed Dwarves".to_string(),
-            width: 1024,
-            height: 1024,
+            width: 1024.,
+            height: 1024.,
             vsync: false,
             resizable: true,
             mode: WindowMode::Windowed,
@@ -288,7 +289,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(TilemapDefaultPlugins)
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_startup_system(setup.system())
+        .add_startup_system(setup_system.system())
         .add_system(load.system())
         .add_system(build_map.system())
         .add_system(drunk_stumbles.system())

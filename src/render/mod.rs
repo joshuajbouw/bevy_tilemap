@@ -3,8 +3,8 @@ use crate::lib::*;
 macro_rules! build_chunk_pipeline {
     ($handle: ident, $id: expr, $name: ident, $file: expr) => {
         /// The constant render pipeline for a chunk.
-        pub(crate) const $handle: Handle<PipelineDescriptor> =
-            Handle::weak_from_u64(PipelineDescriptor::TYPE_UUID, $id);
+        pub(crate) const $handle: HandleUntyped =
+            HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, $id);
 
         /// Builds the chunk render pipeline.
         fn $name(shaders: &mut Assets<Shader>) -> PipelineDescriptor {
@@ -120,7 +120,7 @@ pub enum GridTopology {
 
 impl GridTopology {
     /// Takes a grid topology and returns a handle.
-    pub(crate) fn to_pipeline_handle(&self) -> Handle<PipelineDescriptor> {
+    pub(crate) fn to_pipeline_handle(&self) -> HandleUntyped {
         use GridTopology::*;
         match self {
             Square => CHUNK_SQUARE_PIPELINE,

@@ -75,12 +75,9 @@
     clippy::unwrap_in_result
 )]
 
-pub extern crate bevy_tilemap_spritesheet;
 #[cfg(feature = "types")]
 pub extern crate bevy_tilemap_types;
 
-#[doc(inline)]
-pub use bevy_tilemap_spritesheet as sprite_sheet;
 #[cfg(feature = "types")]
 #[doc(inline)]
 pub use bevy_tilemap_types::dimension;
@@ -117,16 +114,17 @@ pub struct Tilemap2DPlugin;
 impl Plugin for Tilemap2DPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
-            .add_stage_before(bevy::app::stage::POST_UPDATE, stage::TILEMAP)
+            .add_stage_before(
+                bevy::app::stage::POST_UPDATE,
+                stage::TILEMAP,
+                SystemStage::parallel(),
+            )
             .add_system_to_stage(
                 stage::TILEMAP,
                 crate::tilemap::tilemap_auto_configure.system(),
             )
-            .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap_system.system())
-            .add_system_to_stage(
-                bevy::render::stage::DRAW,
-                crate::chunk::chunk_update_system.system(),
-            );
+            .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap.system())
+            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_update.system());
 
         let resources = app.resources_mut();
         let mut render_graph = resources
@@ -145,31 +143,32 @@ mod lib {
     pub extern crate serde;
     pub extern crate std;
 
+    pub use bevy::prelude::*;
+
     // Having to add this is a bug which is fixed in next Bevy (v > 0.3)
     use bevy::{
         app as bevy_app, asset as bevy_asset, core as bevy_core, ecs as bevy_ecs,
-        math as bevy_math, render as bevy_render, sprite as bevy_sprite,
-        transform as bevy_transform, type_registry as bevy_type_registry, utils as bevy_utils,
+        math as bevy_math, reflect as bevy_reflect, render as bevy_render, sprite as bevy_sprite,
+        transform as bevy_transform, utils as bevy_utils,
     };
 
     pub use self::{
         bevy_app::{AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder},
-        bevy_asset::{AddAsset, Assets, Handle, HandleId},
+        bevy_asset::{AddAsset, Assets, Handle, HandleId, HandleUntyped},
         bevy_core::{Byteable, Bytes},
-        bevy_ecs::{
-            Bundle, Changed, Commands, Entity, IntoQuerySystem, Query, Res, ResMut, Resources,
-        },
+        bevy_ecs::{Bundle, Changed, Commands, Entity, Query, Res, ResMut, Resources},
         bevy_math::{Vec2, Vec3},
+        bevy_reflect::{TypeUuid, Uuid},
         bevy_render::{
             color::Color,
-            draw::Draw,
+            draw::{Draw, Visible},
             mesh::{Indices, Mesh},
             pipeline::{
                 BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
-                CompareFunction, CullMode, DepthStencilStateDescriptor, DynamicBinding, FrontFace,
-                PipelineDescriptor, PipelineSpecialization, PrimitiveTopology,
-                RasterizationStateDescriptor, RenderPipeline, RenderPipelines,
-                StencilStateDescriptor, StencilStateFaceDescriptor,
+                CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace,
+                PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor,
+                RenderPipeline, RenderPipelines, StencilStateDescriptor,
+                StencilStateFaceDescriptor,
             },
             render_graph::{base::MainPass, RenderGraph, RenderResourcesNode},
             renderer::{
@@ -183,7 +182,6 @@ mod lib {
             components::{GlobalTransform, Parent, Transform},
             hierarchy::BuildChildren,
         },
-        bevy_type_registry::{TypeUuid, Uuid},
         bevy_utils::{HashMap, HashSet},
     };
 
@@ -206,7 +204,7 @@ mod lib {
         error::Error,
         fmt::{Debug, Display, Formatter, Result as FmtResult},
         iter::{Extend, IntoIterator, Iterator},
-        ops::{FnMut, FnOnce},
+        ops::{Deref, FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},
         vec::Vec,

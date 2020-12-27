@@ -53,9 +53,9 @@ impl From<&ChunkMesh> for Mesh {
 
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.set_indices(Some(indices));
-        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vertices.into());
-        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, tile_indexes.into());
-        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, tile_colors.into());
+        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, tile_indexes);
+        mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, tile_colors);
 
         mesh
     }

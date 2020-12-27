@@ -95,7 +95,7 @@
 
 use crate::{
     chunk::{Chunk, LayerKind},
-    entity::{ChunkComponents, DirtyLayer},
+    entity::{ChunkBundle, ModifiedLayer, ZOrder},
     lib::*,
     mesh::ChunkMesh,
     prelude::GridTopology,
@@ -1834,19 +1834,20 @@ pub(crate) fn tilemap_auto_configure(
 /// 1. Spawn chunks
 /// 1. Modify chunks
 /// 1. Despawn chunks
-pub(crate) fn tilemap_system(
-    mut commands: Commands,
+pub(crate) fn tilemap(
+    commands: &mut Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut query: Query<(Entity, &mut Tilemap)>,
+    mut tilemap_query: Query<(Entity, &mut Tilemap)>,
+    mut layer_query: Query<&mut ModifiedLayer>,
 ) {
-    for (map_entity, mut map) in query.iter_mut() {
-        map.events.update();
+    for (map_entity, mut tilemap) in tilemap_query.iter_mut() {
+        tilemap.events.update();
 
         let mut modified_chunks = Vec::new();
         let mut spawned_chunks = Vec::new();
         let mut despawned_chunks = Vec::new();
-        let mut reader = map.events.get_reader();
-        for event in reader.iter(&map.events) {
+        let mut reader = tilemap.events.get_reader();
+        for event in reader.iter(&tilemap.events) {
             use ChunkEvent::*;
             match event {
                 Modified { ref layers } => {
@@ -1863,12 +1864,12 @@ pub(crate) fn tilemap_system(
 
         let capacity = spawned_chunks.len();
         for point in spawned_chunks.into_iter() {
-            let layers_len = map.layers.len();
-            let chunk_dimensions = map.chunk_dimensions;
-            let tile_dimensions = map.tile_dimensions;
-            let texture_atlas = map.texture_atlas().clone_weak();
-            let pipeline_handle = map.topology.to_pipeline_handle();
-            let chunk = map.chunks.get_mut(&point).expect("`Chunk` is missing.");
+            let layers_len = tilemap.layers.len();
+            let chunk_dimensions = tilemap.chunk_dimensions;
+            let tile_dimensions = tilemap.tile_dimensions;
+            let texture_atlas = tilemap.texture_atlas().clone_weak();
+            let pipeline_handle = tilemap.topology.to_pipeline_handle();
+            let chunk = tilemap.chunks.get_mut(&point).expect("`Chunk` is missing.");
             let mut entities = Vec::with_capacity(capacity);
             for z in 0..layers_len {
                 let mut mesh = Mesh::from(&ChunkMesh::new(chunk_dimensions));
@@ -1878,8 +1879,8 @@ pub(crate) fn tilemap_system(
                     } else {
                         continue;
                     };
-                mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes.into());
-                mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors.into());
+                mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
+                mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
                 let mesh_handle = meshes.add(mesh);
                 chunk.set_mesh(z, mesh_handle.clone());
 
@@ -1891,27 +1892,11 @@ pub(crate) fn tilemap_system(
                         * chunk_dimensions.height as i32) as f32,
                     z as f32,
                 );
-                let pipeline = RenderPipeline::specialized(
-                    pipeline_handle.clone_weak(),
-                    PipelineSpecialization {
-                        dynamic_bindings: vec![
-                            // Transform
-                            DynamicBinding {
-                                bind_group: 2,
-                                binding: 0,
-                            },
-                            // Chunk
-                            DynamicBinding {
-                                bind_group: 2,
-                                binding: 1,
-                            },
-                        ],
-                        ..Default::default()
-                    },
-                );
+                let pipeline = RenderPipeline::new(pipeline_handle.clone_weak().typed());
                 let entity = commands
-                    .spawn(ChunkComponents {
+                    .spawn(ChunkBundle {
                         point,
+                        z_order: ZOrder(z),
                         texture_atlas: texture_atlas.clone_weak(),
                         mesh: mesh_handle.clone_weak(),
                         transform: Transform::from_translation(translation),
@@ -1928,8 +1913,11 @@ pub(crate) fn tilemap_system(
         }
 
         for layers in modified_chunks.into_iter() {
-            for (layer, entity) in layers.into_iter() {
-                commands.insert_one(entity, DirtyLayer(layer));
+            for (_layer, entity) in layers.into_iter() {
+                let mut modified_layer = layer_query
+                    .get_mut(entity)
+                    .expect("`Layer` does not exist.");
+                modified_layer.0 += 1;
             }
         }
 
@@ -1946,7 +1934,7 @@ mod tests {
     use super::*;
 
     // fn new_tilemap_no_auto() -> Tilemap {
-    //     let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    //     let texture_atlas_handle = Handle::weak(Handllet modified_layer = layer_query.get()eId::random::<TextureAtlas>());
 
     //     let mut tilemap = Tilemap::builder()
     //         .chunk_dimensions(5, 5)

@@ -22,6 +22,5 @@ pub struct TilemapDefaultPlugins;
 impl PluginGroup for TilemapDefaultPlugins {
     fn build(&mut self, group: &mut PluginGroupBuilder) {
         group.add(crate::Tilemap2DPlugin::default());
-        group.add(crate::sprite_sheet::SpriteSheetPlugin::default());
     }
 }
