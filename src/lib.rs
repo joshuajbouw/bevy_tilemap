@@ -105,7 +105,12 @@ pub mod tile;
 /// Map traits to implement for a custom map and a basic struct for use.
 pub mod tilemap;
 
-use crate::{lib::*, render::TilemapRenderGraphBuilder, tilemap::Tilemap};
+use crate::{
+    bevy_ecs::{IntoSystem, SystemStage},
+    lib::*,
+    render::TilemapRenderGraphBuilder,
+    tilemap::Tilemap,
+};
 
 /// The Bevy Tilemap 2D main plugin.
 #[derive(Default)]
@@ -115,7 +120,7 @@ impl Plugin for Tilemap2DPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
             .add_stage_before(
-                bevy::app::stage::POST_UPDATE,
+                bevy_app::stage::POST_UPDATE,
                 stage::TILEMAP,
                 SystemStage::parallel(),
             )
@@ -136,21 +141,21 @@ impl Plugin for Tilemap2DPlugin {
 
 /// A custom prelude around everything that we only need to use.
 mod lib {
-    pub extern crate bevy;
+    pub extern crate bevy_app;
+    pub extern crate bevy_asset;
+    pub extern crate bevy_core;
+    pub extern crate bevy_ecs;
+    pub extern crate bevy_math;
+    pub extern crate bevy_reflect;
+    pub extern crate bevy_render;
+    pub extern crate bevy_sprite;
     pub extern crate bevy_tilemap_types;
+    pub extern crate bevy_transform;
+    pub extern crate bevy_utils;
     pub extern crate bitflags;
     #[cfg(feature = "serde")]
     pub extern crate serde;
     pub extern crate std;
-
-    pub use bevy::prelude::*;
-
-    // Having to add this is a bug which is fixed in next Bevy (v > 0.3)
-    use bevy::{
-        app as bevy_app, asset as bevy_asset, core as bevy_core, ecs as bevy_ecs,
-        math as bevy_math, reflect as bevy_reflect, render as bevy_render, sprite as bevy_sprite,
-        transform as bevy_transform, utils as bevy_utils,
-    };
 
     pub use self::{
         bevy_app::{AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder},

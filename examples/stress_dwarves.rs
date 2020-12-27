@@ -1,12 +1,12 @@
-use bevy::{
-    asset::LoadState,
-    diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
-    ecs::bevy_utils::HashSet,
-    prelude::*,
-    sprite::TextureAtlasBuilder,
-    window::WindowMode,
-};
+use bevy_app::prelude::*;
+use bevy_asset::prelude::*;
+use bevy_asset::LoadState;
+use bevy_ecs::prelude::*;
+use bevy_render::prelude::*;
+use bevy_sprite::prelude::*;
+use bevy_sprite::TextureAtlasBuilder;
 use bevy_tilemap::prelude::*;
+use bevy_utils::HashSet;
 use rand::Rng;
 
 const DWARF_COUNT: usize = 10_000;
