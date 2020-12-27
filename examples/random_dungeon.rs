@@ -49,7 +49,7 @@ impl GameState {
     }
 }
 
-fn setup_system(
+fn setup(
     commands: &mut Commands,
     mut tile_sprite_handles: ResMut<TileSpriteHandles>,
     asset_server: Res<AssetServer>,
@@ -59,7 +59,7 @@ fn setup_system(
     commands.spawn(Camera2dBundle::default());
 }
 
-fn load_system(
+fn load(
     commands: &mut Commands,
     mut sprite_handles: ResMut<TileSpriteHandles>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
@@ -107,7 +107,7 @@ fn load_system(
     }
 }
 
-fn build_random_dungeon_system(
+fn build_random_dungeon(
     commands: &mut Commands,
     mut game_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
@@ -238,7 +238,7 @@ fn move_sprite(
     map.insert_tile(tile).unwrap();
 }
 
-fn character_movement_system(
+fn character_movement(
     mut game_state: ResMut<GameState>,
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
@@ -301,8 +301,8 @@ fn main() {
     App::build()
         .add_resource(WindowDescriptor {
             title: "Random Tile Dungeon".to_string(),
-            width: 1024,
-            height: 1024,
+            width: 1024.,
+            height: 1024.,
             vsync: false,
             resizable: false,
             mode: WindowMode::Windowed,
@@ -312,9 +312,9 @@ fn main() {
         .init_resource::<GameState>()
         .add_plugins(DefaultPlugins)
         .add_plugins(TilemapDefaultPlugins)
-        .add_startup_system(setup_system)
-        .add_system(load_system)
-        .add_system(build_random_dungeon_system)
-        .add_system(character_movement_system)
+        .add_startup_system(setup.system())
+        .add_system(load.system())
+        .add_system(build_random_dungeon.system())
+        .add_system(character_movement.system())
         .run()
 }
