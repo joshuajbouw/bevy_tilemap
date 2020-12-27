@@ -173,8 +173,8 @@ fn build_map(
         let range = (chunk_width * chunk_height) as usize / 5;
         let mut rng = rand::thread_rng();
         for _ in 0..range {
-            let x = rng.gen_range(-chunk_width / 2, chunk_width / 2);
-            let y = rng.gen_range(-chunk_height / 2, chunk_height / 2);
+            let x = rng.gen_range((-chunk_width / 2)..(chunk_width / 2));
+            let y = rng.gen_range((-chunk_height / 2)..(chunk_height / 2));
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
                 tiles.push(Tile::new((x, y), wall_idx));
@@ -190,8 +190,8 @@ fn build_map(
         println!("Spawning drunken dwarves.");
         for _ in 0..DWARF_COUNT {
             let position = Position {
-                x: rng.gen_range(-chunk_width / 2 + 1, chunk_width / 2 - 1),
-                y: rng.gen_range(-chunk_height / 2 + 1, chunk_height / 2 - 1),
+                x: rng.gen_range((-chunk_width / 2 + 1)..(chunk_width / 2 - 1)),
+                y: rng.gen_range((-chunk_height / 2 + 1)..(chunk_height / 2 - 1)),
             };
 
             commands.spawn(StressDwarfBundle {
@@ -250,7 +250,7 @@ fn drunk_stumbles(
         for (mut position, render) in drunk_query.iter_mut() {
             let previous_position = *position;
             let mut rng = rand::thread_rng();
-            state.try_stumble(&mut position, (rng.gen_range(-1, 2), rng.gen_range(-1, 2)));
+            state.try_stumble(&mut position, (rng.gen_range(-1..2), rng.gen_range(-1..2)));
             if previous_position == *position {
                 continue;
             }
