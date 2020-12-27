@@ -24,7 +24,7 @@ types = []
 members = ["library/*"]
 
 [dependencies]
-bevy = "0.4"
+bevy =  { version="0.4", default-features=false, features=["bevy_winit","x11","hdr","bevy_gltf"]}
 hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
 bevy_tilemap_types = { path = "library/types" }
 bitflags = "1.2.1"
