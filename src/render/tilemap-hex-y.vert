@@ -50,10 +50,10 @@ void main() {
 
     // offset rows
     float xoffset = floor(0.5 * sprite_dimensions.x);
-    vertex_position.x += xoffset * (float(row) - 0.5);
+    vertex_position.x += xoffset * float(row);
 
     // compact (remove gaps between rows)
-    vertex_position.y -= (float(row) - 0.5) * ceil(0.25 * sprite_dimensions.y);
+    vertex_position.y -= float(row) * ceil(0.25 * sprite_dimensions.y);
 
     vec2 atlas_positions[4] = vec2[](
         vec2(sprite_rect.begin.x, sprite_rect.end.y),
