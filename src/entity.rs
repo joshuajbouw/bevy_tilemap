@@ -47,7 +47,7 @@ impl Default for ChunkBundle {
             render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),
             draw: Default::default(),
             visible: Visible {
-                is_transparent: false,
+                is_transparent: true,
                 ..Default::default()
             },
             main_pass: MainPass,
