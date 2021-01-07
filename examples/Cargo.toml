@@ -23,12 +23,12 @@ rand = "0.8"
 
 [[example]]
 name = "random_dungeon"
-path = "random_dungeon.rs"
+path = "examples/random_dungeon.rs"
 
 [[example]]
 name = "random_world"
-path = "random_world.rs"
+path = "examples/random_world.rs"
 
 [[example]]
 name = "stress_dwarves"
-path = "stress_dwarves.rs"
+path = "examples/stress_dwarves.rs"

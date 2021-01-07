@@ -1,3 +1,4 @@
+#![allow(clippy::all)]
 use bevy::{
     asset::LoadState,
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
