@@ -2,9 +2,9 @@ use bevy::prelude::*;
 use bevy_asset::LoadState;
 use bevy_diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy_sprite::{TextureAtlas, TextureAtlasBuilder};
+use bevy_tilemap::prelude::*;
 use bevy_utils::HashSet;
 use bevy_window::WindowMode;
-use bevy_tilemap::prelude::*;
 use rand::Rng;
 
 const DWARF_COUNT: usize = 10_000;

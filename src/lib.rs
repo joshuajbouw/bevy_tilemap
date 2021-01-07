@@ -105,11 +105,7 @@ pub mod tile;
 /// Map traits to implement for a custom map and a basic struct for use.
 pub mod tilemap;
 
-use crate::{
-    lib::*,
-    render::TilemapRenderGraphBuilder,
-    tilemap::Tilemap,
-};
+use crate::{lib::*, render::TilemapRenderGraphBuilder, tilemap::Tilemap};
 
 /// The Bevy Tilemap 2D main plugin.
 #[derive(Default)]
@@ -142,8 +138,8 @@ impl Plugin for Tilemap2DPlugin {
 mod lib {
     extern crate bevy_app;
     extern crate bevy_asset;
-    pub extern crate bevy_derive;
     extern crate bevy_core;
+    pub extern crate bevy_derive;
     extern crate bevy_ecs;
     extern crate bevy_math;
     extern crate bevy_reflect;
@@ -158,11 +154,16 @@ mod lib {
     extern crate std;
 
     pub use self::{
-        bevy_app::{AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder, stage as app_stage},
+        bevy_app::{
+            stage as app_stage, AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder,
+        },
         bevy_asset::{AddAsset, Assets, Handle, HandleId, HandleUntyped},
         bevy_core::{Byteable, Bytes},
         bevy_derive::*,
-        bevy_ecs::{Bundle, Changed, Commands, Entity, Query, Res, ResMut, Resources, IntoSystem, SystemStage, TypeInfo},
+        bevy_ecs::{
+            Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources,
+            SystemStage, TypeInfo,
+        },
         bevy_math::{Vec2, Vec3},
         bevy_reflect::{TypeUuid, Uuid},
         bevy_render::{
