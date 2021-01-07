@@ -1,4 +1,5 @@
 use crate::{lib::*, render::CHUNK_SQUARE_PIPELINE, Tilemap};
+use crate::lib::Bundle;
 
 /// A component that is used as a flag for dirty chunks that need updating.
 #[derive(Default)]

@@ -24,23 +24,28 @@ types = []
 members = ["library/*"]
 
 [dependencies]
+# Remove this next > 0.4 Bevy patch and add "bevy = 0.x" under dev-dependencies.
+# See: https://github.com/bevyengine/bevy/pull/1182
+bevy = "0.4"
 bevy_app = "0.4"
 bevy_asset = "0.4"
 bevy_core = "0.4"
+bevy_derive = "0.4"
 bevy_ecs = "0.4"
 bevy_math = "0.4"
 bevy_render = "0.4"
 bevy_reflect = "0.4"
 bevy_sprite = "0.4"
+bevy_tilemap_types = { path = "library/types" }
 bevy_transform = "0.4"
 bevy_utils = "0.4"
-
-hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
-bevy_tilemap_types = { path = "library/types" }
 bitflags = "1.2.1"
+hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
+bevy_diagnostic = "0.4"
+bevy_window = "0.4"
 rand = "0.8"
 
 [[example]]
