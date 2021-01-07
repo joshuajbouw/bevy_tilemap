@@ -1,0 +1,34 @@
+# Remove this next > 0.4 Bevy patch and add "bevy = 0.x" under dev-dependencies.
+# See: https://github.com/bevyengine/bevy/pull/1182
+
+[package]
+name = "bevy_tilemap_examples"
+version = "0.2.2"
+authors = ["Joshua J. Bouw <dev@joshuajbouw.com>"]
+edition = "2018"
+description = "Examples for bevy_tilemap."
+repository = "https://github.com/joshuajbouw/bevy_tilemap"
+license = "MIT"
+keywords = ["game", "engine", "bevy", "tiles", "tilemap"]
+categories = ["game-engines", "graphics", "gui"]
+readme = "README.md"
+documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap/"
+exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
+publish = false
+
+[dev-dependencies]
+bevy = "0.4"
+bevy_tilemap = { path = "../" }
+rand = "0.8"
+
+[[example]]
+name = "random_dungeon"
+path = "random_dungeon.rs"
+
+[[example]]
+name = "random_world"
+path = "random_world.rs"
+
+[[example]]
+name = "stress_dwarves"
+path = "stress_dwarves.rs"

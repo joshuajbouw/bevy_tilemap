@@ -1,9 +1,11 @@
-use bevy::prelude::*;
-use bevy_asset::LoadState;
-use bevy_sprite::{TextureAtlas, TextureAtlasBuilder};
+use bevy::{
+    asset::LoadState,
+    prelude::*,
+    sprite::{TextureAtlas, TextureAtlasBuilder},
+    utils::HashSet,
+    window::WindowMode,
+};
 use bevy_tilemap::prelude::*;
-use bevy_utils::HashSet;
-use bevy_window::WindowMode;
 use rand::Rng;
 
 #[derive(Default, Clone)]

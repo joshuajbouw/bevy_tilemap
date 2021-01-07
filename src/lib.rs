@@ -1,4 +1,4 @@
-//! ![](https://github.com/joshuajbouw/bevy_tilemap/raw/master/assets/img/logo.gif)
+//! ![](https://github.com/joshuajbouw/bevy_tilemap/raw/master/docs/img/logo.gif)
 //!
 //! # Bevy Tilemap
 //!
@@ -139,7 +139,6 @@ mod lib {
     extern crate bevy_app;
     extern crate bevy_asset;
     extern crate bevy_core;
-    pub extern crate bevy_derive;
     extern crate bevy_ecs;
     extern crate bevy_math;
     extern crate bevy_reflect;
@@ -159,7 +158,6 @@ mod lib {
         },
         bevy_asset::{AddAsset, Assets, Handle, HandleId, HandleUntyped},
         bevy_core::{Byteable, Bytes},
-        bevy_derive::*,
         bevy_ecs::{
             Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources,
             SystemStage, TypeInfo,
