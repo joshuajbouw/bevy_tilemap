@@ -1,6 +1,4 @@
-use bevy::{
-    asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode,
-};
+use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode};
 use bevy_tilemap::prelude::*;
 
 #[derive(Default, Clone)]

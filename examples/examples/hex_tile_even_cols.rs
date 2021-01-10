@@ -1,6 +1,4 @@
-use bevy::{
-    asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode,
-};
+use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode};
 use bevy_tilemap::prelude::*;
 
 #[derive(Default, Clone)]
@@ -87,7 +85,8 @@ fn build_world(
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
 
-        let grass_floor: Handle<Texture> = asset_server.get_handle("textures/hex-floor-grass_alt.png");
+        let grass_floor: Handle<Texture> =
+            asset_server.get_handle("textures/hex-floor-grass_alt.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let grass_index = texture_atlas.get_texture_index(&grass_floor).unwrap();
 
