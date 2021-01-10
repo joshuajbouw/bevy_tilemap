@@ -91,9 +91,9 @@ fn load(
         // These are fairly advanced configurations just to quickly showcase
         // them.
         let tilemap = Tilemap::builder()
-            .topology(GridTopology::HexEvenRows)
-            .dimensions(1, 1)
-            .chunk_dimensions(32, 38)
+            .topology(GridTopology::HexX)
+            .dimensions(1, 3)
+            .chunk_dimensions(19, 11)
             .tile_dimensions(32, 37)
             .z_layers(3)
             .texture_atlas(atlas_handle)
@@ -130,7 +130,15 @@ fn build_random_world(
         // insert a chunk. This will then communicate with us if we accidentally
         // insert a tile in a chunk we may not want. Also, we only expect to
         // have just 1 chunk.
+        // map.insert_chunk((-1, 0)).unwrap();
         map.insert_chunk((0, 0)).unwrap();
+        // map.insert_chunk((1, 0)).unwrap();
+        // map.insert_chunk((-1, 1)).unwrap();
+        map.insert_chunk((0, 1)).unwrap();
+        // map.insert_chunk((1, 1)).unwrap();
+        // map.insert_chunk((-1, -1)).unwrap();
+        map.insert_chunk((0, -1)).unwrap();
+        // map.insert_chunk((1, -1)).unwrap();
 
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
@@ -241,7 +249,15 @@ fn build_random_world(
 
         // Finally we spawn the chunk! In actual use this should be done in a
         // spawn system.
+        // map.spawn_chunk((-1, 0)).unwrap();
         map.spawn_chunk((0, 0)).unwrap();
+        // map.spawn_chunk((1, 0)).unwrap();
+        // map.spawn_chunk((-1, 1)).unwrap();
+        map.spawn_chunk((0, 1)).unwrap();
+        // map.spawn_chunk((1, 1)).unwrap();
+        // map.spawn_chunk((-1, -1)).unwrap();
+        map.spawn_chunk((0, -1)).unwrap();
+        // map.spawn_chunk((1, -1)).unwrap();
 
         game_state.map_loaded = true;
     }
@@ -360,7 +376,7 @@ fn main() {
             width: 1036.,
             height: 1036.,
             vsync: false,
-            resizable: false,
+            resizable: true,
             mode: WindowMode::Windowed,
             ..Default::default()
         })

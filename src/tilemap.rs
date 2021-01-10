@@ -1866,6 +1866,7 @@ pub(crate) fn tilemap(
             let tile_dimensions = tilemap.tile_dimensions;
             let texture_atlas = tilemap.texture_atlas().clone_weak();
             let pipeline_handle = tilemap.topology.to_pipeline_handle();
+            let topology = tilemap.topology;
             let chunk = tilemap.chunks.get_mut(&point).expect("`Chunk` is missing.");
             let mut entities = Vec::with_capacity(capacity);
             for z in 0..layers_len {
@@ -1881,14 +1882,44 @@ pub(crate) fn tilemap(
                 let mesh_handle = meshes.add(mesh);
                 chunk.set_mesh(z, mesh_handle.clone());
 
-                let translation = Vec3::new(
-                    (chunk.point().x * tile_dimensions.width as i32 * chunk_dimensions.width as i32)
-                        as f32,
-                    (chunk.point().y
-                        * tile_dimensions.height as i32
-                        * chunk_dimensions.height as i32) as f32,
-                    z as f32,
-                );
+                use GridTopology::*;
+                let translation_x = match topology {
+                    HexX => {
+                        (((chunk.point().x * tile_dimensions.width as i32) as f32 * 0.75) as i32
+                            * chunk_dimensions.width as i32) as f32
+                    }
+                    HexY => {
+                        (chunk.point().x
+                            * tile_dimensions.width as i32
+                            * chunk_dimensions.width as i32) as f32
+                            + (chunk.point().y as f32 * chunk_dimensions.height as f32 * 0.5)
+                                * tile_dimensions.width as f32
+                    }
+                    _ => {
+                        (chunk.point().x
+                            * tile_dimensions.width as i32
+                            * chunk_dimensions.width as i32) as f32
+                    }
+                };
+                let translation_y = match topology {
+                    HexX => {
+                        (chunk.point().y
+                            * tile_dimensions.height as i32
+                            * chunk_dimensions.height as i32) as f32
+                            + (chunk.point().x as f32 * chunk_dimensions.width as f32 * 0.5)
+                                * tile_dimensions.height as f32
+                    }
+                    HexY => {
+                        (((chunk.point().y * tile_dimensions.height as i32) as f32 * 0.75) as i32
+                            * chunk_dimensions.height as i32) as f32
+                    }
+                    _ => {
+                        (chunk.point().y
+                            * tile_dimensions.height as i32
+                            * chunk_dimensions.height as i32) as f32
+                    }
+                };
+                let translation = Vec3::new(translation_x, translation_y, z as f32);
                 let pipeline = RenderPipeline::new(pipeline_handle.clone_weak().typed());
                 let entity = commands
                     .spawn(ChunkBundle {
