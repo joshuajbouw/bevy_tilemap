@@ -20,15 +20,3 @@ publish = false
 bevy = "0.4"
 bevy_tilemap = { path = "../" }
 rand = "0.8"
-
-[[example]]
-name = "random_dungeon"
-path = "examples/random_dungeon.rs"
-
-[[example]]
-name = "random_world"
-path = "examples/random_world.rs"
-
-[[example]]
-name = "stress_dwarves"
-path = "examples/stress_dwarves.rs"

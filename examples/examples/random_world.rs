@@ -136,10 +136,10 @@ fn build_random_world(
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
 
         // Then we need to find out what the handles were to our textures we are going to use.
-        let grass_floor: Handle<Texture> = asset_server.get_handle("textures/hex_floor_grass.png");
-        let dirt_floor: Handle<Texture> = asset_server.get_handle("textures/hex_floor_dirt.png");
-        let boulder: Handle<Texture> = asset_server.get_handle("textures/hex_boulder.png");
-        let trees: Handle<Texture> = asset_server.get_handle("textures/hex_trees.png");
+        let grass_floor: Handle<Texture> = asset_server.get_handle("textures/hex-floor-grass.png");
+        let dirt_floor: Handle<Texture> = asset_server.get_handle("textures/hex-floor-dirt.png");
+        let boulder: Handle<Texture> = asset_server.get_handle("textures/hex-boulder.png");
+        let trees: Handle<Texture> = asset_server.get_handle("textures/hex-trees.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let grass_index = texture_atlas.get_texture_index(&grass_floor).unwrap();
         let dirt_index = texture_atlas.get_texture_index(&dirt_floor).unwrap();
@@ -220,7 +220,7 @@ fn build_random_world(
         map.add_layer_with_kind(LayerKind::Sparse, 2).unwrap();
 
         // Now lets add in a dwarf friend!
-        let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/hex_dwarf.png");
+        let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/hex-dwarf.png");
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         // We add in a Z order of 2 to place the tile above the background on Z
         // order 0.
@@ -360,7 +360,7 @@ fn main() {
             width: 1036.,
             height: 1036.,
             vsync: false,
-            resizable: false,
+            resizable: true,
             mode: WindowMode::Windowed,
             ..Default::default()
         })

@@ -136,8 +136,8 @@ fn build_map(
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
 
-        let floor_sprite: Handle<Texture> = asset_server.get_handle("textures/tile_floor.png");
-        let wall_sprite: Handle<Texture> = asset_server.get_handle("textures/tile_wall.png");
+        let floor_sprite: Handle<Texture> = asset_server.get_handle("textures/square-floor.png");
+        let wall_sprite: Handle<Texture> = asset_server.get_handle("textures/square-wall.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let floor_idx = texture_atlas.get_texture_index(&floor_sprite).unwrap();
         let wall_idx = texture_atlas.get_texture_index(&wall_sprite).unwrap();
@@ -185,7 +185,7 @@ fn build_map(
 
         map.add_layer_with_kind(LayerKind::Sparse, 1).unwrap();
 
-        let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/dwarf.png");
+        let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/square-dwarf.png");
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         let mut rng = rand::thread_rng();
         println!("Spawning drunken dwarves.");
