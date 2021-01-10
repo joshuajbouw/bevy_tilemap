@@ -108,8 +108,8 @@ impl Tile {
     ///
     /// # Examples
     /// ```
+    /// use bevy_render::prelude::*;
     /// use bevy_tilemap::prelude::*;
-    /// use bevy::prelude::*;
     ///
     /// let point = (15, 15);
     /// let sprite_index = 3;
@@ -138,8 +138,8 @@ impl Tile {
     ///
     /// # Examples
     /// ```
+    /// use bevy_render::prelude::*;
     /// use bevy_tilemap::prelude::*;
-    /// use bevy::prelude::*;
     ///
     /// let point = (15, 15);
     /// let z_order = 0;
