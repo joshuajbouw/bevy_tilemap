@@ -680,9 +680,9 @@ impl Tilemap {
     /// use bevy_asset::{prelude::*, HandleId};
     /// use bevy_sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
-    /// 
+    ///
     /// let mut tilemap = Tilemap::default();
-    /// 
+    ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
@@ -702,10 +702,10 @@ impl Tilemap {
     /// use bevy_asset::{prelude::*, HandleId};
     /// use bevy_sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
-    /// 
+    ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    /// 
+    ///
     /// let tilemap = Tilemap::new(texture_atlas_handle);
     /// let texture_atlas: &Handle<TextureAtlas> = tilemap.texture_atlas();
     /// ```
@@ -803,10 +803,10 @@ impl Tilemap {
     /// use bevy_asset::{prelude::*, HandleId};
     /// use bevy_sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
-    /// 
+    ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    /// 
+    ///
     /// let mut tilemap = Tilemap::new(texture_atlas_handle);
     ///
     /// let kind = LayerKind::Sparse;
