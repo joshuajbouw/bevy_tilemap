@@ -13,9 +13,9 @@
 //!
 //! # Simple chunk creation
 //! ```
+//! use bevy_asset::{prelude::*, HandleId};
+//! use bevy_sprite::prelude::*;
 //! use bevy_tilemap::prelude::*;
-//! use bevy::asset::HandleId;
-//! use bevy::prelude::*;
 //!
 //! // This must be set in Asset<TextureAtlas>.
 //! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
@@ -37,9 +37,9 @@
 //!
 //! # Specifying what kind of chunk
 //! ```
+//! use bevy_asset::{prelude::*, HandleId};
+//! use bevy_sprite::prelude::*;
 //! use bevy_tilemap::prelude::*;
-//! use bevy::asset::HandleId;
-//! use bevy::prelude::*;
 //!
 //! // This must be set in Asset<TextureAtlas>.
 //! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());

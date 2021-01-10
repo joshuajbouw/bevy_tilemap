@@ -3,7 +3,7 @@
 <p align="center">
     <img width="600"
         alt="Bevy Tilemap logo"
-        src="https://github.com/joshuajbouw/bevy_tilemap/raw/master/assets/img/logo.gif">
+        src="https://github.com/joshuajbouw/bevy_tilemap/raw/master/docs/img/logo.gif">
 </p>
 
 <p align="center">

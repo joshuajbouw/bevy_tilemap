@@ -1,4 +1,4 @@
-//! ![](https://github.com/joshuajbouw/bevy_tilemap/raw/master/assets/img/logo.gif)
+//! ![](https://github.com/joshuajbouw/bevy_tilemap/raw/master/docs/img/logo.gif)
 //!
 //! # Bevy Tilemap
 //!
@@ -115,7 +115,7 @@ impl Plugin for Tilemap2DPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
             .add_stage_before(
-                bevy::app::stage::POST_UPDATE,
+                app_stage::POST_UPDATE,
                 stage::TILEMAP,
                 SystemStage::parallel(),
             )
@@ -136,27 +136,32 @@ impl Plugin for Tilemap2DPlugin {
 
 /// A custom prelude around everything that we only need to use.
 mod lib {
-    pub extern crate bevy;
-    pub extern crate bevy_tilemap_types;
+    extern crate bevy_app;
+    extern crate bevy_asset;
+    extern crate bevy_core;
+    extern crate bevy_ecs;
+    extern crate bevy_math;
+    extern crate bevy_reflect;
+    extern crate bevy_render;
+    extern crate bevy_sprite;
+    extern crate bevy_tilemap_types;
+    extern crate bevy_transform;
+    extern crate bevy_utils;
     pub extern crate bitflags;
     #[cfg(feature = "serde")]
-    pub extern crate serde;
-    pub extern crate std;
-
-    pub use bevy::prelude::*;
-
-    // Having to add this is a bug which is fixed in next Bevy (v > 0.3)
-    use bevy::{
-        app as bevy_app, asset as bevy_asset, core as bevy_core, ecs as bevy_ecs,
-        math as bevy_math, reflect as bevy_reflect, render as bevy_render, sprite as bevy_sprite,
-        transform as bevy_transform, utils as bevy_utils,
-    };
+    extern crate serde;
+    extern crate std;
 
     pub use self::{
-        bevy_app::{AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder},
+        bevy_app::{
+            stage as app_stage, AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder,
+        },
         bevy_asset::{AddAsset, Assets, Handle, HandleId, HandleUntyped},
         bevy_core::{Byteable, Bytes},
-        bevy_ecs::{Bundle, Changed, Commands, Entity, Query, Res, ResMut, Resources},
+        bevy_ecs::{
+            Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources,
+            SystemStage, TypeInfo,
+        },
         bevy_math::{Vec2, Vec3},
         bevy_reflect::{TypeUuid, Uuid},
         bevy_render::{
@@ -185,7 +190,7 @@ mod lib {
         bevy_utils::{HashMap, HashSet},
     };
 
-    pub use crate::bevy_tilemap_types::{
+    pub use bevy_tilemap_types::{
         dimension::{Dimension2, DimensionError},
         point::Point2,
     };

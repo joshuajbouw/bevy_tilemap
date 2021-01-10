@@ -5,11 +5,10 @@
 //!
 //! # Using the default plugin
 //! ```no_run
-//! use bevy::prelude::*;
+//! use bevy_app::prelude::*;
 //! use bevy_tilemap::prelude::*;
 //!
 //! App::build()
-//!     .add_plugins(DefaultPlugins)
 //!     .add_plugins(TilemapDefaultPlugins)
 //!     .run()
 //! ```

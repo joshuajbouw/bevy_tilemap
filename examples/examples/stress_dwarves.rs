@@ -1,9 +1,10 @@
+#![allow(clippy::all)]
 use bevy::{
     asset::LoadState,
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
-    ecs::bevy_utils::HashSet,
     prelude::*,
-    sprite::TextureAtlasBuilder,
+    sprite::{TextureAtlas, TextureAtlasBuilder},
+    utils::HashSet,
     window::WindowMode,
 };
 use bevy_tilemap::prelude::*;

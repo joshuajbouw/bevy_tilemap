@@ -21,26 +21,20 @@ serialize = ["bevy_tilemap_types/serialize", "serde"]
 types = []
 
 [workspace]
-members = ["library/*"]
+members = ["library/*", "examples"]
 
 [dependencies]
-bevy = "0.4"
-hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
+bevy_app = "0.4"
+bevy_asset = "0.4"
+bevy_core = "0.4"
+bevy_ecs = "0.4"
+bevy_math = "0.4"
+bevy_render = "0.4"
+bevy_reflect = "0.4"
+bevy_sprite = "0.4"
 bevy_tilemap_types = { path = "library/types" }
+bevy_transform = "0.4"
+bevy_utils = "0.4"
 bitflags = "1.2.1"
+hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
 serde = { version = "1.0", features = ["derive"], optional = true }
-
-[dev-dependencies]
-rand = "0.8"
-
-[[example]]
-name = "random_dungeon"
-path = "examples/random_dungeon.rs"
-
-[[example]]
-name = "random_world"
-path = "examples/random_world.rs"
-
-[[example]]
-name = "stress_dwarves"
-path = "examples/stress_dwarves.rs"

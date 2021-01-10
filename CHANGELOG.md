@@ -31,6 +31,7 @@ This should make it easier to do animations.
 * `Tilemap::tile_to_chunk_point` method is now `point_to_chunk_point`.
 * `tile:RawTile` is now public API but not included in the prelude as it is not
 meant to be constructed.
+* Library is able to work with WASM.
 
 ### Changed
 
