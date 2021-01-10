@@ -1884,7 +1884,7 @@ pub(crate) fn tilemap(
 
                 use GridTopology::*;
                 let translation_x = match topology {
-                    HexX => {
+                    HexX | HexEvenCols | HexOddCols => {
                         (((chunk.point().x * tile_dimensions.width as i32) as f32 * 0.75) as i32
                             * chunk_dimensions.width as i32) as f32
                     }
@@ -1895,7 +1895,7 @@ pub(crate) fn tilemap(
                             + (chunk.point().y as f32 * chunk_dimensions.height as f32 * 0.5)
                                 * tile_dimensions.width as f32
                     }
-                    _ => {
+                    Square | HexEvenRows | HexOddRows => {
                         (chunk.point().x
                             * tile_dimensions.width as i32
                             * chunk_dimensions.width as i32) as f32
@@ -1909,11 +1909,11 @@ pub(crate) fn tilemap(
                             + (chunk.point().x as f32 * chunk_dimensions.width as f32 * 0.5)
                                 * tile_dimensions.height as f32
                     }
-                    HexY => {
+                    HexY | HexEvenRows | HexOddRows => {
                         (((chunk.point().y * tile_dimensions.height as i32) as f32 * 0.75) as i32
                             * chunk_dimensions.height as i32) as f32
                     }
-                    _ => {
+                    Square | HexEvenCols | HexOddCols => {
                         (chunk.point().y
                             * tile_dimensions.height as i32
                             * chunk_dimensions.height as i32) as f32

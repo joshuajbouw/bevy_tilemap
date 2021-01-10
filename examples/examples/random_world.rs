@@ -91,9 +91,9 @@ fn load(
         // These are fairly advanced configurations just to quickly showcase
         // them.
         let tilemap = Tilemap::builder()
-            .topology(GridTopology::HexX)
-            .dimensions(1, 3)
-            .chunk_dimensions(19, 11)
+            .topology(GridTopology::HexEvenRows)
+            .dimensions(1, 1)
+            .chunk_dimensions(32, 38)
             .tile_dimensions(32, 37)
             .z_layers(3)
             .texture_atlas(atlas_handle)
@@ -130,24 +130,16 @@ fn build_random_world(
         // insert a chunk. This will then communicate with us if we accidentally
         // insert a tile in a chunk we may not want. Also, we only expect to
         // have just 1 chunk.
-        // map.insert_chunk((-1, 0)).unwrap();
         map.insert_chunk((0, 0)).unwrap();
-        // map.insert_chunk((1, 0)).unwrap();
-        // map.insert_chunk((-1, 1)).unwrap();
-        map.insert_chunk((0, 1)).unwrap();
-        // map.insert_chunk((1, 1)).unwrap();
-        // map.insert_chunk((-1, -1)).unwrap();
-        map.insert_chunk((0, -1)).unwrap();
-        // map.insert_chunk((1, -1)).unwrap();
 
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
 
         // Then we need to find out what the handles were to our textures we are going to use.
-        let grass_floor: Handle<Texture> = asset_server.get_handle("textures/hex_floor_grass.png");
-        let dirt_floor: Handle<Texture> = asset_server.get_handle("textures/hex_floor_dirt.png");
-        let boulder: Handle<Texture> = asset_server.get_handle("textures/hex_boulder.png");
-        let trees: Handle<Texture> = asset_server.get_handle("textures/hex_trees.png");
+        let grass_floor: Handle<Texture> = asset_server.get_handle("textures/hex-floor-grass.png");
+        let dirt_floor: Handle<Texture> = asset_server.get_handle("textures/hex-floor-dirt.png");
+        let boulder: Handle<Texture> = asset_server.get_handle("textures/hex-boulder.png");
+        let trees: Handle<Texture> = asset_server.get_handle("textures/hex-trees.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let grass_index = texture_atlas.get_texture_index(&grass_floor).unwrap();
         let dirt_index = texture_atlas.get_texture_index(&dirt_floor).unwrap();
@@ -228,7 +220,7 @@ fn build_random_world(
         map.add_layer_with_kind(LayerKind::Sparse, 2).unwrap();
 
         // Now lets add in a dwarf friend!
-        let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/hex_dwarf.png");
+        let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/hex-dwarf.png");
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         // We add in a Z order of 2 to place the tile above the background on Z
         // order 0.
@@ -249,15 +241,7 @@ fn build_random_world(
 
         // Finally we spawn the chunk! In actual use this should be done in a
         // spawn system.
-        // map.spawn_chunk((-1, 0)).unwrap();
         map.spawn_chunk((0, 0)).unwrap();
-        // map.spawn_chunk((1, 0)).unwrap();
-        // map.spawn_chunk((-1, 1)).unwrap();
-        map.spawn_chunk((0, 1)).unwrap();
-        // map.spawn_chunk((1, 1)).unwrap();
-        // map.spawn_chunk((-1, -1)).unwrap();
-        map.spawn_chunk((0, -1)).unwrap();
-        // map.spawn_chunk((1, -1)).unwrap();
 
         game_state.map_loaded = true;
     }

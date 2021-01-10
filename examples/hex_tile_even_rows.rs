@@ -51,11 +51,10 @@ fn load(
 
         let tilemap = Tilemap::builder()
             .auto_chunk()
-            .topology(GridTopology::HexX)
+            .topology(GridTopology::HexEvenRows)
             .dimensions(3, 3)
             .chunk_dimensions(7, 4)
-            .tile_dimensions(37, 32)
-            .z_layers(3)
+            .tile_dimensions(32, 37)
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();
@@ -88,7 +87,7 @@ fn build_world(
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
 
-        let grass_floor: Handle<Texture> = asset_server.get_handle("textures/hex_floor_grass_alt.png");
+        let grass_floor: Handle<Texture> = asset_server.get_handle("textures/hex-floor-grass.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let grass_index = texture_atlas.get_texture_index(&grass_floor).unwrap();
 
@@ -120,7 +119,7 @@ fn build_world(
 fn main() {
     App::build()
         .add_resource(WindowDescriptor {
-            title: "Hex X".to_string(),
+            title: "Hex Even Rows".to_string(),
             width: 1024.,
             height: 720.,
             vsync: false,
