@@ -27,6 +27,24 @@ serialize = ["bevy_tilemap_types/serialize", "serde"]
 [workspace]
 members = ["library/*", "examples"]
 
+[patch.crates-io]
+bevy_app = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_asset = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_core = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_ecs = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_math = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_input = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_pbr = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_render = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_reflect = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_scene = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_sprite = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_text = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_transform = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_ui = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_utils = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_window = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+
 [dependencies]
 bevy_app = "0.4"
 bevy_asset = "0.4"
