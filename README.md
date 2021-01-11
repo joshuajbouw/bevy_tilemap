@@ -41,6 +41,7 @@ If you have API suggestions, now is the time to do it.
 * Easy to use and *mostly* stable API with thorough documentation.
 * Endless or constrained dimension tilemaps.
 * Batched rendering of many tiles.
+* Square and hex tiles.
 
 ## Design 
 This is not intended to be just another Tilemap. It is meant to be a framework 
@@ -90,6 +91,7 @@ advanced features.
 * Dimensions of a chunk.
 * Dimensions of a tile.
 * Adding Z render layers
+* Automated chunk creation.
 
 With many more features planned for future updates to bring it up to par with
 other tilemap implementations for other projects.
@@ -103,7 +105,7 @@ while now. The next release is focused on added automated methods and system.
 - **Auto-spawn**: Automatically handles spawning and despawning of chunks
 depending on what the camera is viewing.
 - **Tile import**: Imports tiles from a file from multiple formats.
-- **Tilemap3**: Multiple tilemaps working together to create 3D slices that
+- **Tilemap3D**: Multiple tilemaps working together to create 3D slices that
 work together and are aware of each other.
 
 # Building
