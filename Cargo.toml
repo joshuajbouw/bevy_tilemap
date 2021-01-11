@@ -13,28 +13,27 @@ documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap/"
 exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 
 [package.metadata.docs.rs]
-features = ["serialize", "types"]
+features = ["serialize"]
 default-target = "x86_64-pc-windows-msvc"
 
 [features]
 serialize = ["bevy_tilemap_types/serialize", "serde"]
-types = []
 
 [workspace]
 members = ["library/*", "examples"]
 
 [dependencies]
-bevy_app = "0.4"
-bevy_asset = "0.4"
-bevy_core = "0.4"
-bevy_ecs = "0.4"
-bevy_math = "0.4"
-bevy_render = "0.4"
-bevy_reflect = "0.4"
-bevy_sprite = "0.4"
-bevy_tilemap_types = { path = "library/types" }
-bevy_transform = "0.4"
-bevy_utils = "0.4"
+bevy_app = "0.4.0"
+bevy_asset = "0.4.0"
+bevy_core = "0.4.0"
+bevy_ecs = "0.4.0"
+bevy_math = "0.4.0"
+bevy_render = "0.4.0"
+bevy_reflect = "0.4.0"
+bevy_sprite = "0.4.0"
+bevy_tilemap_types = { path = "library/types", version = "0.3" }
+bevy_transform = "0.4.0"
+bevy_utils = "0.4.0"
 bitflags = "1.2.1"
 hexasphere = { git = "https://github.com/joshuajbouw/hexasphere.git", branch = "fix-1.43" }
 serde = { version = "1.0", features = ["derive"], optional = true }
