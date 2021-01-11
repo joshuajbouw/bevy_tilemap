@@ -55,23 +55,29 @@
 //! [`Dimension2`]: crate::dimension::Dimension2
 //! [`Dimension3`]: crate::dimension::Dimension3
 
-#![no_implicit_prelude]
-// rustc
-#![warn(missing_doc_code_examples, missing_docs, private_doc_tests)]
+// This was broken even further and no longer will work at all with the previous
+// workaround. There is a fix, might be sometime for it to be included though. 
+// Even then, it is just a warning. For now, including it per module seems to 
+// fix it.
+// See: https://github.com/rust-lang/rust/pull/80372
+// #![no_implicit_prelude]
+
+// rustc / rustdoc
+#![warn(missing_docs, private_doc_tests)]
 #![deny(dead_code, unused_imports)]
+
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 #![warn(
     clippy::cast_lossless,
     clippy::decimal_literal_representation,
     clippy::else_if_without_else,
-    // clippy::indexing_slicing, // TODO: Change back in when Bevy is updated.
+    clippy::indexing_slicing,
     clippy::let_underscore_must_use,
     clippy::missing_docs_in_private_items,
     clippy::missing_errors_doc,
     clippy::panic_in_result_fn,
     clippy::print_stdout,
-    // clippy::redundant_pub_crate,
     clippy::unwrap_in_result
 )]
 
@@ -85,24 +91,33 @@ pub use bevy_tilemap_types::dimension;
 #[doc(inline)]
 pub use bevy_tilemap_types::point;
 
+#[no_implicit_prelude]
 pub mod default_plugin;
 // pub mod auto_tile;
+#[no_implicit_prelude]
 pub mod chunk;
 /// Bundles of components for spawning entities.
+#[no_implicit_prelude]
 pub mod entity;
 /// Meshes for rendering to vertices.
+#[no_implicit_prelude]
 mod mesh;
+#[no_implicit_prelude]
 pub mod prelude;
 /// Files and helpers for rendering.
+#[no_implicit_prelude]
 pub mod render;
 /// The stages for the tilemap in the bevy app.
+#[no_implicit_prelude]
 pub mod stage {
     /// The tilemap stage, set to run before `POST_UPDATE` stage.
     pub const TILEMAP: &str = "tilemap";
 }
 /// Tile traits to implement for a custom tile.
+#[no_implicit_prelude]
 pub mod tile;
 /// Map traits to implement for a custom map and a basic struct for use.
+#[no_implicit_prelude]
 pub mod tilemap;
 
 use crate::{lib::*, render::TilemapRenderGraphBuilder, tilemap::Tilemap};
@@ -135,6 +150,7 @@ impl Plugin for Tilemap2DPlugin {
 }
 
 /// A custom prelude around everything that we only need to use.
+#[no_implicit_prelude]
 mod lib {
     extern crate bevy_app;
     extern crate bevy_asset;
