@@ -157,6 +157,7 @@ mod lib {
     extern crate bevy_asset;
     extern crate bevy_core;
     extern crate bevy_ecs;
+    extern crate bevy_log;
     extern crate bevy_math;
     extern crate bevy_reflect;
     extern crate bevy_render;
@@ -169,48 +170,43 @@ mod lib {
     extern crate serde;
     extern crate std;
 
-    pub use self::{
-        bevy_app::{
-            stage as app_stage, AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder,
-        },
-        bevy_asset::{AddAsset, Assets, Handle, HandleId, HandleUntyped},
-        bevy_core::{Byteable, Bytes},
-        bevy_ecs::{
-            Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources,
-            SystemStage, TypeInfo,
-        },
-        bevy_math::{Vec2, Vec3},
-        bevy_reflect::{TypeUuid, Uuid},
-        bevy_render::{
-            color::Color,
-            draw::{Draw, Visible},
-            mesh::{Indices, Mesh},
-            pipeline::{
-                BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
-                CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace,
-                PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor,
-                RenderPipeline, RenderPipelines, StencilStateDescriptor,
-                StencilStateFaceDescriptor,
-            },
-            render_graph::{base::MainPass, RenderGraph, RenderResourcesNode},
-            renderer::{
-                RenderResource, RenderResourceIterator, RenderResourceType, RenderResources,
-            },
-            shader::{Shader, ShaderStage, ShaderStages},
-            texture::{Texture, TextureFormat},
-        },
-        bevy_sprite::TextureAtlas,
-        bevy_transform::{
-            components::{GlobalTransform, Parent, Transform},
-            hierarchy::BuildChildren,
-        },
-        bevy_utils::{HashMap, HashSet},
+    pub use bevy_app::{
+        stage as app_stage, AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder,
     };
-
+    pub use bevy_asset::{AddAsset, Assets, Handle, HandleId, HandleUntyped};
+    pub use bevy_core::{Byteable, Bytes};
+    pub use bevy_ecs::{
+        Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources, SystemStage,
+        TypeInfo,
+    };
+    pub use bevy_log::{error, warn};
+    pub use bevy_math::{Vec2, Vec3};
+    pub use bevy_reflect::{TypeUuid, Uuid};
+    pub use bevy_render::{
+        color::Color,
+        draw::{Draw, Visible},
+        mesh::{Indices, Mesh},
+        pipeline::{
+            BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
+            CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, PipelineDescriptor,
+            PrimitiveTopology, RasterizationStateDescriptor, RenderPipeline, RenderPipelines,
+            StencilStateDescriptor, StencilStateFaceDescriptor,
+        },
+        render_graph::{base::MainPass, RenderGraph, RenderResourcesNode},
+        renderer::{RenderResource, RenderResourceIterator, RenderResourceType, RenderResources},
+        shader::{Shader, ShaderStage, ShaderStages},
+        texture::{Texture, TextureFormat},
+    };
+    pub use bevy_sprite::TextureAtlas;
     pub use bevy_tilemap_types::{
         dimension::{Dimension2, DimensionError},
         point::Point2,
     };
+    pub use bevy_transform::{
+        components::{GlobalTransform, Parent, Transform},
+        hierarchy::BuildChildren,
+    };
+    pub use bevy_utils::{HashMap, HashSet};
 
     pub use crate::bitflags::*;
 
@@ -238,4 +234,8 @@ mod lib {
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
     pub use std::println;
+
+    #[cfg(debug_assertions)]
+    #[allow(unused_imports)]
+    pub use bevy_log::debug;
 }
