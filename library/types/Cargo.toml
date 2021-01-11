@@ -1,6 +1,6 @@
 [package]
 name = "bevy_tilemap_types"
-version = "0.3.0"
+version = "0.1.0"
 authors = ["Joshua J. Bouw <dev@joshuajbouw.com>"]
 edition = "2018"
 description = "Common types used across Bevy Tilemaps"
