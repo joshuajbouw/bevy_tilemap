@@ -43,6 +43,9 @@ If you have API suggestions, now is the time to do it.
 * Batched rendering of many tiles.
 * Square and hex tiles.
 
+## Build Features
+* Serde support
+
 ## Design 
 This is not intended to be just another Tilemap. It is meant to be a framework 
 and extensible by design, like Bevy. As well as work done to keep it as close to 
@@ -96,7 +99,7 @@ advanced features.
 With many more features planned for future updates to bring it up to par with
 other tilemap implementations for other projects.
 
-# Future plans
+## Future plans
 
 There is still a lot to do but the API is now stable and should be fine for a
 while now. The next release is focused on added automated methods and system.
@@ -108,7 +111,7 @@ depending on what the camera is viewing.
 - **Tilemap3D**: Multiple tilemaps working together to create 3D slices that
 work together and are aware of each other.
 
-# Building
+## Building
 
 `bevy_tilemap` is only guranteed to work from stable Rust toolchain and up. This
 is to be inline with the rest of Bevy engine.

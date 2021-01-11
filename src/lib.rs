@@ -31,7 +31,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! bevy_tilemap = { version = "0.2", features = ["serde"] }
+//! bevy_tilemap = { version = "0.2", features = ["serialize"] }
 //! ```
 //!
 //! # Extra types feature
@@ -65,7 +65,7 @@
 // #![no_implicit_prelude]
 
 // rustc / rustdoc
-#![warn(missing_doc_code_examples, missing_docs, private_doc_tests)]
+#![warn(missing_docs, private_doc_tests)]
 #![deny(dead_code, unused_imports)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]

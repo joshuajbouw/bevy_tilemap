@@ -865,8 +865,8 @@ impl Tilemap {
     /// ```
     ///
     /// [`add_layer_with_kind`]: Tilemap::add_layer_with_kind
-    /// [`LayerKind`]: crate::chunk::LayerKind;
-    /// [`LayerKind::Sparse`]: crate::chunk::LayerKind::Sparse;
+    /// [`LayerKind`]: crate::chunk::LayerKind
+    /// [`LayerKind::Sparse`]: crate::chunk::LayerKind::Sparse
     pub fn add_layer(&mut self, z_layer: usize) -> TilemapResult<()> {
         self.add_layer_with_kind(LayerKind::Dense, z_layer)
     }
