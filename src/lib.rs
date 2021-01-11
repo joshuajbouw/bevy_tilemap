@@ -14,6 +14,7 @@
 //! * Easy to use and stable API with thorough documentation.
 //! * Endless or constrained tilemaps.
 //! * Batched rendering of many tiles.
+//! * Square and hex tiles.
 //!
 //! ## Design
 //! This is not intended to be just another Tilemap. It is meant to be a
