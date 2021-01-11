@@ -1783,9 +1783,12 @@ pub(crate) fn tilemap_auto_configure(
             return;
         }
 
-        let atlas = texture_atlases
-            .get(&map.texture_atlas)
-            .expect("`TextureAtlas` is missing.");
+        let atlas = if let Some(atlas) = texture_atlases.get(&map.texture_atlas) {
+            atlas
+        } else {
+            error!(target: "tilemap_events", "`TextureAtlas` for the tilemap is missing, can not auto configure");
+            return;
+        };
 
         let mut tile_dimensions: Dimension2 = Dimension2::new(0, 0);
         let mut base_size: u32 = 0;
@@ -1802,11 +1805,10 @@ pub(crate) fn tilemap_auto_configure(
         }
 
         for size in sizes.into_iter() {
-            assert_eq!(
-                size % base_size,
-                0,
-                "The tiles in the set `TextureAtlas` must be divisible by the smallest tile."
-            );
+            if size % base_size != 0 {
+                error!(target: "tilemap_events", "the tiles in the set `TextureAtlas` must be divisible by the smallest itle, can not auto configure");
+                return;
+            }
         }
 
         let chunk_dimensions = Dimension2::new(
@@ -1867,16 +1869,23 @@ pub(crate) fn tilemap(
             let texture_atlas = tilemap.texture_atlas().clone_weak();
             let pipeline_handle = tilemap.topology.to_pipeline_handle();
             let topology = tilemap.topology;
-            let chunk = tilemap.chunks.get_mut(&point).expect("`Chunk` is missing.");
+            let chunk = if let Some(chunk) = tilemap.chunks.get_mut(&point) {
+                chunk
+            } else {
+                warn!(target: "tilemap_events", "can not get chunk at {}, skipping", &point);
+                continue;
+            };
             let mut entities = Vec::with_capacity(capacity);
             for z in 0..layers_len {
                 let mut mesh = Mesh::from(&ChunkMesh::new(chunk_dimensions));
-                let (indexes, colors) =
-                    if let Some(parts) = chunk.tiles_to_renderer_parts(z, chunk_dimensions) {
-                        parts
-                    } else {
-                        continue;
-                    };
+                let (indexes, colors) = if let Some(parts) =
+                    chunk.tiles_to_renderer_parts(z, chunk_dimensions)
+                {
+                    parts
+                } else {
+                    warn!(target: "tilemap_events", "can not split tiles to data for the renderer");
+                    continue;
+                };
                 mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
                 mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
                 let mesh_handle = meshes.add(mesh);
@@ -1921,7 +1930,7 @@ pub(crate) fn tilemap(
                 };
                 let translation = Vec3::new(translation_x, translation_y, z as f32);
                 let pipeline = RenderPipeline::new(pipeline_handle.clone_weak().typed());
-                let entity = commands
+                let entity = if let Some(entity) = commands
                     .spawn(ChunkBundle {
                         point,
                         z_order: ZOrder(z),
@@ -1932,7 +1941,12 @@ pub(crate) fn tilemap(
                         ..Default::default()
                     })
                     .current_entity()
-                    .expect("Chunk entity unexpected does not exist.");
+                {
+                    entity
+                } else {
+                    error!(target: "tilemap_events", "entity does not exist unexpectedly, can not run the tilemap system");
+                    return;
+                };
 
                 chunk.add_entity(z, entity);
                 entities.push(entity);
@@ -1942,9 +1956,12 @@ pub(crate) fn tilemap(
 
         for layers in modified_chunks.into_iter() {
             for (_layer, entity) in layers.into_iter() {
-                let mut modified_layer = layer_query
-                    .get_mut(entity)
-                    .expect("`Layer` does not exist.");
+                let mut modified_layer = if let Ok(layer) = layer_query.get_mut(entity) {
+                    layer
+                } else {
+                    warn!(target: "tilemap_events", "layer does not exist in ECS, skipping");
+                    continue;
+                };
                 modified_layer.0 += 1;
             }
         }

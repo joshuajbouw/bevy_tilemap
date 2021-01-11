@@ -3,10 +3,10 @@ name: Bug Report
 about: Report a bug to help us improve!
 title: ''
 labels: 'bug'
-assignees: ''
+assignees: 'joshuajbouw'
 ---
 
-**Bevy version**
+**Bevy Tilemap version**
 
 The release number or commit hash of the version you're using
 
