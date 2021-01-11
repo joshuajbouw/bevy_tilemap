@@ -17,30 +17,6 @@ impl Point2 {
     pub fn new(x: i32, y: i32) -> Point2 {
         Point2 { x, y }
     }
-
-    /// The X coordinate of the point.
-    #[deprecated(since = "0.2.1", note = "use `self.x` instead, will be removed by 0.3")]
-    #[doc(hidden)]
-    pub fn x(&self) -> i32 {
-        self.x
-    }
-
-    /// The Y coordinate of the point.
-    #[deprecated(since = "0.2.1", note = "use `self.y` instead, will be removed by 0.3")]
-    #[doc(hidden)]
-    pub fn y(&self) -> i32 {
-        self.x
-    }
-
-    /// Consumes the point and returns the inner value.
-    #[deprecated(
-        since = "0.2.1",
-        note = "use `Into<(i32, u32)> instead, will be removed by 0.3"
-    )]
-    #[doc(hidden)]
-    pub fn into_inner(self) -> (i32, i32) {
-        (self.x, self.y)
-    }
 }
 
 impl Display for Point2 {
@@ -289,40 +265,9 @@ impl Point3 {
         Point3 { x, y, z }
     }
 
-    /// The X coordinate of the point.
-    #[deprecated(since = "0.2.1", note = "use `self.x` instead, will be removed by 0.3")]
-    #[doc(hidden)]
-    pub fn x(&self) -> i32 {
-        self.x
-    }
-
-    /// The Y coordinate of the point.
-    #[deprecated(since = "0.2.1", note = "use `self.y` instead, will be removed by 0.3")]
-    #[doc(hidden)]
-    pub fn y(&self) -> i32 {
-        self.y
-    }
-
-    /// The Z coordinate of the point.
-    #[deprecated(since = "0.2.1", note = "use `self.z` instead, will be removed by 0.3")]
-    #[doc(hidden)]
-    pub fn z(&self) -> i32 {
-        self.z
-    }
-
     /// The X,Y coordinate of the point as a [`Point2`](Point2).
     pub fn xy(&self) -> Point2 {
         Point2::new(self.x, self.y)
-    }
-
-    /// Consumes the point and returns the inner value.
-    #[deprecated(
-        since = "0.2.1",
-        note = "use `Into<(i32, i32, i32)> instead, will be removed by 0.3"
-    )]
-    #[doc(hidden)]
-    pub fn into_inner(self) -> (i32, i32, i32) {
-        (self.x, self.y, self.z)
     }
 }
 

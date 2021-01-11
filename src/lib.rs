@@ -14,6 +14,7 @@
 //! * Easy to use and stable API with thorough documentation.
 //! * Endless or constrained tilemaps.
 //! * Batched rendering of many tiles.
+//! * Square and hex tiles.
 //!
 //! ## Design
 //! This is not intended to be just another Tilemap. It is meant to be a
@@ -30,7 +31,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! bevy_tilemap = { version = "0.2", features = ["serde"] }
+//! bevy_tilemap = { version = "0.2", features = ["serialize"] }
 //! ```
 //!
 //! # Extra types feature
@@ -55,6 +56,7 @@
 //! [`Dimension2`]: crate::dimension::Dimension2
 //! [`Dimension3`]: crate::dimension::Dimension3
 
+#![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.3.0")]
 // This was broken even further and no longer will work at all with the previous
 // workaround. There is a fix, might be sometime for it to be included though.
 // Even then, it is just a warning. For now, including it per module seems to

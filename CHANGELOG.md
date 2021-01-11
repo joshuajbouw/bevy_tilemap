@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.0] - 2021-01-11
+
 ### Added
 
 * Auto configuration of optimal chunk sizes to texture size as well as checks
@@ -33,12 +35,13 @@ This should make it easier to do animations.
 meant to be constructed.
 * Examples for all tile orientations.
 * Library is able to work with WASM.
+* Default plugin for Tilemap was introduced.
 
 ### Changed
 
 * The whole project was mostly refactored.
 * `ChunkTilesPlugin` is now `Tilemap2DPlugin`.
-* `TilemapBuilder::build()` is now `TilemapBuilder::finish()`
+* `TilemapBuilder::build()` is now `TilemapBuilder::finish()` to be consistent.
 * Point module was now made optional.
 * Changed the `random_dungeon` example to be more like an actual implementation.
 * `Tile` had all generics removed from it.
@@ -54,6 +57,17 @@ chunk or not already.
 * `TilemapComponents` renamed to `TilemapBundle` to stay inline with Bevy API.
 * `ChunkComponents` renamed to `ChunkBundle` to stay inline with Bevy API.
 * All examples were updated for latest bevy.
+
+
+### Removed
+
+* `Point2` and `Point3` deprecations were removed.
+
+### Known Bugs
+
+* Examples moved to its own library temporarily. This is a Bevy 0.4 issue where
+you can not place `bevy` into the dev-dependencies of the Cargo.toml.
+* Hex Y-axis is not perfectly centred.
 
 ## [0.2.2] - 2020-11-23
 
