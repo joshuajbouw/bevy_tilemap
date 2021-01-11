@@ -18,11 +18,8 @@ be enabled in the `TilemapBuilder` with `auto_configure`.
 it. This can be enabled in the `TilemapBuilder` with `auto_chunk`
 * Optional dimension 2D and 3D API.
 * `TilemapDefaultPlugins` was added.
-* `SpriteSheet` was added which is very much like `TextureAtlas` but it splits
-everything into tiles.
 * `point` and `dimension` modules were moved to `bevy_tilemap_types` crate but 
 still accessible as normal and optional.
-* `bevy_tilemap_spritesheet` sub-crate was added.
 * Example `stress_dwarves` has been added to benchmark and stress test.
 * Various hex orientations were added (thanks @jamadazi!).
 * A hex example `random_world` was added to showcase one of the hex 
