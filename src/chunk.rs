@@ -54,13 +54,7 @@
 //! let z_order = 1;
 //! tilemap.add_layer_with_kind(LayerKind::Sparse, 1);
 //! ```
-use crate::{
-    entity::{ModifiedLayer, ZOrder},
-    lib::*,
-    mesh::ChunkMesh,
-    tile::RawTile,
-    tilemap::Tilemap,
-};
+use crate::{entity::{ModifiedLayer, ZOrder}, lib::*, mesh::ChunkMesh, tile::RawTile, tilemap::Tilemap};
 
 /// Common methods for layers in a chunk.
 pub(crate) trait Layer: 'static {
@@ -469,5 +463,60 @@ pub(crate) fn chunk_update(
         };
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
+    }
+}
+
+/// Spawns and despawns chunks automatically based on a camera's position.
+pub(crate) fn chunk_auto_spawn(
+    mut tilemap_query: Query<(&mut Tilemap, &mut Transform)>,
+    camera_query:Query<(&Camera, &Transform), Changed<Transform>>, 
+) {
+    // For the transform, get chunk coord.
+    for (mut tilemap, tilemap_transform) in tilemap_query.iter_mut() {
+        let spawn_radius = if let Some(radius) = tilemap.auto_spawn() {
+            radius as i32
+        } else {
+            continue;
+        };
+        for (_camera, camera_transform) in camera_query.iter() {
+            let chunk_px_width = (tilemap.chunk_width() as f32 * tilemap.tile_width() as f32) / 2.;
+            let chunk_px_height = (tilemap.chunk_height() as f32 * tilemap.tile_height() as f32) / 2.;
+            let translation = camera_transform.translation - tilemap_transform.translation;
+            let chunk_x = (translation.x / chunk_px_width).floor() as i32;
+            let chunk_y = (translation.y / chunk_px_height).floor() as i32;
+            let mut new_spawned: Vec<Point2> = Vec::new();
+            for y in -spawn_radius..spawn_radius + 1 {
+                for x in -spawn_radius..spawn_radius + 1 {
+                    let chunk_x = x + chunk_x;
+                    let chunk_y = y + chunk_y;
+                    if let Some(width) = tilemap.width() {
+                        let width = width as i32 / 2;
+                        if chunk_x < -width || chunk_x > width {
+                            continue;
+                        }
+                    }
+                    if let Some(height) = tilemap.height() {
+                        let height = height as i32 / 2;
+                        if chunk_y < -height || chunk_y > height {
+                            continue;
+                        }
+                    }
+
+                    if let Err(e) = tilemap.spawn_chunk(Point2::new(chunk_x, chunk_y)) {
+                        warn!(target: "tilemap_events", "{}", e);
+                    };
+                    new_spawned.push(Point2::new(chunk_x, chunk_y));
+                }
+            }
+
+            let spawned_list = tilemap.spawned_mut().clone();
+            for point in spawned_list.iter() {
+                if !new_spawned.contains(&point) {
+                    if let Err(e) = tilemap.despawn_chunk(point) {
+                        warn!(target: "tilemap_events", "{}", e);
+                    }
+                }
+            } 
+        }
     }
 }

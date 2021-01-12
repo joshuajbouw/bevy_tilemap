@@ -104,7 +104,7 @@ use crate::{
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 /// The kinds of errors that can occur.
-enum ErrorKind {
+pub enum ErrorKind {
     /// If the coordinate or index is out of bounds.
     DimensionError(DimensionError),
     /// If a layer already exists this error is returned.
@@ -146,7 +146,7 @@ impl Display for ErrorKind {
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 /// The error type for operations when interacting with the tilemap.
-pub struct TilemapError(Box<ErrorKind>);
+pub struct TilemapError(pub Box<ErrorKind>);
 
 impl Display for TilemapError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
@@ -170,7 +170,6 @@ impl From<DimensionError> for TilemapError {
 
 /// A map result.
 pub type TilemapResult<T> = Result<T, TilemapError>;
-
 #[derive(Debug)]
 /// Events that can happen to chunks.
 enum ChunkEvent {
@@ -197,6 +196,7 @@ bitflags! {
         const NONE = 0b0;
         const AUTO_CONFIGURE = 0b0000_0000_0000_0001;
         const AUTO_CHUNK = 0b0000_0000_0000_0010;
+        const AUTO_SPAWN = 0b0000_0000_0000_0100;
     }
 }
 
@@ -232,6 +232,8 @@ pub struct Tilemap {
     layers: Vec<Option<LayerKind>>,
     /// Auto flags used for different automated features.
     auto_flags: AutoFlags,
+    /// Dimensions of chunks to spawn from camera transform.
+    auto_spawn: Option<u32>,
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The handle of the texture atlas.
     texture_atlas: Handle<TextureAtlas>,
@@ -243,6 +245,8 @@ pub struct Tilemap {
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The events of the tilemap.
     events: Events<ChunkEvent>,
+    /// A set of all spawned chunks.
+    spawned: HashSet<Point2>,
 }
 
 /// Tilemap factory, which can be used to construct and configure new tilemaps.
@@ -319,6 +323,8 @@ pub struct TilemapBuilder {
     texture_atlas: Option<Handle<TextureAtlas>>,
     /// True if this tilemap will automatically configure.
     auto_flags: AutoFlags,
+    /// The radius of chunks to spawn from a camera's transform.
+    auto_spawn: Option<u32>,
 }
 
 impl Default for TilemapBuilder {
@@ -332,6 +338,7 @@ impl Default for TilemapBuilder {
             layers: None,
             texture_atlas: None,
             auto_flags: AutoFlags::NONE,
+            auto_spawn: None,
             // auto_tile: None,
         }
     }
@@ -528,6 +535,13 @@ impl TilemapBuilder {
         self
     }
 
+    /// Sets the tilemap to automatically spawn new chunks within given 
+    /// dimensions.
+    pub fn auto_spawn(mut self, radius: u32) -> Self {
+        self.auto_spawn = Some(radius);
+        self
+    }
+
     /// Consumes the builder and returns a result.
     ///
     /// If successful a [`TilemapResult`] is return with [tilemap] on
@@ -579,10 +593,12 @@ impl TilemapBuilder {
             tile_dimensions: self.tile_dimensions,
             layers: vec![None; z_layers],
             auto_flags: self.auto_flags,
+            auto_spawn: self.auto_spawn,
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
             events: Default::default(),
+            spawned: Default::default(),
         };
 
         if let Some(mut layers) = self.layers {
@@ -608,10 +624,12 @@ impl Default for Tilemap {
             tile_dimensions: DEFAULT_CHUNK_DIMENSIONS,
             layers: vec![None; DEFAULT_Z_LAYERS],
             auto_flags: AutoFlags::NONE,
+            auto_spawn: None,
             texture_atlas: Handle::default(),
             chunks: Default::default(),
             entities: Default::default(),
             events: Default::default(),
+            spawned: Default::default(),
         }
     }
 }
@@ -996,7 +1014,11 @@ impl Tilemap {
             dimensions.check_point(point)?;
         }
 
-        self.events.send(ChunkEvent::Spawned { point });
+        if self.spawned.contains(&point) {
+            return Ok(());
+        } else {
+            self.events.send(ChunkEvent::Spawned { point });
+        }
 
         Ok(())
     }
@@ -1079,6 +1101,8 @@ impl Tilemap {
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
         }
+
+        self.spawned.remove(&point);
 
         if let Some(chunk) = self.chunks.get_mut(&point) {
             let entities = chunk.get_entities();
@@ -1772,9 +1796,19 @@ impl Tilemap {
         self.topology
     }
 
+    /// Returns an option containing a Dimension2.
+    pub(crate) fn auto_spawn(&self) -> Option<u32> {
+        self.auto_spawn
+    }
+
     /// Returns a copy of the chunk's dimensions.
     pub(crate) fn chunk_dimensions(&self) -> Dimension2 {
         self.chunk_dimensions
+    }
+
+    /// Returns a mutable reference to the spawned chunk points.
+    pub(crate) fn spawned_mut(&mut self) -> &mut HashSet<Point2> {
+        &mut self.spawned
     }
 }
 
@@ -1869,6 +1903,13 @@ pub(crate) fn tilemap(
 
         let capacity = spawned_chunks.len();
         for point in spawned_chunks.into_iter() {
+            if tilemap.spawned.contains(&point) {
+                continue;
+            } else {
+                println!("inserting spawned chunk {}", point);
+                tilemap.spawned.insert(point);
+            }
+
             let layers_len = tilemap.layers.len();
             let chunk_dimensions = tilemap.chunk_dimensions;
             let tile_dimensions = tilemap.tile_dimensions;

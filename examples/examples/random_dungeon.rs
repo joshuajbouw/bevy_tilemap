@@ -60,8 +60,6 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-
-    commands.spawn(Camera2dBundle::default());
 }
 
 fn load(
@@ -91,8 +89,10 @@ fn load(
         // These are fairly advanced configurations just to quickly showcase
         // them.
         let tilemap = Tilemap::builder()
-            .dimensions(1, 1)
-            .chunk_dimensions(32, 32)
+            .dimensions(3, 3)
+            .chunk_dimensions(10, 10)
+            .auto_chunk()
+            .auto_spawn(1)
             .z_layers(2)
             .texture_atlas(atlas_handle)
             .finish()
@@ -103,7 +103,8 @@ fn load(
             transform: Default::default(),
             global_transform: Default::default(),
         };
-
+        
+        commands.spawn(Camera2dBundle::default());
         commands
             .spawn(tilemap_components)
             .with(Timer::from_seconds(0.075, true));
@@ -128,7 +129,7 @@ fn build_random_dungeon(
         // insert a chunk. This will then communicate with us if we accidentally
         // insert a tile in a chunk we may not want. Also, we only expect to
         // have just 1 chunk.
-        map.insert_chunk((0, 0)).unwrap();
+        // map.insert_chunk((0, 0)).unwrap();
 
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
@@ -219,7 +220,7 @@ fn build_random_dungeon(
 
         // Finally we spawn the chunk! In actual use this should be done in a
         // spawn system.
-        map.spawn_chunk((0, 0)).unwrap();
+        // map.spawn_chunk((0, 0)).unwrap();
 
         game_state.map_loaded = true;
     }

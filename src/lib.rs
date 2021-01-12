@@ -137,7 +137,8 @@ impl Plugin for Tilemap2DPlugin {
                 crate::tilemap::tilemap_auto_configure.system(),
             )
             .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap.system())
-            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_update.system());
+            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_update.system())
+            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_auto_spawn.system());
 
         let resources = app.resources_mut();
         let mut render_graph = resources
@@ -162,6 +163,7 @@ mod lib {
     extern crate bevy_tilemap_types;
     extern crate bevy_transform;
     extern crate bevy_utils;
+    extern crate bevy_window;
     pub extern crate bitflags;
     #[cfg(feature = "serde")]
     extern crate serde;
@@ -174,12 +176,13 @@ mod lib {
     pub use bevy_core::{Byteable, Bytes};
     pub use bevy_ecs::{
         Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources, SystemStage,
-        TypeInfo,
+        TypeInfo, With
     };
     pub use bevy_log::{error, warn};
     pub use bevy_math::{Vec2, Vec3};
     pub use bevy_reflect::{TypeUuid, Uuid};
     pub use bevy_render::{
+        camera::Camera,
         color::Color,
         draw::{Draw, Visible},
         mesh::{Indices, Mesh},
@@ -204,6 +207,7 @@ mod lib {
         hierarchy::BuildChildren,
     };
     pub use bevy_utils::{HashMap, HashSet};
+    pub use bevy_window::Window;
 
     pub use crate::bitflags::*;
 
