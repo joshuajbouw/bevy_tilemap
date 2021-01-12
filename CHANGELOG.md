@@ -7,6 +7,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.1] - 2021-01-12
+
+### Added
+
+* Added bevy_log logging [#88](https://github.com/joshuajbouw/bevy_tilemap/pull/88)
+
+### Fixed
+
+* Fixed docs.rs fail [#89](https://github.com/joshuajbouw/bevy_tilemap/pull/89)
+* Added Types feature back in [#87](https://github.com/joshuajbouw/bevy_tilemap/pull/87)
+
 ## [0.3.0] - 2021-01-11
 
 ### Added
