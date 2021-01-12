@@ -36,10 +36,10 @@
 //!
 //! # Extra types feature
 //!
-//! Internally, the library uses [`Point2`], [`Point3`], [`Dimension2`] and
-//! [`Dimension3`] types. This is not part of the official Bevy library and
-//! multiple or alternative implementations of them may not be ideal, especially
-//! not in the prelude.
+//! Internally, the library uses Point2, Point3, Dimension2 and Dimension3
+//! types. This is not part of the official Bevy library and multiple or
+//! alternative implementations of them may not be ideal, especially not in the
+//! prelude.
 //!
 //! It is quite important however to `impl Into<T>` for each of them for most
 //! public methods. It already has most basic implementations that make sense.
@@ -51,10 +51,7 @@
 //! bevy_tilemap = { version = "0.2", features = ["types"] }
 //! ```
 //!
-//! [`Point2`]: crate::point::Point2
-//! [`Point3`]: crate::point::Point3
-//! [`Dimension2`]: crate::dimension::Dimension2
-//! [`Dimension3`]: crate::dimension::Dimension3
+//! See the library `bevy_tilemap_types` for more information.
 
 #![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.3.0")]
 // This was broken even further and no longer will work at all with the previous
