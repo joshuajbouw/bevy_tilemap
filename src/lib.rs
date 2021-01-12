@@ -31,7 +31,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! bevy_tilemap = { version = "0.2", features = ["serialize"] }
+//! bevy_tilemap = { version = "0.3", features = ["serialize"] }
 //! ```
 //!
 //! # Extra types feature
