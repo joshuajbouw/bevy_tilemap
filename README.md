@@ -45,6 +45,7 @@ If you have API suggestions, now is the time to do it.
 
 ## Build Features
 * Serde support
+* Extra types
 
 ## Design 
 This is not intended to be just another Tilemap. It is meant to be a framework 
