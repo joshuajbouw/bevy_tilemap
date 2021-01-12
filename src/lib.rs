@@ -48,12 +48,12 @@
 //!
 //! ```toml
 //! [dependencies]
-//! bevy_tilemap = { version = "0.2", features = ["types"] }
+//! bevy_tilemap = { version = "0.3", features = ["types"] }
 //! ```
 //!
 //! See the library `bevy_tilemap_types` for more information.
 
-#![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.3.0")]
+#![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.3.1")]
 // This was broken even further and no longer will work at all with the previous
 // workaround. There is a fix, might be sometime for it to be included though.
 // Even then, it is just a warning. For now, including it per module seems to
