@@ -18,27 +18,16 @@
 //! * [`bevy_tilemap`]::[`Tilemap2DPlugin`], the main plugin with
 //! a collection of systems, components and assets to be used in a Bevy app.
 //!
-//! If **"types"** feature is enabled it re-exports the following.
-//!
-//! * [`bevy_tilemap::dimension`]::{[`Dimension2`], [`Dimension3`]}
-//! common methods and helpers for dealing with dimensions.
-//! * [`bevy_tilemap::point`]::{[`Point2`], [`Point3`]} common methods
-//! and helpers for dealing with points of the 2nd and 3rd dimension.
-//!
 //! [`bevy_tilemap::prelude::v0`]: crate::prelude::v0
 //! [`bevy_tilemap::default_plugin`]: crate::default_plugin
 //! [`bevy_tilemap::chunk`]: crate::chunk
 //! [`bevy_tilemap::entity`]: crate::entity
 //! [`bevy_tilemap::tile`]: crate::tile
 //! [`bevy_tilemap::tilemap`]: crate::tilemap
-//! [`bevy_tilemap::dimension`]: crate::dimension
-//! [`bevy_tilemap::point`]: crate::point
 //! [`bevy_tilemap`]: crate
 
 /// Version 0 prelude.
 pub mod v0 {
-    #[cfg(feature = "types")]
-    pub use crate::bevy_tilemap_types::prelude::v0::*;
     pub use crate::{
         chunk::LayerKind,
         default_plugin::TilemapDefaultPlugins,
