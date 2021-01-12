@@ -11,7 +11,8 @@ documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap_types/"
 
 [package.metadata.docs.rs]
 features = ["serialize"]
-default-target = "x86_64-pc-windows-msvc"
+# This may have broken the doc build. Going to disable it for now.
+# default-target = "x86_64-pc-windows-msvc"
 
 [features]
 serialize = ["serde"]

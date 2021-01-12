@@ -14,7 +14,8 @@ exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 
 [package.metadata.docs.rs]
 features = ["serialize", "types"]
-default-target = "x86_64-pc-windows-msvc"
+# This may have broken the doc build. Going to disable it for now.
+# default-target = "x86_64-pc-windows-msvc"
 
 [features]
 serialize = ["bevy_tilemap_types/serialize", "serde"]
