@@ -176,7 +176,7 @@ mod lib {
     pub use bevy_core::{Byteable, Bytes};
     pub use bevy_ecs::{
         Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources, SystemStage,
-        TypeInfo, With
+        TypeInfo, With,
     };
     pub use bevy_log::{error, warn};
     pub use bevy_math::{Vec2, Vec3};

@@ -2,12 +2,18 @@
 use bevy::{
     asset::LoadState,
     prelude::*,
+    render::camera::Camera,
     sprite::{TextureAtlas, TextureAtlasBuilder},
     utils::HashSet,
     window::WindowMode,
 };
 use bevy_tilemap::prelude::*;
 use rand::Rng;
+
+const CHUNK_WIDTH: u32 = 32;
+const CHUNK_HEIGHT: u32 = 32;
+const TILEMAP_WIDTH: i32 = CHUNK_WIDTH as i32 * 5;
+const TILEMAP_HEIGHT: i32 = CHUNK_HEIGHT as i32 * 5;
 
 #[derive(Default, Clone)]
 struct TileSpriteHandles {
@@ -45,20 +51,23 @@ struct GameState {
 }
 
 impl GameState {
-    fn try_move_player(&mut self, position: &mut Position, delta_xy: (i32, i32)) {
+    fn try_move_player(
+        &mut self,
+        position: &mut Position,
+        camera_translation: &mut Vec3,
+        delta_xy: (i32, i32),
+    ) {
         let new_pos = (position.x + delta_xy.0, position.y + delta_xy.1);
         if !self.collisions.contains(&new_pos) {
-            position.x = new_pos.0;
-            position.y = new_pos.1;
+            position.x = position.x + delta_xy.0;
+            position.y = position.y + delta_xy.1;
+            camera_translation.x = camera_translation.x + (delta_xy.0 as f32 * 32.);
+            camera_translation.y = camera_translation.y + (delta_xy.1 as f32 * 32.);
         }
     }
 }
 
-fn setup(
-    commands: &mut Commands,
-    mut tile_sprite_handles: ResMut<TileSpriteHandles>,
-    asset_server: Res<AssetServer>,
-) {
+fn setup(mut tile_sprite_handles: ResMut<TileSpriteHandles>, asset_server: Res<AssetServer>) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
 }
 
@@ -89,8 +98,8 @@ fn load(
         // These are fairly advanced configurations just to quickly showcase
         // them.
         let tilemap = Tilemap::builder()
-            .dimensions(3, 3)
-            .chunk_dimensions(10, 10)
+            .dimensions(TILEMAP_WIDTH as u32, TILEMAP_HEIGHT as u32)
+            .chunk_dimensions(CHUNK_WIDTH, CHUNK_HEIGHT)
             .auto_chunk()
             .auto_spawn(1)
             .z_layers(2)
@@ -103,7 +112,7 @@ fn load(
             transform: Default::default(),
             global_transform: Default::default(),
         };
-        
+
         commands.spawn(Camera2dBundle::default());
         commands
             .spawn(tilemap_components)
@@ -125,15 +134,6 @@ fn build_random_dungeon(
     }
 
     for mut map in query.iter_mut() {
-        // Since we did not `auto_chunk` in the builder, we must manually
-        // insert a chunk. This will then communicate with us if we accidentally
-        // insert a tile in a chunk we may not want. Also, we only expect to
-        // have just 1 chunk.
-        // map.insert_chunk((0, 0)).unwrap();
-
-        let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
-        let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
-
         // Then we need to find out what the handles were to our textures we are going to use.
         let floor_sprite: Handle<Texture> = asset_server.get_handle("textures/square-floor.png");
         let wall_sprite: Handle<Texture> = asset_server.get_handle("textures/square-wall.png");
@@ -143,10 +143,10 @@ fn build_random_dungeon(
 
         // Now we fill the entire space with floors.
         let mut tiles = Vec::new();
-        for y in 0..chunk_height {
-            for x in 0..chunk_width {
-                let y = y - chunk_height / 2;
-                let x = x - chunk_width / 2;
+        for y in 0..TILEMAP_HEIGHT {
+            for x in 0..TILEMAP_WIDTH {
+                let y = y - TILEMAP_HEIGHT / 2;
+                let x = x - TILEMAP_WIDTH / 2;
                 // By default tile sets the Z order at 0. Lower means that tile
                 // will render lower than others. 0 is the absolute bottom
                 // level which is perfect for backgrounds.
@@ -155,10 +155,10 @@ fn build_random_dungeon(
             }
         }
 
-        for x in 0..chunk_width {
-            let x = x - chunk_width / 2;
-            let tile_a = (x, -chunk_height / 2);
-            let tile_b = (x, chunk_height / 2 - 1);
+        for x in 0..TILEMAP_WIDTH {
+            let x = x - TILEMAP_WIDTH / 2;
+            let tile_a = (x, -TILEMAP_HEIGHT / 2);
+            let tile_b = (x, TILEMAP_HEIGHT / 2 - 1);
             tiles.push(Tile::new(tile_a, wall_idx));
             tiles.push(Tile::new(tile_b, wall_idx));
             game_state.collisions.insert(tile_a);
@@ -166,21 +166,22 @@ fn build_random_dungeon(
         }
 
         // Then the wall tiles on the Y axis.
-        for y in 0..chunk_height {
-            let y = y - chunk_height / 2;
-            let tile_a = (-chunk_width / 2, y);
-            let tile_b = (chunk_width / 2 - 1, y);
+        for y in 0..TILEMAP_HEIGHT {
+            let y = y - TILEMAP_HEIGHT / 2;
+            let tile_a = (-TILEMAP_WIDTH / 2, y);
+            let tile_b = (TILEMAP_WIDTH / 2 - 1, y);
             tiles.push(Tile::new(tile_a, wall_idx));
             tiles.push(Tile::new(tile_b, wall_idx));
             game_state.collisions.insert(tile_a);
             game_state.collisions.insert(tile_b);
         }
+
         // Lets just generate some random walls to sparsely place around the dungeon!
-        let range = (chunk_width * chunk_height) as usize / 5;
+        let range = (TILEMAP_WIDTH * TILEMAP_HEIGHT) as usize / 5;
         let mut rng = rand::thread_rng();
         for _ in 0..range {
-            let x = rng.gen_range((-chunk_width / 2)..(chunk_width / 2));
-            let y = rng.gen_range((-chunk_height / 2)..(chunk_height / 2));
+            let x = rng.gen_range((-TILEMAP_WIDTH / 2)..(TILEMAP_WIDTH / 2));
+            let y = rng.gen_range((-TILEMAP_HEIGHT / 2)..(TILEMAP_HEIGHT / 2));
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
                 tiles.push(Tile::new((x, y), wall_idx));
@@ -218,10 +219,6 @@ fn build_random_dungeon(
         // Now we pass all the tiles to our map.
         map.insert_tiles(tiles).unwrap();
 
-        // Finally we spawn the chunk! In actual use this should be done in a
-        // spawn system.
-        // map.spawn_chunk((0, 0)).unwrap();
-
         game_state.map_loaded = true;
     }
 }
@@ -231,6 +228,7 @@ fn move_sprite(
     previous_position: Position,
     position: Position,
     render: &Render,
+    // camera_translation: &mut Transform,
 ) {
     // We need to first remove where we were prior.
     map.clear_tile((previous_position.x, previous_position.y), 1)
@@ -250,6 +248,7 @@ fn character_movement(
     time: Res<Time>,
     mut map_query: Query<(&mut Tilemap, &mut Timer)>,
     mut player_query: Query<(&mut Position, &Render, &Player)>,
+    mut camera_query: Query<(&Camera, &mut Transform)>,
 ) {
     if !game_state.map_loaded {
         return;
@@ -263,41 +262,71 @@ fn character_movement(
 
         for (mut position, render, _player) in player_query.iter_mut() {
             for key in keyboard_input.get_pressed() {
-                // First we need to store our very current position.
-                let previous_position = *position;
+                for (_camera, mut camera_transform) in camera_query.iter_mut() {
+                    // First we need to store our very current position.
+                    let previous_position = *position;
 
-                // Of course we need to control where we are going to move our
-                // dwarf friend.
-                use KeyCode::*;
-                match key {
-                    W | Numpad8 | Up | K => {
-                        game_state.try_move_player(&mut position, (0, 1));
-                    }
-                    A | Numpad4 | Left | H => {
-                        game_state.try_move_player(&mut position, (-1, 0));
-                    }
-                    S | Numpad2 | Down | J => {
-                        game_state.try_move_player(&mut position, (0, -1));
-                    }
-                    D | Numpad6 | Right | L => {
-                        game_state.try_move_player(&mut position, (1, 0));
+                    // Of course we need to control where we are going to move our
+                    // dwarf friend.
+                    use KeyCode::*;
+                    match key {
+                        W | Numpad8 | Up | K => {
+                            game_state.try_move_player(
+                                &mut position,
+                                &mut camera_transform.translation,
+                                (0, 1),
+                            );
+                        }
+                        A | Numpad4 | Left | H => {
+                            game_state.try_move_player(
+                                &mut position,
+                                &mut camera_transform.translation,
+                                (-1, 0),
+                            );
+                        }
+                        S | Numpad2 | Down | J => {
+                            game_state.try_move_player(
+                                &mut position,
+                                &mut camera_transform.translation,
+                                (0, -1),
+                            );
+                        }
+                        D | Numpad6 | Right | L => {
+                            game_state.try_move_player(
+                                &mut position,
+                                &mut camera_transform.translation,
+                                (1, 0),
+                            );
+                        }
+
+                        Numpad9 | U => game_state.try_move_player(
+                            &mut position,
+                            &mut camera_transform.translation,
+                            (1, 1),
+                        ),
+                        Numpad3 | M => game_state.try_move_player(
+                            &mut position,
+                            &mut camera_transform.translation,
+                            (1, -1),
+                        ),
+                        Numpad1 | N => game_state.try_move_player(
+                            &mut position,
+                            &mut camera_transform.translation,
+                            (-1, -1),
+                        ),
+                        Numpad7 | Y => game_state.try_move_player(
+                            &mut position,
+                            &mut camera_transform.translation,
+                            (-1, 1),
+                        ),
+
+                        _ => {}
                     }
 
-                    Numpad9 | U => game_state.try_move_player(&mut position, (1, 1)),
-                    Numpad3 | M => game_state.try_move_player(&mut position, (1, -1)),
-                    Numpad1 | N => game_state.try_move_player(&mut position, (-1, -1)),
-                    Numpad7 | Y => game_state.try_move_player(&mut position, (-1, 1)),
-
-                    _ => {}
+                    // Finally now we will move the sprite! ... Provided he had
+                    // moved!
+                    move_sprite(&mut map, previous_position, *position, render);
                 }
-
-                // If we are standing still or hit something, don't do anything.
-                if previous_position == *position {
-                    continue;
-                }
-
-                // This is a helpful function to make it easier to do stuff!
-                move_sprite(&mut map, previous_position, *position, render);
             }
         }
     }
@@ -306,11 +335,11 @@ fn character_movement(
 fn main() {
     App::build()
         .add_resource(WindowDescriptor {
-            title: "Random Tile Dungeon".to_string(),
+            title: "Endless Dungeon".to_string(),
             width: 1024.,
             height: 1024.,
             vsync: false,
-            resizable: false,
+            resizable: true,
             mode: WindowMode::Windowed,
             ..Default::default()
         })

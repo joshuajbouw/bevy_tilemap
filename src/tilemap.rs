@@ -246,7 +246,7 @@ pub struct Tilemap {
     /// The events of the tilemap.
     events: Events<ChunkEvent>,
     /// A set of all spawned chunks.
-    spawned: HashSet<Point2>,
+    spawned: HashSet<(i32, i32)>,
 }
 
 /// Tilemap factory, which can be used to construct and configure new tilemaps.
@@ -535,7 +535,7 @@ impl TilemapBuilder {
         self
     }
 
-    /// Sets the tilemap to automatically spawn new chunks within given 
+    /// Sets the tilemap to automatically spawn new chunks within given
     /// dimensions.
     pub fn auto_spawn(mut self, radius: u32) -> Self {
         self.auto_spawn = Some(radius);
@@ -1014,7 +1014,7 @@ impl Tilemap {
             dimensions.check_point(point)?;
         }
 
-        if self.spawned.contains(&point) {
+        if self.spawned.contains(&(point.x, point.y)) {
             return Ok(());
         } else {
             self.events.send(ChunkEvent::Spawned { point });
@@ -1102,7 +1102,7 @@ impl Tilemap {
             dimensions.check_point(point)?;
         }
 
-        self.spawned.remove(&point);
+        self.spawned.remove(&(point.x, point.y));
 
         if let Some(chunk) = self.chunks.get_mut(&point) {
             let entities = chunk.get_entities();
@@ -1806,8 +1806,13 @@ impl Tilemap {
         self.chunk_dimensions
     }
 
+    /// Returns the currently spawned chunk coordinates.
+    pub fn spawned_chunks(&self) -> &HashSet<(i32, i32)> {
+        &self.spawned
+    }
+
     /// Returns a mutable reference to the spawned chunk points.
-    pub(crate) fn spawned_mut(&mut self) -> &mut HashSet<Point2> {
+    pub(crate) fn spawned_chunks_mut(&mut self) -> &mut HashSet<(i32, i32)> {
         &mut self.spawned
     }
 }
@@ -1903,11 +1908,10 @@ pub(crate) fn tilemap(
 
         let capacity = spawned_chunks.len();
         for point in spawned_chunks.into_iter() {
-            if tilemap.spawned.contains(&point) {
+            if tilemap.spawned.contains(&(point.x, point.y)) {
                 continue;
             } else {
-                println!("inserting spawned chunk {}", point);
-                tilemap.spawned.insert(point);
+                tilemap.spawned.insert((point.x, point.y));
             }
 
             let layers_len = tilemap.layers.len();
