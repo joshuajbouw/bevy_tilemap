@@ -10,10 +10,10 @@ use bevy::{
 use bevy_tilemap::prelude::*;
 use rand::Rng;
 
-const CHUNK_WIDTH: u32 = 32;
-const CHUNK_HEIGHT: u32 = 32;
-const TILEMAP_WIDTH: i32 = CHUNK_WIDTH as i32 * 5;
-const TILEMAP_HEIGHT: i32 = CHUNK_HEIGHT as i32 * 5;
+const CHUNK_WIDTH: u32 = 16;
+const CHUNK_HEIGHT: u32 = 16;
+const TILEMAP_WIDTH: i32 = CHUNK_WIDTH as i32 * 40;
+const TILEMAP_HEIGHT: i32 = CHUNK_HEIGHT as i32 * 40;
 
 #[derive(Default, Clone)]
 struct TileSpriteHandles {
