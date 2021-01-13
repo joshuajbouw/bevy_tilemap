@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+* Added `auto_spawn` to the `Tilemap` [#94](https://github.com/joshuajbouw/bevy_tilemap/pull/94)
+
 ## [0.3.1] - 2021-01-12
 
 ### Added
