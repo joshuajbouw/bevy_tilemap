@@ -3,7 +3,7 @@
 
 [package]
 name = "bevy_tilemap_examples"
-version = "0.2.2"
+version = "0.1.0"
 authors = ["Joshua J. Bouw <dev@joshuajbouw.com>"]
 edition = "2018"
 description = "Examples for bevy_tilemap."
