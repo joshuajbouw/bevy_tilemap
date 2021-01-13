@@ -1525,6 +1525,11 @@ impl Tilemap {
         let tile_point = self.point_to_tile_point(point);
         let chunk = self.chunks.get_mut(&chunk_point)?;
         let index = self.chunk_dimensions.encode_point_unchecked(tile_point);
+        let mut layers = HashMap::default();
+        if let Some(entity) = chunk.get_entity(z_order) {
+            layers.insert(z_order, entity);
+            self.events.send(ChunkEvent::Modified { layers });
+        }
         chunk.get_tile_mut(z_order, index)
     }
 
