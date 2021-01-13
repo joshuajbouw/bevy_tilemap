@@ -2,6 +2,7 @@
 use bevy::{
     asset::LoadState,
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
+    log::info,
     prelude::*,
     sprite::{TextureAtlas, TextureAtlasBuilder},
     utils::HashSet,
@@ -188,7 +189,7 @@ fn build_map(
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/square-dwarf.png");
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         let mut rng = rand::thread_rng();
-        println!("Spawning drunken dwarves.");
+        info!("Spawning {} drunken dwarves.", DWARF_COUNT);
         for _ in 0..DWARF_COUNT {
             let position = Position {
                 x: rng.gen_range((-chunk_width / 2 + 1)..(chunk_width / 2 - 1)),
@@ -206,7 +207,7 @@ fn build_map(
             let dwarf_tile = Tile::with_z_order((position.x, position.y), dwarf_sprite_index, 1);
             tiles.push(dwarf_tile);
         }
-        println!("{} drunken dwarves spawned.", DWARF_COUNT);
+        info!("{} drunken dwarves spawned.", DWARF_COUNT);
 
         map.insert_tiles(tiles).unwrap();
         map.spawn_chunk((0, 0)).unwrap();
@@ -268,7 +269,7 @@ fn counter(diagnostics: Res<Diagnostics>, time: Res<Time>, mut query: Query<&mut
                 return;
             }
             if let Some(average) = fps.average() {
-                println!("fps average: {:.2}", average);
+                info!("FPS average: {:.2}", average);
             }
         }
     }
