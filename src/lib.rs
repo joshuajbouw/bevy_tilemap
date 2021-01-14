@@ -139,7 +139,7 @@ impl Plugin for Tilemap2DPlugin {
             .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap.system())
             .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_update.system())
             .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_auto_radius.system())
-            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_auto_spawn.system());            
+            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_auto_spawn.system());
 
         let resources = app.resources_mut();
         let mut render_graph = resources
