@@ -1017,7 +1017,6 @@ impl Tilemap {
         if self.spawned.contains(&(point.x, point.y)) {
             return Ok(());
         } else {
-            println!("spawning chunk {}", point);
             self.events.send(ChunkEvent::Spawned { point });
         }
 

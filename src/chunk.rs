@@ -515,8 +515,6 @@ fn auto_spawn(
         if !new_spawned.contains(&point.into()) {
             if let Err(e) = tilemap.despawn_chunk(point) {
                 warn!(target: "tilemap_events", "{}", e);
-            } else {
-                println!("despawned chunk: {}", Point2::from(point));
             }
         }
     }
