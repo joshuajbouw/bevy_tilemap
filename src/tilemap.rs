@@ -1812,6 +1812,7 @@ pub(crate) fn tilemap_auto_configure(
         for size in sizes.into_iter() {
             if size % base_size != 0 {
                 error!(target: "tilemap_events", "the tiles in the set `TextureAtlas` must be divisible by the smallest itle, can not auto configure");
+                map.auto_flags.toggle(AutoFlags::AUTO_CONFIGURE);
                 return;
             }
         }
