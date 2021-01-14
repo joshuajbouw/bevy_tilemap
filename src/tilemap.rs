@@ -233,7 +233,7 @@ pub struct Tilemap {
     /// Auto flags used for different automated features.
     auto_flags: AutoFlags,
     /// Dimensions of chunks to spawn from camera transform.
-    auto_spawn: Option<u32>,
+    auto_spawn: Option<Dimension2>,
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The handle of the texture atlas.
     texture_atlas: Handle<TextureAtlas>,
@@ -324,7 +324,7 @@ pub struct TilemapBuilder {
     /// True if this tilemap will automatically configure.
     auto_flags: AutoFlags,
     /// The radius of chunks to spawn from a camera's transform.
-    auto_spawn: Option<u32>,
+    auto_spawn: Option<Dimension2>,
 }
 
 impl Default for TilemapBuilder {
@@ -537,8 +537,8 @@ impl TilemapBuilder {
 
     /// Sets the tilemap to automatically spawn new chunks within given
     /// dimensions.
-    pub fn auto_spawn(mut self, radius: u32) -> Self {
-        self.auto_spawn = Some(radius);
+    pub fn auto_spawn(mut self, width: u32, height: u32) -> Self {
+        self.auto_spawn = Some(Dimension2::new(width, height));
         self
     }
 
@@ -1017,6 +1017,7 @@ impl Tilemap {
         if self.spawned.contains(&(point.x, point.y)) {
             return Ok(());
         } else {
+            println!("spawning chunk {}", point);
             self.events.send(ChunkEvent::Spawned { point });
         }
 
@@ -1797,8 +1798,13 @@ impl Tilemap {
     }
 
     /// Returns an option containing a Dimension2.
-    pub(crate) fn auto_spawn(&self) -> Option<u32> {
+    pub(crate) fn auto_spawn(&self) -> Option<Dimension2> {
         self.auto_spawn
+    }
+
+    /// Sets the auto spawn radius.
+    pub(crate) fn set_auto_spawn(&mut self, dimension: Dimension2) {
+        self.auto_spawn = Some(dimension);
     }
 
     /// Returns a copy of the chunk's dimensions.
