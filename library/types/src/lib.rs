@@ -45,15 +45,15 @@ mod lib {
     extern crate serde;
     extern crate std;
 
-    pub use self::{
+    pub(crate) use self::{
         bevy_math::{Vec2, Vec3},
         bevy_render::texture::Extent3d,
     };
 
     #[cfg(feature = "serde")]
-    pub use serde::{Deserialize, Serialize};
+    pub(crate) use serde::{Deserialize, Serialize};
 
-    pub use std::{
+    pub(crate) use std::{
         boxed::Box,
         clone::Clone,
         cmp::Ord,
@@ -66,9 +66,9 @@ mod lib {
     };
 
     // Macros
-    pub use std::write;
+    pub(crate) use std::write;
 
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
-    pub use std::println;
+    pub(crate) use std::println;
 }
