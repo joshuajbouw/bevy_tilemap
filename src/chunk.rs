@@ -472,6 +472,7 @@ pub(crate) fn chunk_update(
     }
 }
 
+/// Actual method used to spawn chunks.
 fn auto_spawn(
     camera_transform: &Transform,
     tilemap_transform: &Transform,
@@ -552,12 +553,12 @@ pub(crate) fn chunk_auto_spawn(
 ) {
     // For the transform, get chunk coord.
     for (mut tilemap, tilemap_transform) in tilemap_query.iter_mut() {
-        let spawn_dimensions = if let Some(dimensions) = tilemap.auto_spawn() {
-            dimensions
-        } else {
-            continue;
-        };
         for (_camera, camera_transform) in camera_query.iter() {
+            let spawn_dimensions = if let Some(dimensions) = tilemap.auto_spawn() {
+                dimensions
+            } else {
+                continue;
+            };
             auto_spawn(camera_transform, &tilemap_transform, &mut tilemap, spawn_dimensions);
         }
     }
