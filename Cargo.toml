@@ -16,6 +16,14 @@ exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 features = ["serialize", "types"]
 
 [features]
+default = ["png", "hdr"]
+hdr = ["bevy_render/hdr"]
+png = ["bevy_render/png"]
+dds = ["bevy_render/dds"]
+tga = ["bevy_render/tga"]
+jpeg = ["bevy_render/jpeg"]
+# bmp = ["bevy_render/bmp"]
+
 serialize = ["bevy_tilemap_types/serialize", "serde"]
 types = []
 
