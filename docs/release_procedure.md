@@ -9,6 +9,8 @@
     - [ ] Update [README.md] if needed.
     - [ ] Update [CHANGELOG.md] only significant changes. Follow this 
     [example by diesel-rs] and use the [compare function on Github] to help.
+- **Run**
+    - [ ] Run all game examples in release mode.
 - **Publish**
     - [ ] [Publish on Github] following the template below.
     - [ ] Ensure that the release body and [CHANGELOG.md] are the same.

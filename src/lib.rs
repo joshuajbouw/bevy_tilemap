@@ -137,7 +137,9 @@ impl Plugin for Tilemap2DPlugin {
                 crate::tilemap::tilemap_auto_configure.system(),
             )
             .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap.system())
-            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_update.system());
+            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_update.system())
+            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_auto_radius.system())
+            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_auto_spawn.system());
 
         let resources = app.resources_mut();
         let mut render_graph = resources
@@ -152,7 +154,6 @@ impl Plugin for Tilemap2DPlugin {
 mod lib {
     extern crate bevy_app;
     extern crate bevy_asset;
-    extern crate bevy_core;
     extern crate bevy_ecs;
     extern crate bevy_log;
     extern crate bevy_math;
@@ -162,24 +163,24 @@ mod lib {
     extern crate bevy_tilemap_types;
     extern crate bevy_transform;
     extern crate bevy_utils;
+    extern crate bevy_window;
     pub extern crate bitflags;
     #[cfg(feature = "serde")]
     extern crate serde;
     extern crate std;
 
-    pub use bevy_app::{
+    pub(crate) use bevy_app::{
         stage as app_stage, AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder,
     };
-    pub use bevy_asset::{AddAsset, Assets, Handle, HandleId, HandleUntyped};
-    pub use bevy_core::{Byteable, Bytes};
-    pub use bevy_ecs::{
+    pub(crate) use bevy_asset::{AddAsset, Assets, Handle, HandleUntyped};
+    pub(crate) use bevy_ecs::{
         Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources, SystemStage,
-        TypeInfo,
     };
-    pub use bevy_log::{error, warn};
-    pub use bevy_math::{Vec2, Vec3};
-    pub use bevy_reflect::{TypeUuid, Uuid};
-    pub use bevy_render::{
+    pub(crate) use bevy_log::{error, warn};
+    pub(crate) use bevy_math::Vec3;
+    pub(crate) use bevy_reflect::{TypeUuid, Uuid};
+    pub(crate) use bevy_render::{
+        camera::Camera,
         color::Color,
         draw::{Draw, Visible},
         mesh::{Indices, Mesh},
@@ -189,28 +190,28 @@ mod lib {
             PrimitiveTopology, RasterizationStateDescriptor, RenderPipeline, RenderPipelines,
             StencilStateDescriptor, StencilStateFaceDescriptor,
         },
-        render_graph::{base::MainPass, RenderGraph, RenderResourcesNode},
-        renderer::{RenderResource, RenderResourceIterator, RenderResourceType, RenderResources},
+        render_graph::{base::MainPass, RenderGraph},
         shader::{Shader, ShaderStage, ShaderStages},
-        texture::{Texture, TextureFormat},
+        texture::TextureFormat,
     };
-    pub use bevy_sprite::TextureAtlas;
-    pub use bevy_tilemap_types::{
+    pub(crate) use bevy_sprite::TextureAtlas;
+    pub(crate) use bevy_tilemap_types::{
         dimension::{Dimension2, DimensionError},
         point::Point2,
     };
-    pub use bevy_transform::{
+    pub(crate) use bevy_transform::{
         components::{GlobalTransform, Parent, Transform},
         hierarchy::BuildChildren,
     };
-    pub use bevy_utils::{HashMap, HashSet};
+    pub(crate) use bevy_utils::{HashMap, HashSet};
+    pub(crate) use bevy_window::WindowResized;
 
-    pub use crate::bitflags::*;
+    pub(crate) use crate::bitflags::*;
 
     #[cfg(feature = "serde")]
-    pub use serde::{Deserialize, Serialize};
+    pub(crate) use serde::{Deserialize, Serialize};
 
-    pub use std::{
+    pub(crate) use std::{
         boxed::Box,
         clone::Clone,
         cmp::Ord,
@@ -219,20 +220,19 @@ mod lib {
         error::Error,
         fmt::{Debug, Display, Formatter, Result as FmtResult},
         iter::{Extend, IntoIterator, Iterator},
-        ops::{Deref, FnMut, FnOnce},
         option::Option::{self, *},
         result::Result::{self, *},
         vec::Vec,
     };
 
     // Macros
-    pub use std::{assert_eq, panic, vec, write};
+    pub(crate) use std::{vec, write};
 
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
-    pub use std::println;
+    pub(crate) use std::println;
 
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
-    pub use bevy_log::debug;
+    pub(crate) use bevy_log::debug;
 }
