@@ -1811,11 +1811,6 @@ impl Tilemap {
         self.chunk_dimensions
     }
 
-    /// Returns the currently spawned chunk coordinates.
-    pub fn spawned_chunks(&self) -> &HashSet<(i32, i32)> {
-        &self.spawned
-    }
-
     /// Returns a mutable reference to the spawned chunk points.
     pub(crate) fn spawned_chunks_mut(&mut self) -> &mut HashSet<(i32, i32)> {
         &mut self.spawned
