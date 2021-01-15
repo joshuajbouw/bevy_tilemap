@@ -77,7 +77,7 @@ use bevy::prelude::*;
 // This must be set in Asset<TextureAtlas>.
 let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 
-let mut tilemap = Tilemap::new(texture_atlas_handle);
+let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
 
 // Coordinate point with Z order.
 let point = (16, 16, 0);
