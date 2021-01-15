@@ -537,6 +537,17 @@ impl TilemapBuilder {
 
     /// Sets the tilemap to automatically spawn new chunks within given
     /// dimensions.
+    ///
+    /// This enables a feature which spawns just the right amount of chunks to
+    /// fit the screen. It is possible that it may not be able to catch all
+    /// dimensions but typical uses should be completely fine.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::prelude::*;
+    ///
+    /// let builder = TilemapBuilder::new().auto_spawn(2, 3);
+    /// ```
     pub fn auto_spawn(mut self, width: u32, height: u32) -> Self {
         self.auto_spawn = Some(Dimension2::new(width, height));
         self
