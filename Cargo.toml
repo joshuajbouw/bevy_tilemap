@@ -17,6 +17,15 @@ features = ["serialize", "types"]
 
 [features]
 default = ["png", "hdr"]
+
+# crate
+types = []
+
+# physics
+simd-stable = ["bevy_rapier2d/simd-stable"]
+parallel = ["bevy_rapier2d/parallel"]
+
+# render
 hdr = ["bevy_render/hdr"]
 png = ["bevy_render/png"]
 dds = ["bevy_render/dds"]
@@ -24,8 +33,8 @@ tga = ["bevy_render/tga"]
 jpeg = ["bevy_render/jpeg"]
 # bmp = ["bevy_render/bmp"]
 
+# serde
 serialize = ["bevy_tilemap_types/serialize", "serde"]
-types = []
 
 [workspace]
 members = ["library/*", "examples"]
@@ -37,6 +46,7 @@ bevy_core = "0.4"
 bevy_ecs = "0.4"
 bevy_log = "0.4"
 bevy_math = "0.4"
+bevy_rapier2d = "0.7.0"
 bevy_render = "0.4"
 bevy_reflect = "0.4"
 bevy_sprite = "0.4"

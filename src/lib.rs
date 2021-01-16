@@ -157,6 +157,7 @@ mod lib {
     extern crate bevy_ecs;
     extern crate bevy_log;
     extern crate bevy_math;
+    extern crate bevy_rapier2d;
     extern crate bevy_reflect;
     extern crate bevy_render;
     extern crate bevy_sprite;
@@ -176,8 +177,12 @@ mod lib {
     pub(crate) use bevy_ecs::{
         Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources, SystemStage,
     };
-    pub(crate) use bevy_log::{error, warn};
+    pub(crate) use bevy_log::{error, info, warn};
     pub(crate) use bevy_math::Vec3;
+    pub(crate) use bevy_rapier2d::rapier::{
+        dynamics::RigidBodyBuilder,
+        geometry::{ColliderBuilder, InteractionGroups},
+    };
     pub(crate) use bevy_reflect::{TypeUuid, Uuid};
     pub(crate) use bevy_render::{
         camera::Camera,
@@ -227,10 +232,6 @@ mod lib {
 
     // Macros
     pub(crate) use std::{vec, write};
-
-    #[cfg(debug_assertions)]
-    #[allow(unused_imports)]
-    pub(crate) use std::println;
 
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
