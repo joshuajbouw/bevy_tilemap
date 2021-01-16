@@ -18,5 +18,6 @@ publish = false
 
 [dev-dependencies]
 bevy = "0.4"
+bevy_rapier2d = "0.7.0"
 bevy_tilemap = { path = "../" }
 rand = "0.8"

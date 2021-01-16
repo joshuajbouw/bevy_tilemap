@@ -34,7 +34,7 @@ pub mod v0 {
         entity::TilemapBundle,
         render::GridTopology,
         tile::Tile,
-        tilemap::{Tilemap, TilemapBuilder},
+        tilemap::{Tilemap, TilemapBuilder, TilemapLayer},
         Tilemap2DPlugin,
     };
 }
