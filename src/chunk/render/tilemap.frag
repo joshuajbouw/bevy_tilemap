@@ -1,19 +1,20 @@
-#version 450
+#version 300 es
+precision highp float;
 
-layout(location = 0) in vec2 v_Uv;
-layout(location = 1) in vec4 v_Color;
+in vec2 v_Uv;
+in vec4 v_Color;
 
-layout(location = 0) out vec4 o_Target;
+out vec4 o_Target;
 
-layout(set = 1, binding = 2) uniform texture2D TextureAtlas_texture;
-layout(set = 1, binding = 3) uniform sampler TextureAtlas_texture_sampler;
+uniform sampler2D TextureAtlas_texture;  // set = 1, binding = 2
+// layout(std140) uniform sampler TextureAtlas_texture_sampler;  // set = 1, binding = 3
 
 void main() {
     if (v_Color.a == 0.0) {
         discard;
     }
     o_Target = v_Color * texture(
-        sampler2D(TextureAtlas_texture, TextureAtlas_texture_sampler),
+        TextureAtlas_texture,
         v_Uv
     );
 }

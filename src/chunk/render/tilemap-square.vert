@@ -1,18 +1,21 @@
-#version 450
+#version 300 es
+precision highp float;
 
-layout(location = 0) in vec3 Vertex_Position;
-layout(location = 1) in float Vertex_Tile_Index;
-layout(location = 2) in vec4 Vertex_Tile_Color;
+#define gl_VertexIndex gl_VertexID
 
-layout(location = 0) out vec2 v_Uv;
-layout(location = 1) out vec4 v_Color;
+in vec3 Vertex_Position;
+in float Vertex_Tile_Index;
+in vec4 Vertex_Tile_Color;
 
-layout(set = 0, binding = 0) uniform Camera {
+out vec2 v_Uv;
+out vec4 v_Color;
+
+layout(std140) uniform Camera {  // set = 0, binding = 0
     mat4 ViewProj;
 };
 
 // TODO: merge dimensions into "sprites" buffer when that is supported in the Uniforms derive abstraction
-layout(set = 1, binding = 0) uniform TextureAtlas_size {
+layout(std140) uniform TextureAtlas_size {  // set = 1, binding = 0
     vec2 AtlasSize;
 };
 
@@ -23,11 +26,11 @@ struct Rect {
     vec2 end;
 };
 
-layout(set = 1, binding = 1) buffer TextureAtlas_textures {
-    Rect[] Textures;
+layout(std140) uniform TextureAtlas_textures {  // set = 1, binding = 1
+    Rect[256] Textures;
 };
 
-layout(set = 2, binding = 0) uniform Transform {
+layout(std140) uniform Transform {  // set = 2, binding = 0
     mat4 ChunkTransform;
 };
 
