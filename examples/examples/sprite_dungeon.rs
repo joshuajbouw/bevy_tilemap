@@ -7,6 +7,7 @@ use bevy::{
     utils::HashSet,
     window::WindowMode,
 };
+use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet};
 pub(crate) use bevy_rapier2d::{
     rapier::{
         dynamics::RigidBodyBuilder,
@@ -200,7 +201,6 @@ fn build_random_dungeon(
         // // Now lets add in a dwarf friend!
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/square-dwarf.png");
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
-        let translation = Vec3::new(16.0, 16.0, 3.0);
         commands
             .spawn(SpriteSheetBundle {
                 texture_atlas: map.texture_atlas().clone_weak(),
@@ -208,12 +208,12 @@ fn build_random_dungeon(
                     index: dwarf_sprite_index as u32,
                     ..Default::default()
                 },
-                transform: Transform::from_translation(translation),
+                transform: Transform::from_translation(Vec3::new(0.0, 0.0, 3.0)),
                 ..Default::default()
             })
             .with(Player {})
-            .with(RigidBodyBuilder::new_dynamic())
-            .with(ColliderBuilder::cuboid(32.0, 32.0).translation(0.0, 0.0).collision_groups(InteractionGroups::new(0b0000_0000_0000_0010, 0b0000_0000_0001)));
+            .with(RigidBodyBuilder::new_dynamic().translation(16.0, 16.0))
+            .with(ColliderBuilder::cuboid(32.0, 32.0).collision_groups(InteractionGroups::new(0b0000_0000_0000_0010, 0b0000_0000_0001)));
 
         // Now we pass all the tiles to our map.
         map.insert_tiles(tiles).unwrap();
@@ -226,8 +226,9 @@ fn character_movement(
     mut game_state: ResMut<GameState>,
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
+    mut rigid_body_set: ResMut<RigidBodySet>,
     mut map_query: Query<(&mut Tilemap, &mut Timer)>,
-    mut player_query: Query<(&mut Transform, &Player)>,
+    mut player_query: Query<(&RigidBodyHandleComponent, &Player)>,
     mut camera_query: Query<(&Camera, &mut Transform)>,
 ) {
     if !game_state.map_loaded {
@@ -235,7 +236,12 @@ fn character_movement(
     }
 
     for (mut map, mut timer) in map_query.iter_mut() {
-        for (mut position, _player) in player_query.iter_mut() {
+        for (rbdhc, _player) in player_query.iter_mut() {
+
+            let rbd = rigid_body_set.get_mut(rbdhc.handle()).unwrap();
+
+            let mut move_velocity = Vec2::new(0.0, 0.0);
+
             for key in keyboard_input.get_pressed() {
                 for (_camera, mut camera_transform) in camera_query.iter_mut() {
                     let move_step = 0.5;
@@ -244,22 +250,29 @@ fn character_movement(
                     use KeyCode::*;
                     match key {
                         W => {
-                            position.translation.y += move_step;
+                            move_velocity.y += move_step;
                         }
                         A => {
-                            position.translation.x -= move_step;
+                            move_velocity.x -= move_step;
                         }
                         S => {
-                            position.translation.y -= move_step;
+                            move_velocity.y -= move_step;
                         }
                         D => {
-                            position.translation.x += move_step;
+                            move_velocity.x += move_step;
                         }
 
                         _ => {}
                     }
                 }
             }
+
+            let mut pos = *rbd.position();
+
+            pos.translation.vector.x += move_velocity.x;
+            pos.translation.vector.y += move_velocity.y;
+
+            rbd.set_position(pos, true);
         }
     }
 }
