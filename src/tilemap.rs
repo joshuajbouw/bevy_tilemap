@@ -2116,17 +2116,18 @@ pub(crate) fn tilemap(
                         let collision_groups = layers.get(z_order).and_then(|layer_opt| {
                             layer_opt.and_then(|layer| Some(layer.interaction_groups))
                         });
+
                         let mut collider = ColliderBuilder::cuboid(
                             tile_dimensions.width as f32,
                             tile_dimensions.height as f32,
-                        )
-                        .translation(x, y);
+                        );
+
                         if let Some(collision_groups) = collision_groups {
                             collider = collider.collision_groups(collision_groups);
                         }
 
                         let entity = if let Some(entity) = commands
-                            .spawn((RigidBodyBuilder::new_static(), collider))
+                            .spawn((RigidBodyBuilder::new_static().translation(x, y), collider))
                             .current_entity()
                         {
                             entity
