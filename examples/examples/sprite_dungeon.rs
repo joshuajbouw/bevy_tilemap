@@ -231,7 +231,7 @@ fn build_random_dungeon(
             .with(Player {})
             .with(RigidBodyBuilder::new_dynamic().lock_rotations())
             .with(
-                ColliderBuilder::cuboid(16.0, 16.0).collision_groups(InteractionGroups::new(
+                ColliderBuilder::ball(16.0).collision_groups(InteractionGroups::new(
                     0b0000_0000_0000_0010,
                     0b0000_0000_0000_0001,
                 )),
@@ -257,15 +257,15 @@ fn character_movement(
         return;
     }
 
-    for (mut map, mut timer) in map_query.iter_mut() {
+    for (mut _map, mut _timer) in map_query.iter_mut() {
         for (rbdhc, _player) in player_query.iter_mut() {
             let rbd = rigid_body_set.get_mut(rbdhc.handle()).unwrap();
 
-            let mut move_velocity = Vec2::new(0.0, 0.0);
+            let mut move_velocity = Vector::new(0.0, 0.0);
 
             for key in keyboard_input.get_pressed() {
                 for _camera in camera_query.iter_mut() {
-                    let move_step = 5000.0;
+                    let move_step = 200000.0;
                     // Of course we need to control where we are going to move our
                     // dwarf friend.
                     use KeyCode::*;
@@ -288,7 +288,7 @@ fn character_movement(
                 }
             }
 
-            rbd.apply_impulse(Vector::new(move_velocity.x, move_velocity.y), true);
+            rbd.apply_impulse(move_velocity * time.delta_seconds(), true);
 
             // let mut pos = *rbd.position();
             //
