@@ -2100,7 +2100,7 @@ pub(crate) fn tilemap(
                             if layer.interaction_groups.0 == 0 {
                                 continue;
                             }
-                        },
+                        }
                         None => continue,
                     }
                 }
