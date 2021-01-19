@@ -39,19 +39,12 @@ struct Position {
 }
 
 #[derive(Default)]
-struct Render {
-    sprite_index: usize,
-    z_order: usize,
-}
-
-#[derive(Default)]
 struct Player {}
 
 #[derive(Bundle)]
 struct PlayerBundle {
     player: Player,
     position: Position,
-    render: Render,
 }
 
 #[derive(Default, Clone)]
