@@ -888,7 +888,6 @@ impl Tilemap {
         let layer = TilemapLayer {
             kind,
             interaction_groups: InteractionGroups::default(),
-            ..Default::default()
         };
         if let Some(some_kind) = self.layers.get_mut(z_order) {
             if some_kind.is_some() {
@@ -2068,7 +2067,6 @@ pub(crate) fn tilemap(
                             // RapierRenderPlugin's output visible.
                             is_visible: true,
                             is_transparent: true,
-                            ..Default::default()
                         },
                         main_pass: MainPass,
                         global_transform: Default::default(),
@@ -2091,7 +2089,20 @@ pub(crate) fn tilemap(
                 chunk.add_entity(z_order, entity);
                 entities.push(entity);
 
-                // Get tile indexes, change to points, adjust points to global
+                // Not supported beyond `GridTopology::Square`.
+                if topology != GridTopology::Square {
+                    continue;
+                }
+                if let Some(layer_opt) = layers.get(z_order) {
+                    match layer_opt {
+                        Some(layer) => {
+                            if layer.interaction_groups.0 == 0 {
+                                continue;
+                            }
+                        },
+                        None => continue,
+                    }
+                }
                 let mut collision_entities = Vec::new();
                 if let Some(indices) = chunk.get_tile_indices(z_order) {
                     for index in indices {
