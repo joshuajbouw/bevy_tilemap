@@ -2064,6 +2064,9 @@ pub(crate) fn tilemap(
                         render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),
                         draw: Default::default(),
                         visible: Visible {
+                            // TODO: this would be nice as a config parameter to make
+                            // RapierRenderPlugin's output visible.
+                            is_visible: true,
                             is_transparent: true,
                             ..Default::default()
                         },
@@ -2116,26 +2119,35 @@ pub(crate) fn tilemap(
                         let collision_groups = layers.get(z_order).and_then(|layer_opt| {
                             layer_opt.and_then(|layer| Some(layer.interaction_groups))
                         });
-                        let mut collider = ColliderBuilder::cuboid(
-                            tile_dimensions.width as f32,
-                            tile_dimensions.height as f32,
-                        )
-                        .translation(x, y);
                         if let Some(collision_groups) = collision_groups {
-                            collider = collider.collision_groups(collision_groups);
-                        }
+                            if collision_groups.with_mask(0).0 != 0 {
+                                let mut collider = ColliderBuilder::cuboid(
+                                    tile_dimensions.width as f32 / 2.0,
+                                    tile_dimensions.height as f32 / 2.0,
+                                );
 
-                        let entity = if let Some(entity) = commands
-                            .spawn((RigidBodyBuilder::new_static(), collider))
-                            .current_entity()
-                        {
-                            entity
-                        } else {
-                            error!("Collider entity does not exist unexpectedly, can not run the tilemap system");
-                            return;
-                        };
-                        debug!("push collider");
-                        collision_entities.push(entity);
+                                collider = collider.collision_groups(collision_groups);
+
+                                let entity = if let Some(entity) = commands
+                                    .spawn((
+                                        RigidBodyBuilder::new_static().translation(
+                                            x * tile_dimensions.width as f32
+                                                + (tile_dimensions.width as f32 / 2.0),
+                                            y * tile_dimensions.height as f32
+                                                + (tile_dimensions.height as f32 / 2.0),
+                                        ),
+                                        collider,
+                                    ))
+                                    .current_entity()
+                                {
+                                    entity
+                                } else {
+                                    error!("Collider entity does not exist unexpectedly, can not run the tilemap system");
+                                    return;
+                                };
+                                collision_entities.push(entity);
+                            }
+                        }
                     }
                 }
                 commands.push_children(entity, &collision_entities);

@@ -4,16 +4,19 @@ use bevy::{
     prelude::*,
     render::camera::Camera,
     sprite::{TextureAtlas, TextureAtlasBuilder},
-    utils::HashSet,
     window::WindowMode,
 };
 pub(crate) use bevy_rapier2d::{
+    physics::RapierPhysicsPlugin,
     rapier::{
         dynamics::RigidBodyBuilder,
         geometry::{ColliderBuilder, InteractionGroups},
     },
     render::RapierRenderPlugin,
-    physics::RapierPhysicsPlugin,
+};
+use bevy_rapier2d::{
+    physics::{RapierConfiguration, RigidBodyHandleComponent},
+    rapier::{dynamics::RigidBodySet, ncollide::math::Vector},
 };
 use bevy_tilemap::prelude::*;
 use rand::Rng;
@@ -57,7 +60,13 @@ struct GameState {
     spawned: bool,
 }
 
-fn setup(mut tile_sprite_handles: ResMut<TileSpriteHandles>, asset_server: Res<AssetServer>) {
+fn setup(
+    mut tile_sprite_handles: ResMut<TileSpriteHandles>,
+    asset_server: Res<AssetServer>,
+    mut configuration: ResMut<RapierConfiguration>,
+) {
+    configuration.gravity = Vector::new(0.0, 0.0);
+
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
 }
 
@@ -85,17 +94,18 @@ fn load(
         let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
         let atlas_handle = texture_atlases.add(texture_atlas);
 
+        let wall_interactions =
+            InteractionGroups::new(0b0000_0000_0000_0001, 0b0000_0000_0000_0010);
         let background_layer = TilemapLayer {
             kind: LayerKind::Dense,
             ..Default::default()
         };
-        let wall_interactions =
-            InteractionGroups::new(0b0000_0000_0000_0001, 0b0000_0000_0000_0010);
         let wall_layer = TilemapLayer {
             kind: LayerKind::Sparse,
-            // interaction_groups: wall_interactions,
+            interaction_groups: wall_interactions,
             ..Default::default()
         };
+
         // These are fairly advanced configurations just to quickly showcase
         // them.
         let tilemap = Tilemap::builder()
@@ -162,8 +172,8 @@ fn build_random_dungeon(
             let x = x - TILEMAP_WIDTH / 2;
             let tile_a = (x, -TILEMAP_HEIGHT / 2);
             let tile_b = (x, TILEMAP_HEIGHT / 2 - 1);
-            tiles.push(Tile::new(tile_a, wall_idx));
-            tiles.push(Tile::new(tile_b, wall_idx));
+            tiles.push(Tile::with_z_order(tile_a, wall_idx, 1));
+            tiles.push(Tile::with_z_order(tile_b, wall_idx, 1));
         }
 
         // Then the wall tiles on the Y axis.
@@ -171,8 +181,8 @@ fn build_random_dungeon(
             let y = y - TILEMAP_HEIGHT / 2;
             let tile_a = (-TILEMAP_WIDTH / 2, y);
             let tile_b = (TILEMAP_WIDTH / 2 - 1, y);
-            tiles.push(Tile::new(tile_a, wall_idx));
-            tiles.push(Tile::new(tile_b, wall_idx));
+            tiles.push(Tile::with_z_order(tile_a, wall_idx, 1));
+            tiles.push(Tile::with_z_order(tile_b, wall_idx, 1));
         }
 
         // Lets just generate some random walls to sparsely place around the dungeon!
@@ -183,7 +193,7 @@ fn build_random_dungeon(
             let y = rng.gen_range((-TILEMAP_HEIGHT / 2)..(TILEMAP_HEIGHT / 2));
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
-                tiles.push(Tile::new((x, y), wall_idx));
+                tiles.push(Tile::with_z_order((x, y), wall_idx, 1));
             }
         }
 
@@ -197,23 +207,35 @@ fn build_random_dungeon(
         // automatically.
         // map.add_layer_with_kind(LayerKind::Sparse, 1).unwrap();
 
-        // // Now lets add in a dwarf friend!
+        // Now lets add in a dwarf friend!
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/square-dwarf.png");
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
-        let translation = Vec3::new(16.0, 16.0, 3.0);
-        commands
-            .spawn(SpriteSheetBundle {
+
+        const RAPIER_DEBUG_DRAW: bool = false;
+
+        if RAPIER_DEBUG_DRAW {
+            commands.spawn(());
+        } else {
+            commands.spawn(SpriteSheetBundle {
                 texture_atlas: map.texture_atlas().clone_weak(),
                 sprite: TextureAtlasSprite {
                     index: dwarf_sprite_index as u32,
                     ..Default::default()
                 },
-                transform: Transform::from_translation(translation),
+                transform: Transform::from_translation(Vec3::new(0.0, 0.0, 3.0)),
                 ..Default::default()
-            })
+            });
+        }
+
+        commands
             .with(Player {})
-            .with(RigidBodyBuilder::new_dynamic())
-            .with(ColliderBuilder::cuboid(32.0, 32.0).translation(0.0, 0.0).collision_groups(InteractionGroups::new(0b0000_0000_0000_0010, 0b0000_0000_0001)));
+            .with(RigidBodyBuilder::new_dynamic().lock_rotations())
+            .with(
+                ColliderBuilder::ball(14.0).collision_groups(InteractionGroups::new(
+                    0b0000_0000_0000_0010,
+                    0b0000_0000_0000_0001,
+                )),
+            );
 
         // Now we pass all the tiles to our map.
         map.insert_tiles(tiles).unwrap();
@@ -223,43 +245,50 @@ fn build_random_dungeon(
 }
 
 fn character_movement(
-    mut game_state: ResMut<GameState>,
+    game_state: Res<GameState>,
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
+    mut rigid_body_set: ResMut<RigidBodySet>,
     mut map_query: Query<(&mut Tilemap, &mut Timer)>,
-    mut player_query: Query<(&mut Transform, &Player)>,
+    mut player_query: Query<(&RigidBodyHandleComponent, &Player)>,
     mut camera_query: Query<(&Camera, &mut Transform)>,
 ) {
     if !game_state.map_loaded {
         return;
     }
 
-    for (mut map, mut timer) in map_query.iter_mut() {
-        for (mut position, _player) in player_query.iter_mut() {
+    for (mut _map, mut _timer) in map_query.iter_mut() {
+        for (rbdhc, _player) in player_query.iter_mut() {
+            let rbd = rigid_body_set.get_mut(rbdhc.handle()).unwrap();
+
+            let mut move_velocity = Vector::new(0.0, 0.0);
+
             for key in keyboard_input.get_pressed() {
-                for (_camera, mut camera_transform) in camera_query.iter_mut() {
-                    let move_step = 0.5;
+                for _camera in camera_query.iter_mut() {
+                    let move_step = 100_000.0;
                     // Of course we need to control where we are going to move our
                     // dwarf friend.
                     use KeyCode::*;
                     match key {
                         W => {
-                            position.translation.y += move_step;
+                            move_velocity.y += move_step;
                         }
                         A => {
-                            position.translation.x -= move_step;
+                            move_velocity.x -= move_step;
                         }
                         S => {
-                            position.translation.y -= move_step;
+                            move_velocity.y -= move_step;
                         }
                         D => {
-                            position.translation.x += move_step;
+                            move_velocity.x += move_step;
                         }
 
                         _ => {}
                     }
                 }
             }
+
+            rbd.apply_impulse(move_velocity * time.delta_seconds(), true);
         }
     }
 }
@@ -268,8 +297,8 @@ fn main() {
     App::build()
         .add_resource(WindowDescriptor {
             title: "Physics Dungeon".to_string(),
-            width: 1024.,
-            height: 1024.,
+            width: 512.,
+            height: 512.,
             vsync: false,
             resizable: true,
             mode: WindowMode::Windowed,
@@ -285,5 +314,6 @@ fn main() {
         .add_system(load.system())
         .add_system(build_random_dungeon.system())
         .add_system(character_movement.system())
+        .add_system(bevy::input::system::exit_on_esc_system.system())
         .run()
 }
