@@ -231,7 +231,7 @@ fn build_random_dungeon(
             .with(Player {})
             .with(RigidBodyBuilder::new_dynamic().lock_rotations())
             .with(
-                ColliderBuilder::ball(16.0).collision_groups(InteractionGroups::new(
+                ColliderBuilder::ball(14.0).collision_groups(InteractionGroups::new(
                     0b0000_0000_0000_0010,
                     0b0000_0000_0000_0001,
                 )),
@@ -265,7 +265,7 @@ fn character_movement(
 
             for key in keyboard_input.get_pressed() {
                 for _camera in camera_query.iter_mut() {
-                    let move_step = 200000.0;
+                    let move_step = 100_000.0;
                     // Of course we need to control where we are going to move our
                     // dwarf friend.
                     use KeyCode::*;
@@ -289,13 +289,6 @@ fn character_movement(
             }
 
             rbd.apply_impulse(move_velocity * time.delta_seconds(), true);
-
-            // let mut pos = *rbd.position();
-            //
-            // pos.translation.vector.x += move_velocity.x;
-            // pos.translation.vector.y += move_velocity.y;
-            //
-            // rbd.set_position(pos, true);
         }
     }
 }
@@ -304,8 +297,8 @@ fn main() {
     App::build()
         .add_resource(WindowDescriptor {
             title: "Physics Dungeon".to_string(),
-            width: 1024.,
-            height: 1024.,
+            width: 512.,
+            height: 512.,
             vsync: false,
             resizable: true,
             mode: WindowMode::Windowed,

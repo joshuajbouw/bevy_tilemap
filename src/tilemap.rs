@@ -2119,7 +2119,6 @@ pub(crate) fn tilemap(
                         let collision_groups = layers.get(z_order).and_then(|layer_opt| {
                             layer_opt.and_then(|layer| Some(layer.interaction_groups))
                         });
-
                         if let Some(collision_groups) = collision_groups {
                             if collision_groups.with_mask(0).0 != 0 {
                                 let mut collider = ColliderBuilder::cuboid(
@@ -2132,8 +2131,8 @@ pub(crate) fn tilemap(
                                 let entity = if let Some(entity) = commands
                                     .spawn((
                                         RigidBodyBuilder::new_static().translation(
-                                            x * tile_dimensions.width as f32,
-                                            y * tile_dimensions.height as f32,
+                                            x * tile_dimensions.width as f32 + (tile_dimensions.width as f32 / 2.0),
+                                            y * tile_dimensions.height as f32 + (tile_dimensions.height as f32 / 2.0),
                                         ),
                                         collider,
                                     ))
@@ -2144,8 +2143,6 @@ pub(crate) fn tilemap(
                                     error!("Collider entity does not exist unexpectedly, can not run the tilemap system");
                                     return;
                                 };
-
-                                debug!("push collider at {} {}", x, y);
                                 collision_entities.push(entity);
                             }
                         }
