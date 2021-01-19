@@ -2071,8 +2071,6 @@ pub(crate) fn tilemap(
                         main_pass: MainPass,
                         global_transform: Default::default(),
                         modified_layer: Default::default(),
-                        rigid_body: RigidBodyBuilder::new_static(),
-                        // collider: ColliderBuilder::,
                     })
                     .current_entity()
                 {

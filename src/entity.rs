@@ -36,33 +36,7 @@ pub(crate) struct ChunkBundle {
     pub(crate) global_transform: GlobalTransform,
     /// If a layer has been modified, all are set here.
     pub(crate) modified_layer: ModifiedLayer,
-    pub(crate) rigid_body: RigidBodyBuilder,
-    // pub(crate) collider: ColliderBuilder,
 }
-
-// impl Default for ChunkBundle {
-//     fn default() -> ChunkBundle {
-//         let pipeline = RenderPipeline::new(CHUNK_SQUARE_PIPELINE.typed());
-//         ChunkBundle {
-//             point: Default::default(),
-//             z_order: ZOrder(0),
-//             texture_atlas: Default::default(),
-//             mesh: Default::default(),
-//             transform: Default::default(),
-//             render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),
-//             draw: Default::default(),
-//             visible: Visible {
-//                 is_transparent: true,
-//                 ..Default::default()
-//             },
-//             main_pass: MainPass,
-//             global_transform: Default::default(),
-//             modified_layer: Default::default(),
-//             rigid_body: RigidBodyBuilder::new_static(),
-//             collider: ColliderBuilder::,
-//         }
-//     }
-// }
 
 /// A component bundle for `Tilemap` entities.
 #[derive(Debug, Bundle)]
