@@ -42,9 +42,9 @@
 //!     .chunk_dimensions(64, 64)
 //!     .tile_dimensions(8, 8)
 //!     .dimensions(32, 32)
-//!     .add_layer(LayerKind::Dense, 0)
-//!     .add_layer(LayerKind::Sparse, 1)
-//!     .add_layer(LayerKind::Sparse, 2)
+//!     .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
+//!     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 1)
+//!     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 2)
 //!     .z_layers(3)
 //!     .finish();
 //! ```
@@ -493,9 +493,9 @@ impl TilemapBuilder {
     /// use bevy_tilemap::prelude::*;
     ///
     /// let builder = TilemapBuilder::new()
-    ///     .add_layer(LayerKind::Dense, 0)
-    ///     .add_layer(LayerKind::Sparse, 1)
-    ///     .add_layer(LayerKind::Sparse, 2);
+    ///     .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
+    ///     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 1)
+    ///     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 2);
     /// ```
     ///
     /// [`LayerKind`]: crate::chunk::LayerKind
@@ -933,10 +933,14 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
+    /// let layer = TilemapLayer {
+    ///    kind: LayerKind::Sparse,
+    ///    ..Default::default()
+    /// };
     /// let mut tilemap = Tilemap::new(texture_atlas_handle);
     ///
-    /// assert!(tilemap.add_layer(1).is_ok());
-    /// assert!(tilemap.add_layer(1).is_err());
+    /// assert!(tilemap.add_layer(layer, 1).is_ok());
+    /// assert!(tilemap.add_layer(layer, 1).is_err());
     /// ```
     ///
     /// [`add_layer_with_kind`]: Tilemap::add_layer_with_kind
@@ -976,11 +980,10 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .z_layers(3)
+    ///     .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
+    ///     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 3)
     ///     .finish()
     ///     .unwrap();
-    ///
-    /// tilemap.add_layer(0).unwrap();
-    /// tilemap.add_layer(3).unwrap();
     ///
     /// // If we moved this to layer 3, it would instead fail.
     /// assert!(tilemap.move_layer(0, 2).is_ok());
@@ -1026,7 +1029,7 @@ impl Tilemap {
     ///
     /// let mut tilemap = Tilemap::new(texture_atlas_handle);
     ///
-    /// tilemap.add_layer(1);
+    /// tilemap.add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 1);
     ///
     /// tilemap.remove_layer(1);
     /// ```
