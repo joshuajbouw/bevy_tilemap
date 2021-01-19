@@ -2131,8 +2131,10 @@ pub(crate) fn tilemap(
                                 let entity = if let Some(entity) = commands
                                     .spawn((
                                         RigidBodyBuilder::new_static().translation(
-                                            x * tile_dimensions.width as f32 + (tile_dimensions.width as f32 / 2.0),
-                                            y * tile_dimensions.height as f32 + (tile_dimensions.height as f32 / 2.0),
+                                            x * tile_dimensions.width as f32
+                                                + (tile_dimensions.width as f32 / 2.0),
+                                            y * tile_dimensions.height as f32
+                                                + (tile_dimensions.height as f32 / 2.0),
                                         ),
                                         collider,
                                     ))
