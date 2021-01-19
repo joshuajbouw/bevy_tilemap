@@ -449,11 +449,12 @@ impl Chunk {
         })
     }
 
+    /// Gets a vec of all the tiles in the layer, if any.
     pub(crate) fn get_tile_indices(&self, z_order: usize) -> Option<Vec<usize>> {
         self.sprite_layers.get(z_order).and_then(|layer| {
             layer
                 .as_ref()
-                .and_then(|layer| Some(layer.inner.as_ref().get_tile_indices()))
+                .map(|layer| layer.inner.as_ref().get_tile_indices())
         })
     }
 

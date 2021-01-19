@@ -223,10 +223,13 @@ impl Default for AutoFlags {
     }
 }
 
+/// A layer configuration for a tilemap.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TilemapLayer {
+    /// The kind of layer to create.
     pub kind: LayerKind,
+    /// The interaction group and its mask.
     #[cfg_attr(feature = "serde", serde(skip))]
     pub interaction_groups: InteractionGroups,
 }
