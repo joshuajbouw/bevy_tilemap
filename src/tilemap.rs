@@ -1868,6 +1868,34 @@ impl Tilemap {
         self.topology
     }
 
+    /// Returns a reference to the tilemap chunk events.
+    ///
+    /// This is handy if it is needed to know when new chunks are created which
+    /// can then be used to trigger events with other systems. For example,
+    /// if you have a system that adds tiles procedurally to the chunks, upon
+    /// a chunk event this can be used to trigger the creation of those tiles.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_app::prelude::*;
+    /// use bevy_asset::{prelude::*, HandleId};
+    /// use bevy_sprite::prelude::*;
+    /// use bevy_tilemap::{prelude::*, tilemap::ChunkEvent};
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let tilemap = TilemapBuilder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .finish()
+    ///     .unwrap();
+    ///
+    /// let events: &Events<ChunkEvent> = tilemap.events();
+    /// ```
+    pub fn events(&self) -> &Events<ChunkEvent> {
+        &self.events
+    }
+
     /// Returns an option containing a Dimension2.
     pub(crate) fn auto_spawn(&self) -> Option<Dimension2> {
         self.auto_spawn
