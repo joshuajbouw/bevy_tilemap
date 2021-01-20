@@ -11,7 +11,7 @@
 //! // This must be set in Asset<TextureAtlas>.
 //! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 //!
-//! let mut tilemap = Tilemap::new(texture_atlas_handle);
+//! let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
 //!
 //! // Coordinate point with Z order.
 //! let point = (16, 16);
@@ -73,7 +73,7 @@
 //! // This must be set in Asset<TextureAtlas>.
 //! let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 //!
-//! let mut tilemap = Tilemap::new(texture_atlas_handle);
+//! let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
 //!
 //! // Prefer this
 //! let mut tiles = Vec::new();
@@ -113,6 +113,8 @@ pub enum ErrorKind {
     LayerDoesNotExist(usize),
     /// Texture atlas was not set
     MissingTextureAtlas,
+    /// The tile dimensions were not set.
+    MissingTileDimensions,
     /// The chunk does not exist.
     MissingChunk,
     /// The chunk already exists.
@@ -134,6 +136,9 @@ impl Display for ErrorKind {
                 f,
                 "texture atlas is missing, must use `TilemapBuilder::texture_atlas`"
             ),
+            MissingTileDimensions => {
+                write!(f, "tile dimensions are missing, it is required to set it")
+            }
             MissingChunk => write!(f, "the chunk does not exist, try `add_chunk` first"),
             ChunkAlreadyExists(p) => write!(
                 f,
@@ -214,12 +219,10 @@ const DEFAULT_TEXTURE_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
 const DEFAULT_CHUNK_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
 /// The default z layers.
 const DEFAULT_Z_LAYERS: usize = 5;
-/// The default auto flags.
-const DEFAULT_AUTO_FLAGS: AutoFlags = AutoFlags::NONE;
 
 impl Default for AutoFlags {
     fn default() -> Self {
-        DEFAULT_AUTO_FLAGS
+        AutoFlags::AUTO_CONFIGURE & AutoFlags::AUTO_CHUNK
     }
 }
 
@@ -308,7 +311,7 @@ pub struct Tilemap {
 ///
 /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 ///
-/// let builder = TilemapBuilder::new().texture_atlas(texture_atlas_handle);
+/// let builder = TilemapBuilder::new().tile_dimensions(32, 32).texture_atlas(texture_atlas_handle);
 ///
 /// let tilemap = builder.finish().unwrap();
 /// ```
@@ -321,7 +324,7 @@ pub struct Tilemap {
 ///
 /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 ///
-/// let builder = Tilemap::builder().texture_atlas(texture_atlas_handle);
+/// let builder = Tilemap::builder().tile_dimensions(32, 32).texture_atlas(texture_atlas_handle);
 ///
 /// let tilemap = builder.finish().unwrap();
 /// ```
@@ -344,7 +347,7 @@ pub struct TilemapBuilder {
     /// The chunks dimensions in tiles.
     chunk_dimensions: Dimension2,
     /// The tiles dimensions in pixels.
-    tile_dimensions: Dimension2,
+    tile_dimensions: Option<Dimension2>,
     /// The amount of z layers.
     z_layers: usize,
     /// The layers to be set. If there are more, it will override `z_layers`.
@@ -363,13 +366,12 @@ impl Default for TilemapBuilder {
             topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
-            tile_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
+            tile_dimensions: None,
             z_layers: DEFAULT_Z_LAYERS,
             layers: None,
             texture_atlas: None,
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
-            // auto_tile: None,
         }
     }
 }
@@ -460,7 +462,7 @@ impl TilemapBuilder {
     /// let builder = TilemapBuilder::new().tile_dimensions(32, 32);
     /// ```
     pub fn tile_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
-        self.tile_dimensions = Dimension2::new(width, height);
+        self.tile_dimensions = Some(Dimension2::new(width, height));
         self
     }
 
@@ -527,24 +529,6 @@ impl TilemapBuilder {
         self
     }
 
-    /// Sets if you want the tilemap to automatically configure itself.
-    ///
-    /// This is useful and meant as a shortcut if you want the tilemap to
-    /// figure out the size of the textures and optimal chunk sizes on its own.
-    ///
-    /// By default this is not enabled.
-    ///
-    /// # Examples
-    /// ```
-    /// use bevy_tilemap::prelude::*;
-    ///
-    /// let builder = TilemapBuilder::new().auto_configure();
-    /// ```
-    pub fn auto_configure(mut self) -> TilemapBuilder {
-        self.auto_flags.toggle(AutoFlags::AUTO_CONFIGURE);
-        self
-    }
-
     /// Sets if you want the tilemap to automatically spawn new chunks.
     ///
     /// This is useful if the tilemap map is meant to be endless or nearly
@@ -600,7 +584,7 @@ impl TilemapBuilder {
     ///
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let builder = TilemapBuilder::new().texture_atlas(texture_atlas_handle);
+    /// let builder = TilemapBuilder::new().tile_dimensions(32, 32).texture_atlas(texture_atlas_handle);
     ///
     /// assert!(builder.finish().is_ok());
     /// assert!(TilemapBuilder::new().finish().is_err());
@@ -615,6 +599,11 @@ impl TilemapBuilder {
             atlas
         } else {
             return Err(ErrorKind::MissingTextureAtlas.into());
+        };
+        let tile_dimensions = if let Some(dimensions) = self.tile_dimensions {
+            dimensions
+        } else {
+            return Err(ErrorKind::MissingTileDimensions.into());
         };
 
         let z_layers = if let Some(layers) = &self.layers {
@@ -631,7 +620,7 @@ impl TilemapBuilder {
             topology: self.topology,
             dimensions: self.dimensions,
             chunk_dimensions: self.chunk_dimensions,
-            tile_dimensions: self.tile_dimensions,
+            tile_dimensions,
             layers: vec![None; z_layers],
             auto_flags: self.auto_flags,
             auto_spawn: self.auto_spawn,
@@ -663,8 +652,8 @@ impl Default for Tilemap {
         Tilemap {
             topology: GridTopology::Square,
             dimensions: None,
-            chunk_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
-            tile_dimensions: DEFAULT_CHUNK_DIMENSIONS,
+            chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
+            tile_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
             layers: vec![None; DEFAULT_Z_LAYERS],
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
@@ -694,13 +683,14 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = Tilemap::new(texture_atlas_handle);
+    /// let tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     /// ```
     ///
     /// [`default`]: Tilemap::default
-    pub fn new(texture_atlas: Handle<TextureAtlas>) -> Tilemap {
+    pub fn new(texture_atlas: Handle<TextureAtlas>, tile_width: u32, tile_height: u32) -> Tilemap {
         Tilemap {
             texture_atlas,
+            tile_dimensions: Dimension2::new(tile_width, tile_height),
             ..Default::default()
         }
     }
@@ -768,7 +758,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = Tilemap::new(texture_atlas_handle);
+    /// let tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     /// let texture_atlas: &Handle<TextureAtlas> = tilemap.texture_atlas();
     /// ```
     pub fn texture_atlas(&self) -> &Handle<TextureAtlas> {
@@ -793,6 +783,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(3, 3)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -842,7 +833,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// assert!(tilemap.insert_chunk((0, 0)).is_ok());
     /// assert!(tilemap.contains_chunk((0, 0)));
@@ -874,7 +865,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// let kind = LayerKind::Sparse;
     ///
@@ -937,7 +928,7 @@ impl Tilemap {
     ///    kind: LayerKind::Sparse,
     ///    ..Default::default()
     /// };
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// assert!(tilemap.add_layer(layer, 1).is_ok());
     /// assert!(tilemap.add_layer(layer, 1).is_err());
@@ -980,6 +971,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .z_layers(3)
+    ///     .tile_dimensions(32, 32)
     ///     .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
     ///     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 3)
     ///     .finish()
@@ -1027,7 +1019,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// tilemap.add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 1);
     ///
@@ -1067,6 +1059,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(1, 1)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1113,6 +1106,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 32)
+    ///     .tile_dimensions(32, 32)
     ///     .dimensions(1, 1)
     ///     .finish()
     ///     .unwrap();
@@ -1152,6 +1146,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(1, 1)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1208,6 +1203,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(3, 3)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1239,7 +1235,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// let tile_point = (15, 15);
     /// let chunk_point = tilemap.point_to_chunk_point(tile_point);
@@ -1293,6 +1289,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(1, 1)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1412,7 +1409,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// tilemap.insert_chunk((0, 0)).unwrap();
     ///
@@ -1444,7 +1441,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// assert!(tilemap.insert_chunk((0, 0)).is_ok());
     ///
@@ -1514,7 +1511,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// assert!(tilemap.insert_chunk((0, 0)).is_ok());
     ///
@@ -1559,7 +1556,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// tilemap.insert_chunk((0, 0)).unwrap();
     ///
@@ -1600,7 +1597,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// tilemap.insert_chunk((0, 0)).unwrap();
     ///
@@ -1646,6 +1643,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle.clone_weak())
     ///     .dimensions(32, 32)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1654,7 +1652,7 @@ impl Tilemap {
     /// // 32 * 32 / 2 = 512
     /// assert_eq!(center, Some((512, 512)));
     ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle);
+    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// let center = tilemap.center_tile_coord();
     ///
@@ -1683,6 +1681,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle.clone_weak())
     ///     .dimensions(32, 64)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1690,7 +1689,7 @@ impl Tilemap {
     ///
     /// assert_eq!(width, Some(32));
     ///
-    /// let tilemap = Tilemap::new(texture_atlas_handle);
+    /// let tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// let width = tilemap.width();
     ///
@@ -1714,6 +1713,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle.clone_weak())
     ///     .dimensions(32, 64)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1721,7 +1721,7 @@ impl Tilemap {
     ///
     /// assert_eq!(height, Some(64));
     ///
-    /// let tilemap = Tilemap::new(texture_atlas_handle);
+    /// let tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// let height = tilemap.height();
     ///
@@ -1745,6 +1745,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 64)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1770,6 +1771,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 64)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1795,6 +1797,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .tile_dimensions(32, 64)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1859,6 +1862,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .topology(GridTopology::HexX)
+    ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1885,10 +1889,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = TilemapBuilder::new()
-    ///     .texture_atlas(texture_atlas_handle)
-    ///     .finish()
-    ///     .unwrap();
+    /// let tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// let events: &Events<ChunkEvent> = tilemap.events();
     /// ```
@@ -1914,58 +1915,6 @@ impl Tilemap {
     /// Returns a mutable reference to the spawned chunk points.
     pub(crate) fn spawned_chunks_mut(&mut self) -> &mut HashSet<(i32, i32)> {
         &mut self.spawned
-    }
-}
-
-/// Automatically configures all tilemaps that need to be configured.
-pub(crate) fn tilemap_auto_configure(
-    texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<&mut Tilemap>,
-) {
-    for mut map in query.iter_mut() {
-        if !map.auto_flags.contains(AutoFlags::AUTO_CONFIGURE) {
-            return;
-        }
-
-        let atlas = if let Some(atlas) = texture_atlases.get(&map.texture_atlas) {
-            atlas
-        } else {
-            error!("`TextureAtlas` for the tilemap is missing, can not auto configure");
-            return;
-        };
-
-        let mut tile_dimensions: Dimension2 = Dimension2::new(0, 0);
-        let mut base_size: u32 = 0;
-        let mut sizes = HashSet::default();
-        for texture in &atlas.textures {
-            let dimensions: Dimension2 =
-                Dimension2::new(texture.width() as u32, texture.height() as u32);
-            let size = dimensions.area();
-            sizes.insert(size);
-            if size < base_size || base_size == 0 {
-                tile_dimensions = dimensions;
-                base_size = size;
-            }
-        }
-
-        for size in sizes.into_iter() {
-            if size % base_size != 0 {
-                error!("the tiles in the set `TextureAtlas` must be divisible by the smallest itle, can not auto configure");
-                map.auto_flags.toggle(AutoFlags::AUTO_CONFIGURE);
-                return;
-            }
-        }
-
-        let chunk_dimensions = Dimension2::new(
-            (DEFAULT_TEXTURE_DIMENSIONS.width as f32 / tile_dimensions.width as f32
-                * DEFAULT_CHUNK_DIMENSIONS.width as f32) as u32,
-            (DEFAULT_TEXTURE_DIMENSIONS.height as f32 / tile_dimensions.height as f32
-                * DEFAULT_CHUNK_DIMENSIONS.height as f32) as u32,
-        );
-
-        map.tile_dimensions = tile_dimensions;
-        map.chunk_dimensions = chunk_dimensions;
-        map.auto_flags.toggle(AutoFlags::AUTO_CONFIGURE);
     }
 }
 
