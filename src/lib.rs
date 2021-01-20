@@ -118,7 +118,8 @@ pub mod tile;
 #[no_implicit_prelude]
 pub mod tilemap;
 
-use crate::{lib::*, render::TilemapRenderGraphBuilder, tilemap::Tilemap};
+pub use crate::tilemap::{ChunkEvent, Tilemap, TilemapLayer};
+use crate::{lib::*, render::TilemapRenderGraphBuilder};
 
 /// The Bevy Tilemap 2D main plugin.
 #[derive(Default)]
