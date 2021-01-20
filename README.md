@@ -60,8 +60,8 @@ Less time fiddling, more time building
 Add to your `Cargo.toml` file:
 ```toml
 [dependencies]
-bevy = 0.3
-bevy_tilemap = 0.3
+bevy = "0.3"
+bevy_tilemap = "0.3"
 ```
 
 ## Simple tilemap construction
@@ -114,7 +114,7 @@ work together and are aware of each other.
 
 ## Building
 
-`bevy_tilemap` is only guranteed to work from stable Rust toolchain and up. This
+`bevy_tilemap` is only guaranteed to work from stable Rust toolchain and up. This
 is to be inline with the rest of Bevy engine.
 
 Once you have a development environment, Bevy Tilemap can be fetched using git:
