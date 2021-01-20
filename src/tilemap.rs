@@ -178,7 +178,7 @@ impl From<DimensionError> for TilemapError {
 pub type TilemapResult<T> = Result<T, TilemapError>;
 #[derive(Debug)]
 /// Events that can happen to chunks.
-enum ChunkEvent {
+pub enum ChunkEvent {
     /// An event when a chunk needs to be spawned.
     Spawned {
         /// The point to get the correct chunk to spawn.
