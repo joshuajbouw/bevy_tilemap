@@ -7,8 +7,8 @@ currently an issue with Bevy v0.4.0 which prevents `bevy` from being added to
 
 ## Running the examples
 
-To run an example you you can run them based on their name in the example 
-folder. For example:
+To run an example you can run them based on their name in the example folder.
+For example:
 
 ```bash
 cargo run --example random_dungeon
@@ -19,15 +19,15 @@ cargo run --example random_dungeon
 The two different kinds of topologies that are explored in this library is both 
 square and hex. 
 
-Square is typically used for most grid based games that have a 
-local map or playing field. Many a creatures and characters have explored on a 
+Square is typically used for most grid-based games that have a 
+local map or playing field. Many creatures and characters have explored on a 
 grid system such as this. This is quite common of older RPGs. Movement on
 square tiles usually has a different movement length on diagonals opposed to 
 going the other directions.
 
 Where as hex is used for pen & paper wargames but not uncommon for world maps
 for more some RPGs with world movement. The best part of hexes is that movement
-in each direction is treated usually exactly the same in game logic.
+in each direction is treated usually exactly the same in-game logic.
 
 ### square_tile
 
