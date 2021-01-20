@@ -1950,7 +1950,7 @@ pub(crate) fn tilemap_auto_configure(
 /// 1. Spawn chunks
 /// 1. Modify chunks
 /// 1. Despawn chunks
-pub(crate) fn tilemap(
+pub(crate) fn tilemap_events(
     commands: &mut Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut tilemap_query: Query<(Entity, &mut Tilemap, &Transform)>,
