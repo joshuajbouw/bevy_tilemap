@@ -1889,10 +1889,7 @@ impl Tilemap {
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let tilemap = TilemapBuilder::new()
-    ///     .texture_atlas(texture_atlas_handle)
-    ///     .finish()
-    ///     .unwrap();
+    /// let tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
     /// let events: &Events<ChunkEvent> = tilemap.events();
     /// ```
