@@ -67,6 +67,7 @@ impl Default for Tile {
     }
 }
 
+// TODO: Remove this and replace with builder.
 impl Tile {
     /// Creates a new tile with a provided point and tile index.
     ///

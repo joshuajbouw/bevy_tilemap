@@ -58,6 +58,7 @@ use crate::{
     entity::{ModifiedLayer, ZOrder},
     lib::*,
     mesh::ChunkMesh,
+    prelude::Tile,
     tile::RawTile,
     tilemap::Tilemap,
 };
@@ -71,13 +72,16 @@ pub(crate) trait Layer: 'static {
     fn set_mesh(&mut self, mesh: Handle<Mesh>);
 
     /// Sets a raw tile for a layer at an index.
-    fn set_raw_tile(&mut self, index: usize, tile: RawTile);
+    fn set_tile(&mut self, index: usize, tile: RawTile);
 
     /// Gets a tile by an index.
     fn get_tile(&self, index: usize) -> Option<&RawTile>;
 
     /// Gets a tile with a mutable reference by an index.
     fn get_tile_mut(&mut self, index: usize) -> Option<&mut RawTile>;
+
+    /// Gets all the tile indices in the layer that exist.
+    fn get_tile_indices(&self) -> Vec<usize>;
 
     /// Takes all the tiles in the layer and returns attributes for the renderer.
     fn tiles_to_attributes(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>);
@@ -106,11 +110,14 @@ impl Layer for DenseLayer {
         self.mesh = mesh;
     }
 
-    fn set_raw_tile(&mut self, index: usize, tile: RawTile) {
+    fn set_tile(&mut self, index: usize, tile: RawTile) {
         if let Some(inner_tile) = self.tiles.get_mut(index) {
             *inner_tile = tile;
         } else {
-            warn!(target: "tilemap_events", "tile is out of bounds at index {} and can not be set", index);
+            warn!(
+                "tile is out of bounds at index {} and can not be set",
+                index
+            );
         }
     }
 
@@ -132,6 +139,17 @@ impl Layer for DenseLayer {
                 Some(tile)
             }
         })
+    }
+
+    fn get_tile_indices(&self) -> Vec<usize> {
+        let mut indices = Vec::with_capacity(self.tiles.len());
+        for (index, tile) in self.tiles.iter().enumerate() {
+            if tile.color.a() != 0.0 {
+                indices.push(index);
+            }
+        }
+        indices.shrink_to_fit();
+        indices
     }
 
     fn tiles_to_attributes(&self, _area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
@@ -169,7 +187,7 @@ impl Layer for SparseLayer {
         self.mesh = mesh;
     }
 
-    fn set_raw_tile(&mut self, index: usize, tile: RawTile) {
+    fn set_tile(&mut self, index: usize, tile: RawTile) {
         if tile.color.a() == 0.0 {
             self.tiles.remove(&index);
         }
@@ -182,6 +200,14 @@ impl Layer for SparseLayer {
 
     fn get_tile_mut(&mut self, index: usize) -> Option<&mut RawTile> {
         self.tiles.get_mut(&index)
+    }
+
+    fn get_tile_indices(&self) -> Vec<usize> {
+        let mut indices = Vec::with_capacity(self.tiles.len());
+        for index in self.tiles.keys() {
+            indices.push(*index);
+        }
+        indices
     }
 
     fn tiles_to_attributes(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
@@ -286,7 +312,7 @@ impl Chunk {
 
     /// Adds a layer from a layer kind, the z layer, and dimensions of the
     /// chunk.
-    pub(crate) fn add_layer(&mut self, kind: &LayerKind, z: usize, dimensions: Dimension2) {
+    pub(crate) fn add_layer(&mut self, kind: &LayerKind, z_order: usize, dimensions: Dimension2) {
         match kind {
             LayerKind::Dense => {
                 let tiles = vec![
@@ -296,23 +322,23 @@ impl Chunk {
                     };
                     dimensions.area() as usize
                 ];
-                if let Some(layer) = self.sprite_layers.get_mut(z) {
+                if let Some(layer) = self.sprite_layers.get_mut(z_order) {
                     *layer = Some(SpriteLayer {
                         inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
                         entity: None,
                     });
                 } else {
-                    warn!(target: "tilemap_events", "sprite layer {} is out of bounds", z);
+                    warn!("sprite layer {} is out of bounds", z_order);
                 }
             }
             LayerKind::Sparse => {
-                if let Some(layer) = self.sprite_layers.get_mut(z) {
+                if let Some(layer) = self.sprite_layers.get_mut(z_order) {
                     *layer = Some(SpriteLayer {
                         inner: LayerKindInner::Sparse(SparseLayer::new(HashMap::default())),
                         entity: None,
                     });
                 } else {
-                    warn!(target: "tilemap_events", "sprite layer {} is out of bounds", z);
+                    warn!("sprite layer {} is out of bounds", z_order);
                 }
             }
         }
@@ -327,7 +353,10 @@ impl Chunk {
     pub(crate) fn move_layer(&mut self, from_z: usize, to_z: usize) {
         // TODO: rename to swap and include it in the greater api
         if self.sprite_layers.get(to_z).is_some() {
-            warn!(target: "tilemap_events", "sprite layer {} unexpectedly exists and can not be moved", to_z);
+            warn!(
+                "sprite layer {} unexpectedly exists and can not be moved",
+                to_z
+            );
             return;
         }
 
@@ -345,23 +374,27 @@ impl Chunk {
             if let Some(layer) = layer.as_mut() {
                 layer.inner.as_mut().set_mesh(mesh)
             } else {
-                warn!(target: "tilemap_events", "can not set mesh to sprite layer {}", z_order);
+                warn!("can not set mesh to sprite layer {}", z_order);
             }
         } else {
-            warn!(target: "tilemap_events", "sprite layer {} does not exist", z_order);
+            warn!("sprite layer {} does not exist", z_order);
         }
     }
 
     /// Sets a single raw tile to be added to a z layer and index.
-    pub(crate) fn set_raw_tile(&mut self, z_order: usize, index: usize, raw_tile: RawTile) {
-        if let Some(layer) = self.sprite_layers.get_mut(z_order) {
+    pub(crate) fn set_tile(&mut self, index: usize, tile: Tile) {
+        if let Some(layer) = self.sprite_layers.get_mut(tile.z_order) {
             if let Some(layer) = layer.as_mut() {
-                layer.inner.as_mut().set_raw_tile(index, raw_tile);
+                let raw_tile = RawTile {
+                    index: tile.sprite_index,
+                    color: tile.tint,
+                };
+                layer.inner.as_mut().set_tile(index, raw_tile);
             } else {
-                warn!(target: "tilemap_events", "can not set tile to sprite layer {}", z_order);
+                warn!("can not set tile to sprite layer {}", tile.z_order);
             }
         } else {
-            warn!(target: "tilemap_events", "sprite layer {} does not exist", z_order);
+            warn!("sprite layer {} does not exist", tile.z_order);
         }
     }
 
@@ -371,10 +404,10 @@ impl Chunk {
             if let Some(layer) = layer.as_mut() {
                 layer.entity = Some(entity);
             } else {
-                warn!(target: "tilemap_events", "can not add entity to sprite layer {}", z_order);
+                warn!("can not add entity to sprite layer {}", z_order);
             }
         } else {
-            warn!(target: "tilemap_events", "sprite layer {} does not exist", z_order);
+            warn!("sprite layer {} does not exist", z_order);
         }
     }
 
@@ -416,6 +449,15 @@ impl Chunk {
         })
     }
 
+    /// Gets a vec of all the tiles in the layer, if any.
+    pub(crate) fn get_tile_indices(&self, z_order: usize) -> Option<Vec<usize>> {
+        self.sprite_layers.get(z_order).and_then(|layer| {
+            layer
+                .as_ref()
+                .map(|layer| layer.inner.as_ref().get_tile_indices())
+        })
+    }
+
     /// At the given z layer, changes the tiles into attributes for use with
     /// the renderer using the given dimensions.
     ///
@@ -444,19 +486,19 @@ pub(crate) fn chunk_update(
         let tilemap = if let Ok(tilemap) = map_query.get(**parent) {
             tilemap
         } else {
-            error!(target: "tilemap_events", "`Tilemap` is missing, can not update chunk");
+            error!("`Tilemap` is missing, can not update chunk");
             return;
         };
         let chunk = if let Some(chunk) = tilemap.get_chunk(point) {
             chunk
         } else {
-            error!(target: "tilemap_events", "`Chunk` is missing, can not update chunk");
+            error!("`Chunk` is missing, can not update chunk");
             return;
         };
         let mesh = if let Some(mesh) = meshes.get_mut(mesh_handle) {
             mesh
         } else {
-            error!(target: "tilemap_events", "`Mesh` is missing, can not update chunk");
+            error!("`Mesh` is missing, can not update chunk");
             return;
         };
         let (indexes, colors) = if let Some((index, colors)) =
@@ -464,7 +506,7 @@ pub(crate) fn chunk_update(
         {
             (index, colors)
         } else {
-            error!(target: "tilemap_events", "Tiles are missing, can not update chunk");
+            error!("Tiles are missing, can not update chunk");
             return;
         };
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
@@ -504,7 +546,7 @@ fn auto_spawn(
             }
 
             if let Err(e) = tilemap.spawn_chunk(Point2::new(chunk_x, chunk_y)) {
-                warn!(target: "tilemap_events", "{}", e);
+                warn!("{}", e);
             }
             new_spawned.push(Point2::new(chunk_x, chunk_y));
         }
@@ -514,7 +556,7 @@ fn auto_spawn(
     for point in spawned_list.iter() {
         if !new_spawned.contains(&point.into()) {
             if let Err(e) = tilemap.despawn_chunk(point) {
-                warn!(target: "tilemap_events", "{}", e);
+                warn!("{}", e);
             }
         }
     }

@@ -76,3 +76,13 @@ the numpad.
 
 A randomly generated overworld with grass, dirty, boulders, and small croppings 
 of trees. Movement is done with Q W E A D Z X C.
+
+### stress_dwarves
+
+Simple stress test of pure tilemap sprites stumbling randomly around a map with
+simple collisions.
+
+### physics_dungeon
+
+A simple physics and collision demonstration of a dwarf sliding around a random
+dungeon.
