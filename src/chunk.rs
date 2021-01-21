@@ -74,6 +74,9 @@ pub(crate) trait Layer: 'static {
     /// Sets a raw tile for a layer at an index.
     fn set_tile(&mut self, index: usize, tile: RawTile);
 
+    /// Removes a tile for a layer at an index.
+    fn remove_tile(&mut self, index: usize);
+
     /// Gets a tile by an index.
     fn get_tile(&self, index: usize) -> Option<&RawTile>;
 
@@ -118,6 +121,12 @@ impl Layer for DenseLayer {
                 "tile is out of bounds at index {} and can not be set",
                 index
             );
+        }
+    }
+
+    fn remove_tile(&mut self, index: usize) {
+        if let Some(tile) = self.tiles.get_mut(index) {
+            tile.color.set_a(0.0);
         }
     }
 
@@ -192,6 +201,10 @@ impl Layer for SparseLayer {
             self.tiles.remove(&index);
         }
         self.tiles.insert(index, tile);
+    }
+
+    fn remove_tile(&mut self, index: usize) {
+        self.tiles.remove(&index);
     }
 
     fn get_tile(&self, index: usize) -> Option<&RawTile> {
@@ -281,6 +294,8 @@ pub(crate) struct SpriteLayer {
     #[cfg_attr(feature = "serde", serde(skip))]
     /// Contains an entity if the layer had been spawned.
     entity: Option<Entity>,
+    /// Contains a map of all collision entities.
+    collision_entities: HashMap<usize, Entity>,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -326,9 +341,10 @@ impl Chunk {
                     *layer = Some(SpriteLayer {
                         inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
                         entity: None,
+                        collision_entities: HashMap::default(),
                     });
                 } else {
-                    warn!("sprite layer {} is out of bounds", z_order);
+                    error!("sprite layer {} is out of bounds", z_order);
                 }
             }
             LayerKind::Sparse => {
@@ -336,9 +352,10 @@ impl Chunk {
                     *layer = Some(SpriteLayer {
                         inner: LayerKindInner::Sparse(SparseLayer::new(HashMap::default())),
                         entity: None,
+                        collision_entities: HashMap::default(),
                     });
                 } else {
-                    warn!("sprite layer {} is out of bounds", z_order);
+                    error!("sprite layer {} is out of bounds", z_order);
                 }
             }
         }
@@ -353,7 +370,7 @@ impl Chunk {
     pub(crate) fn move_layer(&mut self, from_z: usize, to_z: usize) {
         // TODO: rename to swap and include it in the greater api
         if self.sprite_layers.get(to_z).is_some() {
-            warn!(
+            error!(
                 "sprite layer {} unexpectedly exists and can not be moved",
                 to_z
             );
@@ -374,10 +391,10 @@ impl Chunk {
             if let Some(layer) = layer.as_mut() {
                 layer.inner.as_mut().set_mesh(mesh)
             } else {
-                warn!("can not set mesh to sprite layer {}", z_order);
+                error!("can not set mesh to sprite layer {}", z_order);
             }
         } else {
-            warn!("sprite layer {} does not exist", z_order);
+            error!("sprite layer {} does not exist", z_order);
         }
     }
 
@@ -391,10 +408,23 @@ impl Chunk {
                 };
                 layer.inner.as_mut().set_tile(index, raw_tile);
             } else {
-                warn!("can not set tile to sprite layer {}", tile.z_order);
+                error!("can not set tile to sprite layer {}", tile.z_order);
             }
         } else {
-            warn!("sprite layer {} does not exist", tile.z_order);
+            error!("sprite layer {} does not exist", tile.z_order);
+        }
+    }
+
+    /// Removes a tile from a sprite layer with a given index and z order.
+    pub(crate) fn remove_tile(&mut self, index: usize, z_order: usize) {
+        if let Some(layer) = self.sprite_layers.get_mut(z_order) {
+            if let Some(layer) = layer.as_mut() {
+                layer.inner.as_mut().remove_tile(index);
+            } else {
+                error!("can not remove tile on sprite layer {}", z_order);
+            }
+        } else {
+            error!("sprite layer {} does not exist", z_order);
         }
     }
 
@@ -404,10 +434,23 @@ impl Chunk {
             if let Some(layer) = layer.as_mut() {
                 layer.entity = Some(entity);
             } else {
-                warn!("can not add entity to sprite layer {}", z_order);
+                error!("can not add entity to sprite layer {}", z_order);
             }
         } else {
-            warn!("sprite layer {} does not exist", z_order);
+            error!("sprite layer {} does not exist", z_order);
+        }
+    }
+
+    /// Adds an entity to a tile index in a layer.
+    pub(crate) fn insert_collision_entity(&mut self, z_order: usize, index: usize, entity: Entity) {
+        if let Some(layer) = self.sprite_layers.get_mut(z_order) {
+            if let Some(layer) = layer.as_mut() {
+                layer.collision_entities.insert(index, entity);
+            } else {
+                error!("can not add collision entity to sprite layer {}", z_order);
+            }
+        } else {
+            error!("sprite layer {} does not exist", z_order);
         }
     }
 
@@ -416,6 +459,14 @@ impl Chunk {
         self.sprite_layers
             .get(z_order)
             .and_then(|o| o.as_ref().and_then(|layer| layer.entity))
+    }
+
+    /// Gets the collision entity if any.
+    pub(crate) fn get_collision_entities(&self, index: usize, z_order: usize) -> Option<Entity> {
+        self.sprite_layers.get(z_order).and_then(|o| {
+            o.as_ref()
+                .and_then(|layer| layer.collision_entities.get(&index).cloned())
+        })
     }
 
     /// Gets all the layers entities for use with bulk despawning.

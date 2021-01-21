@@ -203,7 +203,7 @@ mod lib {
     };
     pub(crate) use bevy_transform::{
         components::{GlobalTransform, Parent, Transform},
-        hierarchy::BuildChildren,
+        hierarchy::{BuildChildren, DespawnRecursiveExt},
     };
     pub(crate) use bevy_utils::{HashMap, HashSet};
     pub(crate) use bevy_window::WindowResized;
@@ -233,4 +233,8 @@ mod lib {
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
     pub(crate) use bevy_log::debug;
+
+    #[cfg(debug_assertions)]
+    #[allow(unused_imports)]
+    pub(crate) use std::println;
 }

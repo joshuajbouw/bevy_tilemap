@@ -201,6 +201,13 @@ pub enum ChunkEvent {
         /// The point of the chunk to despawn.
         point: Point2,
     },
+    /// An event when a collision needs to be despawned.
+    DespawnedCollision {
+        /// The entities that need to be despawned.
+        entities: Vec<Entity>,
+        /// The point of the chunk to despawn collisions.
+        point: Point2,
+    },
 }
 
 bitflags! {
@@ -1278,6 +1285,48 @@ impl Tilemap {
         (x, y)
     }
 
+    /// Sorts tiles into the chunks they belong to.
+    fn sort_tiles_to_chunks<I>(&mut self, tiles: I) -> TilemapResult<HashMap<Point2, Vec<Tile>>>
+    where
+        I: IntoIterator<Item = Tile>,
+    {
+        let width = self.chunk_dimensions.width as i32;
+        let height = self.chunk_dimensions.height as i32;
+
+        let mut chunk_map: HashMap<Point2, Vec<Tile>> = HashMap::default();
+        for tile in tiles.into_iter() {
+            let global_tile_point: Point2 = tile.point;
+            let chunk_point: Point2 = self.point_to_chunk_point(global_tile_point).into();
+
+            if let Some(layer) = self.layers.get(tile.z_order as usize) {
+                if layer.as_ref().is_none() {
+                    self.add_layer(TilemapLayer::default(), tile.z_order as usize)?;
+                }
+            } else {
+                return Err(ErrorKind::LayerDoesNotExist(tile.z_order).into());
+            }
+
+            let tile_point = Point2::new(
+                global_tile_point.x - (width * chunk_point.x) + (width / 2),
+                global_tile_point.y - (height * chunk_point.y) + (height / 2),
+            );
+
+            let chunk_tile: Tile = Tile {
+                point: tile_point,
+                z_order: tile.z_order,
+                sprite_index: tile.sprite_index,
+                tint: tile.tint,
+            };
+            if let Some(tiles) = chunk_map.get_mut(&chunk_point) {
+                tiles.push(chunk_tile);
+            } else {
+                let tiles = vec![chunk_tile];
+                chunk_map.insert(chunk_point, tiles);
+            }
+        }
+        Ok(chunk_map)
+    }
+
     /// Sets many tiles, creating new chunks if needed.
     ///
     /// If setting a single tile is more preferable, then use the [`insert_tile`]
@@ -1331,41 +1380,7 @@ impl Tilemap {
     where
         I: IntoIterator<Item = Tile>,
     {
-        let width = self.chunk_dimensions.width as i32;
-        let height = self.chunk_dimensions.height as i32;
-
-        let mut chunk_map: HashMap<Point2, Vec<Tile>> = HashMap::default();
-        for tile in tiles.into_iter() {
-            let global_tile_point: Point2 = tile.point;
-            let chunk_point: Point2 = self.point_to_chunk_point(global_tile_point).into();
-
-            if let Some(layer) = self.layers.get(tile.z_order as usize) {
-                if layer.as_ref().is_none() {
-                    self.add_layer(TilemapLayer::default(), tile.z_order as usize)?;
-                }
-            } else {
-                return Err(ErrorKind::LayerDoesNotExist(tile.z_order).into());
-            }
-
-            let tile_point = Point2::new(
-                global_tile_point.x - (width * chunk_point.x) + (width / 2),
-                global_tile_point.y - (height * chunk_point.y) + (height / 2),
-            );
-
-            let chunk_tile: Tile = Tile {
-                point: tile_point,
-                z_order: tile.z_order,
-                sprite_index: tile.sprite_index,
-                tint: tile.tint,
-            };
-            if let Some(tiles) = chunk_map.get_mut(&chunk_point) {
-                tiles.push(chunk_tile);
-            } else {
-                let tiles = vec![chunk_tile];
-                chunk_map.insert(chunk_point, tiles);
-            }
-        }
-
+        let chunk_map = self.sort_tiles_to_chunks(tiles)?;
         for (point, tiles) in chunk_map.into_iter() {
             // Is there a better way to do this? Clippy hates if I don't do it
             // like this talking about constructing regardless yet, here it is,
@@ -1501,7 +1516,25 @@ impl Tilemap {
                 Color::rgba(0.0, 0.0, 0.0, 0.0),
             ));
         }
-        self.insert_tiles(tiles)?;
+        let chunk_map = self.sort_tiles_to_chunks(tiles)?;
+        for (point, tiles) in chunk_map.into_iter() {
+            let chunk = match self.chunks.get_mut(&point) {
+                Some(c) => c,
+                None => return Err(ErrorKind::MissingChunk.into()),
+            };
+            let mut entities = Vec::with_capacity(tiles.len());
+            for tile in tiles.into_iter() {
+                let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
+                if let Some(entity) = chunk.get_collision_entities(index, tile.z_order) {
+                    entities.push(entity);
+                };
+                chunk.remove_tile(index, tile.z_order);
+            }
+
+            self.events
+                .send(ChunkEvent::DespawnedCollision { entities, point });
+        }
+
         Ok(())
     }
 
@@ -1955,6 +1988,7 @@ pub(crate) fn tilemap_events(
         let mut modified_chunks = Vec::new();
         let mut spawned_chunks = Vec::new();
         let mut despawned_chunks = Vec::new();
+        let mut despawned_collisions = Vec::new();
         let mut reader = tilemap.events.get_reader();
         for event in reader.iter(&tilemap.events) {
             use ChunkEvent::*;
@@ -1970,6 +2004,12 @@ pub(crate) fn tilemap_events(
                     ref point,
                 } => {
                     despawned_chunks.push((entities.clone(), *point));
+                }
+                DespawnedCollision {
+                    ref entities,
+                    ref point,
+                } => {
+                    despawned_collisions.push((entities.clone(), *point));
                 }
             }
         }
@@ -2104,8 +2144,8 @@ pub(crate) fn tilemap_events(
                 }
                 let mut collision_entities = Vec::new();
                 if let Some(indices) = chunk.get_tile_indices(z_order) {
-                    for index in indices {
-                        let point = match chunk_dimensions.decode_point(index) {
+                    for index in &indices {
+                        let point = match chunk_dimensions.decode_point(*index) {
                             Ok(p) => p,
                             Err(e) => {
                                 error!("{}", e);
@@ -2160,12 +2200,16 @@ pub(crate) fn tilemap_events(
                                     error!("Collider entity does not exist unexpectedly, can not run the tilemap system");
                                     return;
                                 };
+
                                 collision_entities.push(entity);
                             }
                         }
                     }
+                    for (index, entity) in indices.iter().zip(&collision_entities) {
+                        chunk.insert_collision_entity(z_order, *index, *entity);
+                    }
+                    commands.push_children(entity, &collision_entities);
                 }
-                commands.push_children(entity, &collision_entities);
             }
             commands.push_children(map_entity, &entities);
         }
@@ -2183,10 +2227,17 @@ pub(crate) fn tilemap_events(
         }
 
         for (entities, point) in despawned_chunks.into_iter() {
-            for entity in entities {
-                commands.despawn(entity);
+            for entity in entities.into_iter() {
+                commands.despawn_recursive(entity);
             }
             info!("Chunk {} despawned", point);
+        }
+
+        for (entities, point) in despawned_collisions.into_iter() {
+            for entity in entities.into_iter() {
+                commands.despawn(entity);
+            }
+            info!("Chunk {} collision entities despawned", point);
         }
     }
 }
