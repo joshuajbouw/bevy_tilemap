@@ -218,7 +218,7 @@ fn build_random_dungeon(
                     index: dwarf_sprite_index as u32,
                     ..Default::default()
                 },
-                
+
                 transform: Transform::from_translation(Vec3::new(0.0, 0.0, 3.0)),
                 ..Default::default()
             });
@@ -228,7 +228,12 @@ fn build_random_dungeon(
             .with(Player {})
             // The offset is important here only for even sized chunk sizes. It
             // is 0.5 because its half a block width as our scale is a tile.
-            .with(RigidBodyBuilder::new_dynamic().lock_rotations().translation(0.5, 0.5).linear_damping(0.75))
+            .with(
+                RigidBodyBuilder::new_dynamic()
+                    .lock_rotations()
+                    .translation(0.5, 0.5)
+                    .linear_damping(0.75),
+            )
             .with(
                 ColliderBuilder::ball(0.4).collision_groups(InteractionGroups::new(
                     0b0000_0000_0000_0010,
