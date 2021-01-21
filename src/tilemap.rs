@@ -2126,6 +2126,13 @@ pub(crate) fn tilemap_events(
                         x += transform.translation.x;
                         y += transform.translation.y;
 
+                        if chunk_dimensions.width % 2 == 0 {
+                            x += 0.5;
+                        }
+                        if chunk_dimensions.height % 2 == 0 {
+                            y += 0.5;
+                        }
+
                         let collision_groups = layers.get(z_order).and_then(|layer_opt| {
                             layer_opt.and_then(|layer| Some(layer.interaction_groups))
                         });
@@ -2141,8 +2148,8 @@ pub(crate) fn tilemap_events(
                                 let entity = if let Some(entity) = commands
                                     .spawn((
                                         RigidBodyBuilder::new_static().translation(
-                                            (x + 0.5) * physics_tile_width,
-                                            (y + 0.5) * physics_tile_height,
+                                            x * physics_tile_width,
+                                            y * physics_tile_height,
                                         ),
                                         collider,
                                     ))
