@@ -265,6 +265,9 @@ pub struct Tilemap {
     auto_flags: AutoFlags,
     /// Dimensions of chunks to spawn from camera transform.
     auto_spawn: Option<Dimension2>,
+    /// Rapier physics scale for colliders and rigid bodies created
+    /// for layers with colliders.
+    physics_scale: f32,
     /// Custom flags.
     custom_flags: Vec<u32>,
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -358,6 +361,9 @@ pub struct TilemapBuilder {
     auto_flags: AutoFlags,
     /// The radius of chunks to spawn from a camera's transform.
     auto_spawn: Option<Dimension2>,
+    /// Rapier physics scale for colliders and rigid bodies created
+    /// for layers with colliders.
+    physics_scale: f32,
 }
 
 impl Default for TilemapBuilder {
@@ -372,6 +378,7 @@ impl Default for TilemapBuilder {
             texture_atlas: None,
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
+            physics_scale: 1.0,
         }
     }
 }
@@ -567,6 +574,13 @@ impl TilemapBuilder {
         self
     }
 
+    /// Sets the Rapier physics scale for colliders and rigid bodies created
+    /// for layers with colliders.
+    pub fn physics_scale(mut self, scale: f32) -> Self {
+        self.physics_scale = scale;
+        self
+    }
+
     /// Consumes the builder and returns a result.
     ///
     /// If successful a [`TilemapResult`] is return with [tilemap] on
@@ -624,6 +638,7 @@ impl TilemapBuilder {
             layers: vec![None; z_layers],
             auto_flags: self.auto_flags,
             auto_spawn: self.auto_spawn,
+            physics_scale: self.physics_scale,
             // interaction_groups: Vec::new(),
             custom_flags: Vec::new(),
             texture_atlas,
@@ -657,6 +672,7 @@ impl Default for Tilemap {
             layers: vec![None; DEFAULT_Z_LAYERS],
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
+            physics_scale: 1.0,
             custom_flags: Vec::new(),
             texture_atlas: Handle::default(),
             chunks: Default::default(),
@@ -1973,6 +1989,8 @@ pub(crate) fn tilemap_events(
             let texture_atlas = tilemap.texture_atlas().clone_weak();
             let pipeline_handle = tilemap.topology.to_pipeline_handle();
             let topology = tilemap.topology;
+            let physics_tile_width = tile_dimensions.width as f32 / tilemap.physics_scale;
+            let physics_tile_height = tile_dimensions.height as f32 / tilemap.physics_scale;
             let chunk = if let Some(chunk) = tilemap.chunks.get_mut(&point) {
                 chunk
             } else {
@@ -2114,8 +2132,8 @@ pub(crate) fn tilemap_events(
                         if let Some(collision_groups) = collision_groups {
                             if collision_groups.with_mask(0).0 != 0 {
                                 let mut collider = ColliderBuilder::cuboid(
-                                    tile_dimensions.width as f32 / 2.0,
-                                    tile_dimensions.height as f32 / 2.0,
+                                    physics_tile_width / 2.0,
+                                    physics_tile_height / 2.0,
                                 );
 
                                 collider = collider.collision_groups(collision_groups);
@@ -2123,10 +2141,8 @@ pub(crate) fn tilemap_events(
                                 let entity = if let Some(entity) = commands
                                     .spawn((
                                         RigidBodyBuilder::new_static().translation(
-                                            x * tile_dimensions.width as f32
-                                                + (tile_dimensions.width as f32 / 2.0),
-                                            y * tile_dimensions.height as f32
-                                                + (tile_dimensions.height as f32 / 2.0),
+                                            (x + 0.5) * physics_tile_width,
+                                            (y + 0.5) * physics_tile_height,
                                         ),
                                         collider,
                                     ))

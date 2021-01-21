@@ -59,6 +59,7 @@ fn setup(
     mut configuration: ResMut<RapierConfiguration>,
 ) {
     configuration.gravity = Vector::new(0.0, 0.0);
+    configuration.scale = 32.0;
 
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
 }
@@ -111,6 +112,7 @@ fn load(
             .add_layer(background_layer, 0)
             .add_layer(wall_layer, 1)
             .texture_atlas(atlas_handle)
+            .physics_scale(32.0)
             .finish()
             .unwrap();
 
@@ -225,7 +227,7 @@ fn build_random_dungeon(
             .with(Player {})
             .with(RigidBodyBuilder::new_dynamic().lock_rotations())
             .with(
-                ColliderBuilder::ball(14.0).collision_groups(InteractionGroups::new(
+                ColliderBuilder::ball(0.4).collision_groups(InteractionGroups::new(
                     0b0000_0000_0000_0010,
                     0b0000_0000_0000_0001,
                 )),
@@ -259,7 +261,7 @@ fn character_movement(
 
             for key in keyboard_input.get_pressed() {
                 for _camera in camera_query.iter_mut() {
-                    let move_step = 100_000.0;
+                    let move_step = 7.0;
                     // Of course we need to control where we are going to move our
                     // dwarf friend.
                     use KeyCode::*;
