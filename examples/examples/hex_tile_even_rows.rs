@@ -94,7 +94,11 @@ fn build_world(
             for x in 0..chunk_width {
                 let y = y - chunk_height / 2;
                 let x = x - chunk_width / 2;
-                let tile = Tile::new((x, y), grass_index);
+                let tile = Tile {
+                    point: (x, y),
+                    sprite_index: grass_index,
+                    ..Default::default()
+                };
                 tiles.push(tile);
             }
         }

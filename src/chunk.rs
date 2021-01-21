@@ -30,7 +30,7 @@
 //!
 //! let point = (0, 0);
 //! let sprite_index = 0;
-//! let tile = Tile::new(point.clone(), sprite_index);
+//! let tile = Tile { point: point, sprite_index, ..Default::default() };
 //! tilemap.insert_tile(tile);
 //!
 //! ```
@@ -399,7 +399,7 @@ impl Chunk {
     }
 
     /// Sets a single raw tile to be added to a z layer and index.
-    pub(crate) fn set_tile(&mut self, index: usize, tile: Tile) {
+    pub(crate) fn set_tile<P: Into<Point2>>(&mut self, index: usize, tile: Tile<P>) {
         if let Some(layer) = self.sprite_layers.get_mut(tile.z_order) {
             if let Some(layer) = layer.as_mut() {
                 let raw_tile = RawTile {

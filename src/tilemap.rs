@@ -16,7 +16,7 @@
 //! // Coordinate point with Z order.
 //! let point = (16, 16);
 //! let sprite_index = 0;
-//! let tile = Tile::new(point.clone(), sprite_index);
+//! let tile = Tile { point: point.clone(), sprite_index, ..Default::default() };
 //! tilemap.insert_tile(tile);
 //!
 //! tilemap.spawn_chunk_containing_point(point);
@@ -79,7 +79,7 @@
 //! let mut tiles = Vec::new();
 //! for y in 0..31 {
 //!     for x in 0..31 {
-//!         tiles.push(Tile::new((x, y, 0), 0));
+//!         tiles.push(Tile { point: (x, y), ..Default::default() });
 //!     }
 //! }
 //!
@@ -88,7 +88,7 @@
 //! // Over this...
 //! for y in 0..31 {
 //!     for x in 0..31 {
-//!         tilemap.insert_tile(Tile::new((x, y, 0), 0));
+//!         tilemap.insert_tile(Tile { point: (x, y), ..Default::default() });
 //!     }
 //! }
 //! ```
@@ -1135,8 +1135,8 @@ impl Tilemap {
     ///     .unwrap();
     ///
     /// let point = (15, 15);
-    /// let index = 0;
-    /// let tile = Tile::new(point, index);
+    /// let sprite_index = 0;
+    /// let tile = Tile { point, sprite_index, ..Default::default() };
     ///
     /// tilemap.insert_tile(tile);
     ///
@@ -1286,16 +1286,20 @@ impl Tilemap {
     }
 
     /// Sorts tiles into the chunks they belong to.
-    fn sort_tiles_to_chunks<I>(&mut self, tiles: I) -> TilemapResult<HashMap<Point2, Vec<Tile>>>
+    fn sort_tiles_to_chunks<P, I>(
+        &mut self,
+        tiles: I,
+    ) -> TilemapResult<HashMap<Point2, Vec<Tile<Point2>>>>
     where
-        I: IntoIterator<Item = Tile>,
+        P: Into<Point2>,
+        I: IntoIterator<Item = Tile<P>>,
     {
         let width = self.chunk_dimensions.width as i32;
         let height = self.chunk_dimensions.height as i32;
 
-        let mut chunk_map: HashMap<Point2, Vec<Tile>> = HashMap::default();
+        let mut chunk_map: HashMap<Point2, Vec<Tile<Point2>>> = HashMap::default();
         for tile in tiles.into_iter() {
-            let global_tile_point: Point2 = tile.point;
+            let global_tile_point: Point2 = tile.point.into();
             let chunk_point: Point2 = self.point_to_chunk_point(global_tile_point).into();
 
             if let Some(layer) = self.layers.get(tile.z_order as usize) {
@@ -1311,7 +1315,7 @@ impl Tilemap {
                 global_tile_point.y - (height * chunk_point.y) + (height / 2),
             );
 
-            let chunk_tile: Tile = Tile {
+            let chunk_tile: Tile<Point2> = Tile {
                 point: tile_point,
                 z_order: tile.z_order,
                 sprite_index: tile.sprite_index,
@@ -1361,9 +1365,9 @@ impl Tilemap {
     /// tilemap.insert_chunk((0, 0)).unwrap();
     ///
     /// let mut tiles = vec![
-    ///     Tile::new((1, 1), 0),
-    ///     Tile::new((2, 2), 1),
-    ///     Tile::new((3, 3), 2)
+    ///     Tile { point: (1, 1), sprite_index: 0, ..Default::default() },
+    ///     Tile { point: (2, 2), sprite_index: 1, ..Default::default() },
+    ///     Tile { point: (3, 3), sprite_index: 2, ..Default::default() },
     /// ];
     ///
     /// // Set multiple tiles and unwrap the result
@@ -1376,9 +1380,10 @@ impl Tilemap {
     /// ```
     ///
     /// [`insert_tile`]: Tilemap::insert_tile
-    pub fn insert_tiles<I>(&mut self, tiles: I) -> TilemapResult<()>
+    pub fn insert_tiles<P, I>(&mut self, tiles: I) -> TilemapResult<()>
     where
-        I: IntoIterator<Item = Tile>,
+        P: Into<Point2>,
+        I: IntoIterator<Item = Tile<P>>,
     {
         let chunk_map = self.sort_tiles_to_chunks(tiles)?;
         for (point, tiles) in chunk_map.into_iter() {
@@ -1446,7 +1451,7 @@ impl Tilemap {
     ///
     /// let point = (9, 3);
     /// let sprite_index = 3;
-    /// let tile = Tile::new(point, sprite_index);
+    /// let tile = Tile { point, sprite_index, ..Default::default() };
     ///
     /// assert!(tilemap.insert_tile(tile).is_ok());
     /// assert_eq!(tilemap.get_tile((9, 3), 0), Some(&RawTile { index: 3, color: Color::WHITE }))
@@ -1455,7 +1460,7 @@ impl Tilemap {
     /// # Errors
     ///
     /// Returns an error if the given coordinate or index is out of bounds.
-    pub fn insert_tile(&mut self, tile: Tile) -> TilemapResult<()> {
+    pub fn insert_tile<P: Into<Point2>>(&mut self, tile: Tile<P>) -> TilemapResult<()> {
         let tiles = vec![tile];
         self.insert_tiles(tiles)
     }
@@ -1477,9 +1482,9 @@ impl Tilemap {
     /// assert!(tilemap.insert_chunk((0, 0)).is_ok());
     ///
     /// let mut tiles = vec![
-    ///     Tile::new((1, 1), 0),
-    ///     Tile::new((2, 2), 0),
-    ///     Tile::new((3, 3), 0)
+    ///     Tile { point: (1, 1), ..Default::default() },
+    ///     Tile { point: (2, 2), ..Default::default() },
+    ///     Tile { point: (3, 3), ..Default::default() },
     /// ];
     ///
     /// // Set multiple tiles and unwrap the result
@@ -1509,14 +1514,15 @@ impl Tilemap {
     {
         let mut tiles = Vec::new();
         for (point, z_order) in points {
-            tiles.push(Tile::with_z_order_and_tint(
-                point,
-                0,
+            tiles.push(Tile {
+                point: point.into(),
+                sprite_index: 0,
                 z_order,
-                Color::rgba(0.0, 0.0, 0.0, 0.0),
-            ));
+                tint: Color::rgba(0.0, 0.0, 0.0, 0.0),
+            });
         }
         let chunk_map = self.sort_tiles_to_chunks(tiles)?;
+        let mut layers = HashMap::default();
         for (point, tiles) in chunk_map.into_iter() {
             let chunk = match self.chunks.get_mut(&point) {
                 Some(c) => c,
@@ -1529,11 +1535,16 @@ impl Tilemap {
                     entities.push(entity);
                 };
                 chunk.remove_tile(index, tile.z_order);
+                if let Some(entity) = chunk.get_entity(tile.z_order) {
+                    layers.entry(tile.z_order).or_insert(entity);
+                }
             }
 
             self.events
                 .send(ChunkEvent::DespawnedCollision { entities, point });
         }
+
+        self.events.send(ChunkEvent::Modified { layers });
 
         Ok(())
     }
@@ -1566,7 +1577,7 @@ impl Tilemap {
     ///
     /// let point = (3, 1);
     /// let sprite_index = 1;
-    /// let tile = Tile::new(point, sprite_index);
+    /// let tile = Tile { point: point, sprite_index, ..Default::default() };
     ///
     /// // Set a single tile and unwrap the result
     /// assert!(tilemap.insert_tile(tile).is_ok());
@@ -1611,7 +1622,7 @@ impl Tilemap {
     ///
     /// let point = (9, 3);
     /// let sprite_index = 3;
-    /// let tile = Tile::new(point, sprite_index);
+    /// let tile = Tile { point: point, sprite_index, ..Default::default() };
     ///
     /// assert!(tilemap.insert_tile(tile).is_ok());
     /// assert_eq!(tilemap.get_tile((9, 3), 0), Some(&RawTile { index: 3, color: Color::WHITE }));
@@ -1652,7 +1663,7 @@ impl Tilemap {
     ///
     /// let point = (2, 5);
     /// let sprite_index = 2;
-    /// let tile = Tile::new(point, sprite_index);
+    /// let tile = Tile { point: point, sprite_index, ..Default::default() };
     ///
     /// assert!(tilemap.insert_tile(tile).is_ok());
     /// assert_eq!(tilemap.get_tile_mut((2, 5), 0), Some(&mut RawTile { index: 2, color: Color::WHITE }));
@@ -2236,8 +2247,8 @@ pub(crate) fn tilemap_events(
         for (entities, point) in despawned_collisions.into_iter() {
             for entity in entities.into_iter() {
                 commands.despawn(entity);
+                info!("Chunk {} collision entities despawned", point);
             }
-            info!("Chunk {} collision entities despawned", point);
         }
     }
 }

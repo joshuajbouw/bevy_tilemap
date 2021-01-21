@@ -159,7 +159,11 @@ fn build_random_dungeon(
                 // By default tile sets the Z order at 0. Lower means that tile
                 // will render lower than others. 0 is the absolute bottom
                 // level which is perfect for backgrounds.
-                let tile = Tile::new((x, y), floor_idx);
+                let tile = Tile {
+                    point: (x, y),
+                    sprite_index: floor_idx,
+                    ..Default::default()
+                };
                 tiles.push(tile);
             }
         }
@@ -168,8 +172,18 @@ fn build_random_dungeon(
             let x = x - TILEMAP_WIDTH / 2;
             let tile_a = (x, -TILEMAP_HEIGHT / 2);
             let tile_b = (x, TILEMAP_HEIGHT / 2 - 1);
-            tiles.push(Tile::with_z_order(tile_a, wall_idx, 1));
-            tiles.push(Tile::with_z_order(tile_b, wall_idx, 1));
+            tiles.push(Tile {
+                point: tile_a,
+                sprite_index: wall_idx,
+                z_order: 1,
+                ..Default::default()
+            });
+            tiles.push(Tile {
+                point: tile_b,
+                sprite_index: wall_idx,
+                z_order: 1,
+                ..Default::default()
+            });
         }
 
         // Then the wall tiles on the Y axis.
@@ -177,8 +191,18 @@ fn build_random_dungeon(
             let y = y - TILEMAP_HEIGHT / 2;
             let tile_a = (-TILEMAP_WIDTH / 2, y);
             let tile_b = (TILEMAP_WIDTH / 2 - 1, y);
-            tiles.push(Tile::with_z_order(tile_a, wall_idx, 1));
-            tiles.push(Tile::with_z_order(tile_b, wall_idx, 1));
+            tiles.push(Tile {
+                point: tile_a,
+                sprite_index: wall_idx,
+                z_order: 1,
+                ..Default::default()
+            });
+            tiles.push(Tile {
+                point: tile_b,
+                sprite_index: wall_idx,
+                z_order: 1,
+                ..Default::default()
+            });
         }
 
         // Lets just generate some random walls to sparsely place around the dungeon!
@@ -189,7 +213,12 @@ fn build_random_dungeon(
             let y = rng.gen_range((-TILEMAP_HEIGHT / 2)..(TILEMAP_HEIGHT / 2));
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
-                tiles.push(Tile::with_z_order((x, y), wall_idx, 1));
+                tiles.push(Tile {
+                    point: (x, y),
+                    sprite_index: wall_idx,
+                    z_order: 1,
+                    ..Default::default()
+                });
             }
         }
 

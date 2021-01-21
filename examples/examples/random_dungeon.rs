@@ -100,6 +100,7 @@ fn load(
         let tilemap = Tilemap::builder()
             .dimensions(TILEMAP_WIDTH as u32, TILEMAP_HEIGHT as u32)
             .chunk_dimensions(CHUNK_WIDTH, CHUNK_HEIGHT)
+            .tile_dimensions(32, 32)
             .auto_chunk()
             .auto_spawn(2, 2)
             .z_layers(2)
@@ -150,7 +151,11 @@ fn build_random_dungeon(
                 // By default tile sets the Z order at 0. Lower means that tile
                 // will render lower than others. 0 is the absolute bottom
                 // level which is perfect for backgrounds.
-                let tile = Tile::new((x, y), floor_idx);
+                let tile = Tile {
+                    point: (x, y),
+                    sprite_index: floor_idx,
+                    ..Default::default()
+                };
                 tiles.push(tile);
             }
         }
@@ -159,8 +164,16 @@ fn build_random_dungeon(
             let x = x - TILEMAP_WIDTH / 2;
             let tile_a = (x, -TILEMAP_HEIGHT / 2);
             let tile_b = (x, TILEMAP_HEIGHT / 2 - 1);
-            tiles.push(Tile::new(tile_a, wall_idx));
-            tiles.push(Tile::new(tile_b, wall_idx));
+            tiles.push(Tile {
+                point: tile_a,
+                sprite_index: wall_idx,
+                ..Default::default()
+            });
+            tiles.push(Tile {
+                point: tile_b,
+                sprite_index: wall_idx,
+                ..Default::default()
+            });
             game_state.collisions.insert(tile_a);
             game_state.collisions.insert(tile_b);
         }
@@ -170,8 +183,16 @@ fn build_random_dungeon(
             let y = y - TILEMAP_HEIGHT / 2;
             let tile_a = (-TILEMAP_WIDTH / 2, y);
             let tile_b = (TILEMAP_WIDTH / 2 - 1, y);
-            tiles.push(Tile::new(tile_a, wall_idx));
-            tiles.push(Tile::new(tile_b, wall_idx));
+            tiles.push(Tile {
+                point: tile_a,
+                sprite_index: wall_idx,
+                ..Default::default()
+            });
+            tiles.push(Tile {
+                point: tile_b,
+                sprite_index: wall_idx,
+                ..Default::default()
+            });
             game_state.collisions.insert(tile_a);
             game_state.collisions.insert(tile_b);
         }
@@ -184,7 +205,11 @@ fn build_random_dungeon(
             let y = rng.gen_range((-TILEMAP_HEIGHT / 2)..(TILEMAP_HEIGHT / 2));
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
-                tiles.push(Tile::new((x, y), wall_idx));
+                tiles.push(Tile {
+                    point: (x, y),
+                    sprite_index: wall_idx,
+                    ..Default::default()
+                });
                 game_state.collisions.insert((x, y));
             }
         }
@@ -204,7 +229,12 @@ fn build_random_dungeon(
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         // We add in a Z order of 1 to place the tile above the background on Z
         // order 0.
-        let dwarf_tile = Tile::with_z_order((0, 0), dwarf_sprite_index, 1);
+        let dwarf_tile = Tile {
+            point: (0, 0),
+            sprite_index: dwarf_sprite_index,
+            z_order: 1,
+            ..Default::default()
+        };
         tiles.push(dwarf_tile);
 
         commands.spawn(PlayerBundle {
@@ -234,11 +264,12 @@ fn move_sprite(
     map.clear_tile((previous_position.x, previous_position.y), 1)
         .unwrap();
     // We then need to update where we are going!
-    let tile = Tile::with_z_order(
-        (position.x, position.y),
-        render.sprite_index,
-        render.z_order,
-    );
+    let tile = Tile {
+        point: (position.x, position.y),
+        sprite_index: render.sprite_index,
+        z_order: render.z_order,
+        ..Default::default()
+    };
     map.insert_tile(tile).unwrap();
 }
 
