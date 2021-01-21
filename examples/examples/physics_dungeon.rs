@@ -218,6 +218,7 @@ fn build_random_dungeon(
                     index: dwarf_sprite_index as u32,
                     ..Default::default()
                 },
+
                 transform: Transform::from_translation(Vec3::new(0.0, 0.0, 3.0)),
                 ..Default::default()
             });
@@ -225,7 +226,14 @@ fn build_random_dungeon(
 
         commands
             .with(Player {})
-            .with(RigidBodyBuilder::new_dynamic().lock_rotations())
+            // The offset is important here only for even sized chunk sizes. It
+            // is 0.5 because its half a block width as our scale is a tile.
+            .with(
+                RigidBodyBuilder::new_dynamic()
+                    .lock_rotations()
+                    .translation(0.5, 0.5)
+                    .linear_damping(0.75),
+            )
             .with(
                 ColliderBuilder::ball(0.4).collision_groups(InteractionGroups::new(
                     0b0000_0000_0000_0010,
@@ -258,10 +266,9 @@ fn character_movement(
             let rbd = rigid_body_set.get_mut(rbdhc.handle()).unwrap();
 
             let mut move_velocity = Vector::new(0.0, 0.0);
-
+            let move_step = 1.5;
             for key in keyboard_input.get_pressed() {
                 for _camera in camera_query.iter_mut() {
-                    let move_step = 7.0;
                     // Of course we need to control where we are going to move our
                     // dwarf friend.
                     use KeyCode::*;
