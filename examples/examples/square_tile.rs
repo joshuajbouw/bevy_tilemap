@@ -51,6 +51,7 @@ fn load(
             .auto_chunk()
             .topology(GridTopology::Square)
             .dimensions(3, 3)
+            .tile_dimensions(37, 32)
             .chunk_dimensions(8, 4)
             .tile_dimensions(32, 35)
             .z_layers(3)
@@ -95,7 +96,11 @@ fn build_world(
             for x in 0..chunk_width {
                 let y = y - chunk_height / 2;
                 let x = x - chunk_width / 2;
-                let tile = Tile::new((x, y), floor_index);
+                let tile = Tile {
+                    point: (x, y),
+                    sprite_index: floor_index,
+                    ..Default::default()
+                };
                 tiles.push(tile);
             }
         }

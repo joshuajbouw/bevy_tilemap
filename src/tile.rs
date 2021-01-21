@@ -22,10 +22,9 @@ impl Default for RawTile {
 /// A tile with an index value and color.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, PartialEq, Debug)]
-#[non_exhaustive]
-pub struct Tile {
+pub struct Tile<P: Into<Point2>> {
     /// A point where the tile will exist.
-    pub point: Point2,
+    pub point: P,
     /// The Z order layer of the tile. Higher will place the tile above others.
     pub z_order: usize,
     /// The sprites index in the texture atlas.
@@ -34,110 +33,13 @@ pub struct Tile {
     pub tint: Color,
 }
 
-impl Default for Tile {
-    fn default() -> Tile {
+impl<P: Into<Point2> + Default> Default for Tile<P> {
+    fn default() -> Tile<P> {
         Tile {
-            point: Point2::new(0, 0),
+            point: P::default(),
             z_order: 0,
             sprite_index: 0,
             tint: Color::WHITE,
-        }
-    }
-}
-
-// TODO: Remove this and replace with builder.
-impl Tile {
-    /// Creates a new tile with a provided point and tile index.
-    ///
-    /// By default, this makes a tile with no tint to the color at all. If tile
-    /// tinting is needed, use [`with_tint`] instead.
-    ///
-    /// # Examples
-    /// ```
-    /// use bevy_tilemap::prelude::*;
-    ///
-    /// // Creates a tile with an index of 0 at point 3x,3y
-    /// let tile = Tile::new((3, 3), 0);
-    /// ```
-    ///
-    /// [`Tile`]: Tile
-    /// [`with_tint`]: Tile::with_tint
-    pub fn new<P: Into<Point2>>(point: P, sprite_index: usize) -> Tile {
-        Tile {
-            point: point.into(),
-            z_order: 0,
-            sprite_index,
-            tint: Color::WHITE,
-        }
-    }
-
-    /// Creates a new tile with a given Z order and sprite index at a point.
-    pub fn with_z_order<P: Into<Point2>>(point: P, sprite_index: usize, z_order: usize) -> Tile {
-        Tile {
-            point: point.into(),
-            z_order,
-            sprite_index,
-            tint: Color::WHITE,
-        }
-    }
-
-    /// Creates a new tile with a color and a given sprite index.
-    ///
-    /// The color argument implements `Into<[`Color`]>`.
-    ///
-    /// # Examples
-    /// ```
-    /// use bevy_render::prelude::*;
-    /// use bevy_tilemap::prelude::*;
-    ///
-    /// let point = (15, 15);
-    /// let sprite_index = 3;
-    /// let tint = Color::BLUE;
-    ///
-    /// let tile = Tile::with_tint(point, sprite_index, tint);
-    /// ```
-    ///
-    /// [`Color`]: Bevy::render::color::Color
-    pub fn with_tint<P: Into<Point2>, C: Into<Color>>(
-        point: P,
-        sprite_index: usize,
-        tint: C,
-    ) -> Tile {
-        Tile {
-            point: point.into(),
-            z_order: 0,
-            sprite_index,
-            tint: tint.into(),
-        }
-    }
-
-    /// Crates a new tile with a given color, index and color at a point.
-    ///
-    /// The color argument implements `Into<[`Color`]>`.
-    ///
-    /// # Examples
-    /// ```
-    /// use bevy_render::prelude::*;
-    /// use bevy_tilemap::prelude::*;
-    ///
-    /// let point = (15, 15);
-    /// let z_order = 0;
-    /// let sprite_index = 2;
-    /// let tint = Color::RED;
-    ///
-    /// let tile = Tile::with_z_order_and_tint(point, z_order, sprite_index, tint);
-    /// ```
-    pub fn with_z_order_and_tint<P: Into<Point2>, C: Into<Color>>(
-        point: P,
-        sprite_index: usize,
-        z_order: usize,
-        tint: C,
-    ) -> Tile {
-        Tile {
-            point: point.into(),
-            z_order,
-            sprite_index,
-            tint: tint.into(),
         }
     }
 }

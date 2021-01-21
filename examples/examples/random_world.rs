@@ -155,7 +155,11 @@ fn build_random_world(
                 // By default tile sets the Z order at 0. Lower means that tile
                 // will render lower than others. 0 is the absolute bottom
                 // level which is perfect for backgrounds.
-                let tile = Tile::new((x, y), grass_index);
+                let tile = Tile {
+                    point: (x, y),
+                    sprite_index: grass_index,
+                    ..Default::default()
+                };
                 tiles.push(tile);
             }
         }
@@ -165,8 +169,18 @@ fn build_random_world(
             let x = x - chunk_width / 2;
             let tile_a = (x, -chunk_height / 2);
             let tile_b = (x, chunk_height / 2 - 1);
-            tiles.push(Tile::with_z_order(tile_a, boulder_index, 1));
-            tiles.push(Tile::with_z_order(tile_b, boulder_index, 1));
+            tiles.push(Tile {
+                point: tile_a,
+                sprite_index: boulder_index,
+                z_order: 1,
+                ..Default::default()
+            });
+            tiles.push(Tile {
+                point: tile_b,
+                sprite_index: boulder_index,
+                z_order: 1,
+                ..Default::default()
+            });
             game_state.collisions.insert(tile_a);
             game_state.collisions.insert(tile_b);
         }
@@ -176,8 +190,18 @@ fn build_random_world(
             let y = y - chunk_height / 2;
             let tile_a = (-chunk_width / 2, y);
             let tile_b = (chunk_width / 2 - 1, y);
-            tiles.push(Tile::with_z_order(tile_a, boulder_index, 1));
-            tiles.push(Tile::with_z_order(tile_b, boulder_index, 1));
+            tiles.push(Tile {
+                point: tile_a,
+                sprite_index: boulder_index,
+                z_order: 1,
+                ..Default::default()
+            });
+            tiles.push(Tile {
+                point: tile_b,
+                sprite_index: boulder_index,
+                z_order: 1,
+                ..Default::default()
+            });
             game_state.collisions.insert(tile_a);
             game_state.collisions.insert(tile_b);
         }
@@ -191,9 +215,19 @@ fn build_random_world(
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
                 if rng.gen_bool(0.5) {
-                    tiles.push(Tile::with_z_order((x, y), boulder_index, 1));
+                    tiles.push(Tile {
+                        point: (x, y),
+                        sprite_index: boulder_index,
+                        z_order: 1,
+                        ..Default::default()
+                    });
                 } else {
-                    tiles.push(Tile::with_z_order((x, y), trees_index, 1));
+                    tiles.push(Tile {
+                        point: (x, y),
+                        sprite_index: trees_index,
+                        z_order: 1,
+                        ..Default::default()
+                    });
                 }
                 game_state.collisions.insert((x, y));
             }
@@ -202,7 +236,11 @@ fn build_random_world(
         for _ in 0..range {
             let x = rng.gen_range((-chunk_width / 2)..(chunk_width / 2));
             let y = rng.gen_range((-chunk_height / 2)..(chunk_height / 2));
-            tiles.push(Tile::with_z_order((x, y), dirt_index, 0));
+            tiles.push(Tile {
+                point: (x, y),
+                sprite_index: dirt_index,
+                ..Default::default()
+            });
         }
 
         // The above should give us a neat little randomized world! However,
@@ -224,7 +262,12 @@ fn build_random_world(
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         // We add in a Z order of 2 to place the tile above the background on Z
         // order 0.
-        let dwarf_tile = Tile::with_z_order((0, 0), dwarf_sprite_index, 2);
+        let dwarf_tile = Tile {
+            point: (0, 0),
+            sprite_index: dwarf_sprite_index,
+            z_order: 2,
+            ..Default::default()
+        };
         tiles.push(dwarf_tile);
 
         commands.spawn(PlayerBundle {
@@ -257,11 +300,12 @@ fn move_sprite(
     map.clear_tile((previous_position.x, previous_position.y), 2)
         .unwrap();
     // We then need to update where we are going!
-    let tile = Tile::with_z_order(
-        (position.x, position.y),
-        render.sprite_index,
-        render.z_order,
-    );
+    let tile = Tile {
+        point: (position.x, position.y),
+        sprite_index: render.sprite_index,
+        z_order: render.z_order,
+        ..Default::default()
+    };
     map.insert_tile(tile).unwrap();
 }
 

@@ -92,6 +92,7 @@ fn load(
         // them.
         let tilemap = Tilemap::builder()
             .dimensions(3, 3)
+            .tile_dimensions(32, 32)
             .chunk_dimensions(32, 32)
             .z_layers(2)
             .texture_atlas(atlas_handle)
@@ -146,7 +147,11 @@ fn build_map(
         let mut tiles = Vec::new();
         for y in (-chunk_height / 2)..(chunk_height / 2) {
             for x in (-chunk_width / 2)..(chunk_width / 2) {
-                let tile = Tile::new((x, y), floor_idx);
+                let tile = Tile {
+                    point: (x, y),
+                    sprite_index: floor_idx,
+                    ..Default::default()
+                };
                 tiles.push(tile);
             }
         }
@@ -155,8 +160,16 @@ fn build_map(
             let x = x - chunk_width / 2;
             let tile_a = (x, -chunk_height / 2);
             let tile_b = (x, chunk_height / 2 - 1);
-            tiles.push(Tile::new(tile_a, wall_idx));
-            tiles.push(Tile::new(tile_b, wall_idx));
+            tiles.push(Tile {
+                point: tile_a,
+                sprite_index: wall_idx,
+                ..Default::default()
+            });
+            tiles.push(Tile {
+                point: tile_b,
+                sprite_index: wall_idx,
+                ..Default::default()
+            });
             state.collisions.insert(tile_a);
             state.collisions.insert(tile_b);
         }
@@ -166,8 +179,16 @@ fn build_map(
             let y = y - chunk_height / 2;
             let tile_a = (-chunk_width / 2, y);
             let tile_b = (chunk_width / 2 - 1, y);
-            tiles.push(Tile::new(tile_a, wall_idx));
-            tiles.push(Tile::new(tile_b, wall_idx));
+            tiles.push(Tile {
+                point: tile_a,
+                sprite_index: wall_idx,
+                ..Default::default()
+            });
+            tiles.push(Tile {
+                point: tile_b,
+                sprite_index: wall_idx,
+                ..Default::default()
+            });
             state.collisions.insert(tile_a);
             state.collisions.insert(tile_b);
         }
@@ -179,7 +200,11 @@ fn build_map(
             let y = rng.gen_range((-chunk_height / 2)..(chunk_height / 2));
             let coord = (x, y, 0i32);
             if coord != (0, 0, 0) {
-                tiles.push(Tile::new((x, y), wall_idx));
+                tiles.push(Tile {
+                    point: (x, y),
+                    sprite_index: wall_idx,
+                    ..Default::default()
+                });
                 state.collisions.insert((x, y));
             }
         }
@@ -204,7 +229,12 @@ fn build_map(
                 },
             });
 
-            let dwarf_tile = Tile::with_z_order((position.x, position.y), dwarf_sprite_index, 1);
+            let dwarf_tile = Tile {
+                point: (0, 0),
+                sprite_index: dwarf_sprite_index,
+                z_order: 1,
+                ..Default::default()
+            };
             tiles.push(dwarf_tile);
         }
         info!("{} drunken dwarves spawned.", DWARF_COUNT);
@@ -231,11 +261,12 @@ fn move_sprite(
 ) {
     map.clear_tile((previous_position.x, previous_position.y), 1)
         .unwrap();
-    let tile = Tile::with_z_order(
-        (position.x, position.y),
-        render.sprite_index,
-        render.z_order,
-    );
+    let tile = Tile {
+        point: (position.x, position.y),
+        sprite_index: render.sprite_index,
+        z_order: render.z_order,
+        ..Default::default()
+    };
     map.insert_tile(tile).unwrap();
 }
 
