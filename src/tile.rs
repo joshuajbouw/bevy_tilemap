@@ -10,36 +10,14 @@ pub struct RawTile {
     pub color: Color,
 }
 
-// pub struct TileBuilder {
-//     point: Point2,
-//     z_order: usize,
-//     sprite_index: usize,
-//     // auto_tile: Option<AutoTileFlags>,
-//     tint: Color,
-// }
-//
-// impl Default for TileBuilder {
-//     fn default() -> TileBuilder {
-//         TileBuilder {
-//             point: Point2::new(0, 0),
-//             z_order: 0,
-//             sprite_index: 0,
-//             // auto_tile: None,
-//             tint: Color::WHITE,
-//         }
-//     }
-// }
-//
-// impl TileBuilder {
-//     pub fn new() -> TileBuilder {
-//         TileBuilder::default()
-//     }
-//
-//     pub fn point<P: Into<Point2>>(mut self, point: P) -> TileBuilder {
-//         self.point = point.into();
-//         self
-//     }
-// }
+impl Default for RawTile {
+    fn default() -> Self {
+        RawTile {
+            index: 0,
+            color: Color::WHITE,
+        }
+    }
+}
 
 /// A tile with an index value and color.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
