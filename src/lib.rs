@@ -105,7 +105,7 @@ pub mod stage {
     pub const TILEMAP: &str = "tilemap";
 }
 #[no_implicit_prelude]
-mod event;
+pub mod event;
 #[no_implicit_prelude]
 mod system;
 #[no_implicit_prelude]
