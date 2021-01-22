@@ -222,7 +222,7 @@ fn spawn_collisions(
     };
     // Don't continue if there already is a collision there.
     let index = chunk_dimensions.encode_point_unchecked(point);
-    if chunk.get_collision_entity(index, z_order).is_some() {
+    if chunk.get_collision_entity(index).is_some() {
         return;
     }
     let mut collision_entities = Vec::new();
@@ -287,7 +287,7 @@ fn spawn_collisions(
             }
         }
         for (index, entity) in indices.iter().zip(&collision_entities) {
-            chunk.insert_collision_entity(z_order, *index, *entity);
+            chunk.insert_collision_entity(*index, *entity);
         }
         commands.push_children(entity, &collision_entities);
     }
@@ -408,7 +408,7 @@ pub(crate) fn tilemap_collision_events(
             };
             for tile in tiles {
                 let index = chunk_dimensions.encode_point_unchecked(tile.point);
-                let collision_entity = chunk.get_collision_entity(index, tile.z_order);
+                let collision_entity = chunk.get_collision_entity(index);
                 if let Some(entity) = collision_entity {
                     commands.despawn(entity);
                     info!(

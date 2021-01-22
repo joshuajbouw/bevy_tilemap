@@ -83,6 +83,9 @@ pub(crate) struct Chunk {
     sprite_layers: Vec<Option<SpriteLayer>>,
     /// Ephemeral user data that can be used for flags or other purposes.
     user_data: u128,
+    /// Contains a map of all collision entities.
+    #[cfg(feature = "bevy_rapier2d")]
+    pub collision_entities: HashMap<usize, Entity>,
 }
 
 impl Chunk {
@@ -96,6 +99,8 @@ impl Chunk {
             point,
             sprite_layers: vec![None; layers.len()],
             user_data: 0,
+            #[cfg(feature = "bevy_rapier2d")]
+            collision_entities: HashMap::default(),
         };
         for (z_order, kind) in layers.iter().enumerate() {
             if let Some(kind) = kind {
@@ -121,8 +126,6 @@ impl Chunk {
                     *layer = Some(SpriteLayer {
                         inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
                         entity: None,
-                        #[cfg(feature = "bevy_rapier2d")]
-                        collision_entities: HashMap::default(),
                     });
                 } else {
                     error!("sprite layer {} is out of bounds", z_order);
@@ -133,8 +136,6 @@ impl Chunk {
                     *layer = Some(SpriteLayer {
                         inner: LayerKindInner::Sparse(SparseLayer::new(HashMap::default())),
                         entity: None,
-                        #[cfg(feature = "bevy_rapier2d")]
-                        collision_entities: HashMap::default(),
                     });
                 } else {
                     error!("sprite layer {} is out of bounds", z_order);
@@ -235,16 +236,12 @@ impl Chunk {
 
     /// Adds an entity to a tile index in a layer.
     #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) fn insert_collision_entity(&mut self, z_order: usize, index: usize, entity: Entity) {
-        if let Some(layer) = self.sprite_layers.get_mut(z_order) {
-            if let Some(layer) = layer.as_mut() {
-                layer.collision_entities.insert(index, entity);
-            } else {
-                error!("can not add collision entity to sprite layer {}", z_order);
-            }
-        } else {
-            error!("sprite layer {} does not exist", z_order);
-        }
+    pub(crate) fn insert_collision_entity(
+        &mut self,
+        index: usize,
+        entity: Entity,
+    ) -> Option<Entity> {
+        self.collision_entities.insert(index, entity)
     }
 
     /// Gets the layers entity, if any. Useful for despawning.
@@ -256,11 +253,8 @@ impl Chunk {
 
     /// Gets the collision entity if any.
     #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) fn get_collision_entity(&self, index: usize, z_order: usize) -> Option<Entity> {
-        self.sprite_layers.get(z_order).and_then(|o| {
-            o.as_ref()
-                .and_then(|layer| layer.collision_entities.get(&index).cloned())
-        })
+    pub(crate) fn get_collision_entity(&self, index: usize) -> Option<Entity> {
+        self.collision_entities.get(&index).cloned()
     }
 
     /// Gets all the layers entities for use with bulk despawning.

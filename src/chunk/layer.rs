@@ -231,7 +231,4 @@ pub(super) struct SpriteLayer {
     #[cfg_attr(feature = "serde", serde(skip))]
     /// Contains an entity if the layer had been spawned.
     pub entity: Option<Entity>,
-    /// Contains a map of all collision entities.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub collision_entities: HashMap<usize, Entity>,
 }
