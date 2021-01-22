@@ -113,7 +113,7 @@ pub mod tile;
 #[no_implicit_prelude]
 pub mod tilemap;
 
-use crate::{chunk::render::TilemapRenderGraphBuilder, event::TilemapEvent, lib::*};
+use crate::{chunk::render::TilemapRenderGraphBuilder, event::TilemapChunkEvent, lib::*};
 pub use crate::{
     tile::Tile,
     tilemap::{Tilemap, TilemapLayer},
@@ -131,8 +131,6 @@ impl Plugin for Tilemap2DPlugin {
                 stage::TILEMAP,
                 SystemStage::parallel(),
             )
-            .add_event::<TilemapEvent>()
-            // .add_event::<TilemapCollisionEvent>()
             .add_system_to_stage(stage::TILEMAP, crate::system::tilemap_events.system())
             .add_system_to_stage(stage::TILEMAP, crate::chunk::system::chunk_update.system())
             .add_system_to_stage(
@@ -143,6 +141,11 @@ impl Plugin for Tilemap2DPlugin {
                 stage::TILEMAP,
                 crate::chunk::system::chunk_auto_spawn.system(),
             );
+        #[cfg(feature = "bevy_rapier2d")]
+        app.add_system_to_stage(
+            stage::TILEMAP,
+            crate::system::tilemap_collision_events.system(),
+        );
 
         let resources = app.resources_mut();
         let mut render_graph = resources
@@ -160,6 +163,7 @@ mod lib {
     extern crate bevy_ecs;
     extern crate bevy_log;
     extern crate bevy_math;
+    #[cfg(feature = "bevy_rapier2d")]
     extern crate bevy_rapier2d;
     extern crate bevy_reflect;
     extern crate bevy_render;
@@ -182,6 +186,7 @@ mod lib {
     };
     pub(crate) use bevy_log::{error, info, warn};
     pub(crate) use bevy_math::Vec3;
+    #[cfg(feature = "bevy_rapier2d")]
     pub(crate) use bevy_rapier2d::rapier::{
         dynamics::RigidBodyBuilder,
         geometry::{ColliderBuilder, InteractionGroups},

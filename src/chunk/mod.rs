@@ -49,10 +49,10 @@
 //! tilemap.insert_chunk((0, 0));
 //!
 //! let z_order = 0;
-//! tilemap.add_layer_with_kind(LayerKind::Dense, 0);
+//! tilemap.add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 1);
 //!
 //! let z_order = 1;
-//! tilemap.add_layer_with_kind(LayerKind::Sparse, 1);
+//! tilemap.add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 1);
 //! ```
 
 /// Chunk entity.
@@ -121,6 +121,7 @@ impl Chunk {
                     *layer = Some(SpriteLayer {
                         inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
                         entity: None,
+                        #[cfg(feature = "bevy_rapier2d")]
                         collision_entities: HashMap::default(),
                     });
                 } else {
@@ -132,6 +133,7 @@ impl Chunk {
                     *layer = Some(SpriteLayer {
                         inner: LayerKindInner::Sparse(SparseLayer::new(HashMap::default())),
                         entity: None,
+                        #[cfg(feature = "bevy_rapier2d")]
                         collision_entities: HashMap::default(),
                     });
                 } else {
@@ -232,6 +234,7 @@ impl Chunk {
     }
 
     /// Adds an entity to a tile index in a layer.
+    #[cfg(feature = "bevy_rapier2d")]
     pub(crate) fn insert_collision_entity(&mut self, z_order: usize, index: usize, entity: Entity) {
         if let Some(layer) = self.sprite_layers.get_mut(z_order) {
             if let Some(layer) = layer.as_mut() {
@@ -252,7 +255,8 @@ impl Chunk {
     }
 
     /// Gets the collision entity if any.
-    pub(crate) fn get_collision_entities(&self, index: usize, z_order: usize) -> Option<Entity> {
+    #[cfg(feature = "bevy_rapier2d")]
+    pub(crate) fn get_collision_entity(&self, index: usize, z_order: usize) -> Option<Entity> {
         self.sprite_layers.get(z_order).and_then(|o| {
             o.as_ref()
                 .and_then(|layer| layer.collision_entities.get(&index).cloned())
@@ -291,6 +295,7 @@ impl Chunk {
     }
 
     /// Gets a vec of all the tiles in the layer, if any.
+    #[cfg(feature = "bevy_rapier2d")]
     pub(crate) fn get_tile_indices(&self, z_order: usize) -> Option<Vec<usize>> {
         self.sprite_layers.get(z_order).and_then(|layer| {
             layer

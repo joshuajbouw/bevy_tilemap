@@ -93,9 +93,11 @@
 //! }
 //! ```
 
+#[cfg(feature = "bevy_rapier2d")]
+use crate::event::TilemapCollisionEvent;
 use crate::{
     chunk::{Chunk, LayerKind, RawTile},
-    event::TilemapEvent,
+    event::TilemapChunkEvent,
     lib::*,
     prelude::GridTopology,
     tile::Tile,
@@ -212,6 +214,7 @@ pub struct TilemapLayer {
     pub kind: LayerKind,
     /// The interaction group and its mask.
     #[cfg_attr(feature = "serde", serde(skip))]
+    #[cfg(feature = "bevy_rapier2d")]
     pub interaction_groups: InteractionGroups,
 }
 
@@ -219,6 +222,7 @@ impl Default for TilemapLayer {
     fn default() -> TilemapLayer {
         TilemapLayer {
             kind: LayerKind::Dense,
+            #[cfg(feature = "bevy_rapier2d")]
             interaction_groups: InteractionGroups::none(),
         }
     }
@@ -245,6 +249,7 @@ pub struct Tilemap {
     auto_spawn: Option<Dimension2>,
     /// Rapier physics scale for colliders and rigid bodies created
     /// for layers with colliders.
+    #[cfg(feature = "bevy_rapier2d")]
     physics_scale: f32,
     /// Custom flags.
     custom_flags: Vec<u32>,
@@ -258,7 +263,11 @@ pub struct Tilemap {
     entities: HashMap<usize, Vec<Entity>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The events of the tilemap.
-    events: Events<TilemapEvent>, // Possibly refactor this out
+    chunk_events: Events<TilemapChunkEvent>,
+    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg_attr(feature = "serde", serde(skip))]
+    /// The collision events of the tilemap.
+    collision_events: Events<TilemapCollisionEvent>,
     /// A set of all spawned chunks.
     spawned: HashSet<(i32, i32)>,
 }
@@ -341,6 +350,7 @@ pub struct TilemapBuilder {
     auto_spawn: Option<Dimension2>,
     /// Rapier physics scale for colliders and rigid bodies created
     /// for layers with colliders.
+    #[cfg(feature = "bevy_rapier2d")]
     physics_scale: f32,
 }
 
@@ -356,6 +366,7 @@ impl Default for TilemapBuilder {
             texture_atlas: None,
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
+            #[cfg(feature = "bevy_rapier2d")]
             physics_scale: 1.0,
         }
     }
@@ -554,6 +565,7 @@ impl TilemapBuilder {
 
     /// Sets the Rapier physics scale for colliders and rigid bodies created
     /// for layers with colliders.
+    #[cfg(feature = "bevy_rapier2d")]
     pub fn physics_scale(mut self, scale: f32) -> Self {
         self.physics_scale = scale;
         self
@@ -616,13 +628,15 @@ impl TilemapBuilder {
             layers: vec![None; z_layers],
             auto_flags: self.auto_flags,
             auto_spawn: self.auto_spawn,
+            #[cfg(feature = "bevy_rapier2d")]
             physics_scale: self.physics_scale,
-            // interaction_groups: Vec::new(),
             custom_flags: Vec::new(),
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
-            events: Default::default(),
+            chunk_events: Default::default(),
+            #[cfg(feature = "bevy_rapier2d")]
+            collision_events: Default::default(),
             spawned: Default::default(),
         };
 
@@ -650,12 +664,15 @@ impl Default for Tilemap {
             layers: vec![None; DEFAULT_Z_LAYERS],
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
+            #[cfg(feature = "bevy_rapier2d")]
             physics_scale: 1.0,
             custom_flags: Vec::new(),
             texture_atlas: Handle::default(),
             chunks: Default::default(),
             entities: Default::default(),
-            events: Default::default(),
+            chunk_events: Default::default(),
+            #[cfg(feature = "bevy_rapier2d")]
+            collision_events: Default::default(),
             spawned: Default::default(),
         }
     }
@@ -838,43 +855,15 @@ impl Tilemap {
         self.chunks.contains_key(&point)
     }
 
-    /// Adds a layer to the tilemap with a specified layer kind.
-    ///
-    /// This method takes in a [`LayerKind`] as well as a specified Z layer
-    /// that the layer needs to be set to. If the layer is already the specified
-    /// layer's kind, then nothing happens.
-    ///
-    /// # Errors
-    ///
-    /// If a layer is set and a different layer already exists at that Z layer
-    /// then an error is returned regarding that. This is done to prevent
-    /// accidental overwrites of a layer.
-    ///
-    /// # Examples
-    /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
-    /// use bevy_tilemap::prelude::*;
-    ///
-    /// // In production use a strong handle from an actual source.
-    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
-    ///
-    /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
-    ///
-    /// let kind = LayerKind::Sparse;
-    ///
-    /// assert!(tilemap.add_layer_with_kind(kind, 1).is_ok());
-    /// assert!(tilemap.add_layer_with_kind(kind, 1).is_err());
-    /// ```
-    ///
-    /// [`LayerKind`]: crate::chunk::LayerKind
     #[deprecated(
         since = "0.4.0",
         note = "Please use `add_layer` method instead with the `TilemapLayer` struct"
     )]
+    #[doc(hidden)]
     pub fn add_layer_with_kind(&mut self, kind: LayerKind, z_order: usize) -> TilemapResult<()> {
         let layer = TilemapLayer {
             kind,
+            #[cfg(feature = "bevy_rapier2d")]
             interaction_groups: InteractionGroups::default(),
         };
         if let Some(some_kind) = self.layers.get_mut(z_order) {
@@ -1075,7 +1064,7 @@ impl Tilemap {
         if self.spawned.contains(&(point.x, point.y)) {
             return Ok(());
         } else {
-            self.events.send(TilemapEvent::Spawned { point });
+            self.chunk_events.send(TilemapChunkEvent::Spawned { point });
         }
 
         Ok(())
@@ -1166,8 +1155,8 @@ impl Tilemap {
 
         if let Some(chunk) = self.chunks.get_mut(&point) {
             let entities = chunk.get_entities();
-            self.events
-                .send(TilemapEvent::Despawned { entities, point })
+            self.chunk_events
+                .send(TilemapChunkEvent::Despawned { entities, point })
         }
 
         Ok(())
@@ -1358,7 +1347,7 @@ impl Tilemap {
         I: IntoIterator<Item = Tile<P>>,
     {
         let chunk_map = self.sort_tiles_to_chunks(tiles)?;
-        for (point, tiles) in chunk_map.into_iter() {
+        for (chunk_point, tiles) in chunk_map.into_iter() {
             // Is there a better way to do this? Clippy hates if I don't do it
             // like this talking about constructing regardless yet, here it is,
             // copying stuff regardless because it doesn't like self in the
@@ -1366,31 +1355,35 @@ impl Tilemap {
             let layers = self.layers.clone();
             let chunk_dimensions = self.chunk_dimensions;
             let chunk = if self.auto_flags.contains(AutoFlags::AUTO_CHUNK) {
-                self.chunks.entry(point).or_insert_with(|| {
+                self.chunks.entry(chunk_point).or_insert_with(|| {
                     let layer_kinds = layers
                         .iter()
                         .map(|x| x.and_then(|y| Some(y.kind)))
                         .collect::<Vec<Option<LayerKind>>>();
-                    Chunk::new(point, &layer_kinds, chunk_dimensions)
+                    Chunk::new(chunk_point, &layer_kinds, chunk_dimensions)
                 })
             } else {
-                match self.chunks.get_mut(&point) {
+                match self.chunks.get_mut(&chunk_point) {
                     Some(c) => c,
                     None => return Err(ErrorKind::MissingChunk.into()),
                 }
             };
 
             let mut layers = HashMap::default();
-            for tile in tiles.into_iter() {
+            for tile in tiles.iter() {
                 let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
                 // TODO: Tile collider must be added to the chunk.
-                chunk.set_tile(index, tile);
+                chunk.set_tile(index, *tile);
                 if let Some(entity) = chunk.get_entity(tile.z_order) {
                     layers.entry(tile.z_order).or_insert(entity);
                 }
             }
 
-            self.events.send(TilemapEvent::Modified { layers });
+            self.chunk_events
+                .send(TilemapChunkEvent::Modified { layers });
+            #[cfg(feature = "bevy_rapier2d")]
+            self.collision_events
+                .send(TilemapCollisionEvent::Spawned { chunk_point, tiles });
         }
 
         Ok(())
@@ -1495,28 +1488,26 @@ impl Tilemap {
         }
         let chunk_map = self.sort_tiles_to_chunks(tiles)?;
         let mut layers = HashMap::default();
-        for (point, tiles) in chunk_map.into_iter() {
-            let chunk = match self.chunks.get_mut(&point) {
+        for (chunk_point, tiles) in chunk_map.into_iter() {
+            let chunk = match self.chunks.get_mut(&chunk_point) {
                 Some(c) => c,
                 None => return Err(ErrorKind::MissingChunk.into()),
             };
-            let mut entities = Vec::with_capacity(tiles.len());
-            for tile in tiles.into_iter() {
+            for tile in tiles.iter() {
                 let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
-                if let Some(entity) = chunk.get_collision_entities(index, tile.z_order) {
-                    entities.push(entity);
-                };
                 chunk.remove_tile(index, tile.z_order);
                 if let Some(entity) = chunk.get_entity(tile.z_order) {
                     layers.entry(tile.z_order).or_insert(entity);
                 }
             }
 
-            // self.events
-            //     .send(TilemapEvent::DespawnedCollision { entities, point });
+            #[cfg(feature = "bevy_rapier2d")]
+            self.collision_events
+                .send(TilemapCollisionEvent::Despawned { chunk_point, tiles });
         }
 
-        self.events.send(TilemapEvent::Modified { layers });
+        self.chunk_events
+            .send(TilemapChunkEvent::Modified { layers });
 
         Ok(())
     }
@@ -1549,7 +1540,7 @@ impl Tilemap {
     ///
     /// let point = (3, 1);
     /// let sprite_index = 1;
-    /// let tile = Tile { point: point, sprite_index, ..Default::default() };
+    /// let tile = Tile { point, sprite_index, ..Default::default() };
     ///
     /// // Set a single tile and unwrap the result
     /// assert!(tilemap.insert_tile(tile).is_ok());
@@ -1594,7 +1585,7 @@ impl Tilemap {
     ///
     /// let point = (9, 3);
     /// let sprite_index = 3;
-    /// let tile = Tile { point: point, sprite_index, ..Default::default() };
+    /// let tile = Tile { point, sprite_index, ..Default::default() };
     ///
     /// assert!(tilemap.insert_tile(tile).is_ok());
     /// assert_eq!(tilemap.get_tile((9, 3), 0), Some(&RawTile { index: 3, color: Color::WHITE }));
@@ -1635,7 +1626,7 @@ impl Tilemap {
     ///
     /// let point = (2, 5);
     /// let sprite_index = 2;
-    /// let tile = Tile { point: point, sprite_index, ..Default::default() };
+    /// let tile = Tile { point, sprite_index, ..Default::default() };
     ///
     /// assert!(tilemap.insert_tile(tile).is_ok());
     /// assert_eq!(tilemap.get_tile_mut((2, 5), 0), Some(&mut RawTile { index: 2, color: Color::WHITE }));
@@ -1653,7 +1644,8 @@ impl Tilemap {
         let mut layers = HashMap::default();
         if let Some(entity) = chunk.get_entity(z_order) {
             layers.insert(z_order, entity);
-            self.events.send(TilemapEvent::Modified { layers });
+            self.chunk_events
+                .send(TilemapChunkEvent::Modified { layers });
         }
         chunk.get_tile_mut(z_order, index)
     }
@@ -1916,25 +1908,54 @@ impl Tilemap {
     /// use bevy_app::prelude::*;
     /// use bevy_asset::{prelude::*, HandleId};
     /// use bevy_sprite::prelude::*;
-    /// use bevy_tilemap::{prelude::*, event::TilemapEvent};
+    /// use bevy_tilemap::{prelude::*, event::TilemapChunkEvent};
     ///
     /// // In production use a strong handle from an actual source.
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
     /// let tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
-    /// let events: &Events<TilemapEvent> = tilemap.events();
+    /// let events: &Events<TilemapChunkEvent> = tilemap.chunk_events();
     /// ```
-    pub fn events(&self) -> &Events<TilemapEvent> {
-        &self.events
+    pub fn chunk_events(&self) -> &Events<TilemapChunkEvent> {
+        &self.chunk_events
+    }
+
+    /// Updates the chunk events. This should only be done once per frame.
+    pub(crate) fn chunk_events_update(&mut self) {
+        self.chunk_events.update()
+    }
+
+    /// Returns a reference to the tilemap collision events.
+    ///
+    /// This is handy if you need to know which collisions were spawned which
+    /// can then be used to trigger other systems. It should be used in
+    /// conjunction with [`chunk_events_update`] as collisions will spawn
+    /// on a chunk spawn and be despawned with a chunk despawn. Those will not
+    /// trigger events.
+    ///
+    /// [`chunk_events_update`]:
+    ///
+    ///
+    #[cfg(feature = "bevy_rapier2d")]
+    pub fn collision_events(&self) -> &Events<TilemapCollisionEvent> {
+        &self.collision_events
+    }
+
+    /// Updates the collision events. This should only be done once per frame.
+    #[cfg(feature = "bevy_rapier2d")]
+    pub(crate) fn collision_events_update(&mut self) {
+        self.collision_events.update()
     }
 
     /// Returns a copy of the physics scale.
+    #[cfg(feature = "bevy_rapier2d")]
     pub fn physics_scale(&self) -> f32 {
         self.physics_scale
     }
 
     /// Sets the physics scale.
+    #[cfg(feature = "bevy_rapier2d")]
     pub fn set_physics_scale(&mut self, scale: f32) {
         self.physics_scale = scale;
     }
