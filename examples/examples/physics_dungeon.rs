@@ -104,7 +104,7 @@ fn load(
         // them.
         let tilemap = Tilemap::builder()
             .dimensions(TILEMAP_WIDTH as u32, TILEMAP_HEIGHT as u32)
-            .tile_dimensions(32, 32)
+            .texture_dimensions(32, 32)
             .chunk_dimensions(CHUNK_WIDTH, CHUNK_HEIGHT)
             .auto_chunk()
             .auto_spawn(2, 2)

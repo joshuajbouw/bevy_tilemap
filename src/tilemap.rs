@@ -40,7 +40,7 @@
 //! let mut tilemap = TilemapBuilder::new()
 //!     .texture_atlas(texture_atlas_handle)
 //!     .chunk_dimensions(64, 64)
-//!     .tile_dimensions(8, 8)
+//!     .texture_dimensions(8, 8)
 //!     .dimensions(32, 32)
 //!     .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
 //!     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 1)
@@ -93,7 +93,7 @@
 //! }
 //! ```
 
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
 use crate::event::TilemapCollisionEvent;
 use crate::{
     chunk::{Chunk, LayerKind, RawTile},
@@ -196,7 +196,10 @@ bitflags! {
 /// The default texture dimensions in chunks.
 const DEFAULT_TEXTURE_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
 /// The default chunk dimensions in tiles.
+#[cfg(not(feature = "bevy_rapier3d"))]
 const DEFAULT_CHUNK_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
+#[cfg(feature = "bevy_rapier3d")]
+const DEFAULT_CHUNK_DIMENSIONS: Dimension3 = Dimension3::new(32, 32, 32);
 /// The default z layers.
 const DEFAULT_Z_LAYERS: usize = 5;
 
@@ -214,7 +217,7 @@ pub struct TilemapLayer {
     pub kind: LayerKind,
     /// The interaction group and its mask.
     #[cfg_attr(feature = "serde", serde(skip))]
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
     pub interaction_groups: InteractionGroups,
 }
 
@@ -222,7 +225,7 @@ impl Default for TilemapLayer {
     fn default() -> TilemapLayer {
         TilemapLayer {
             kind: LayerKind::Dense,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
             interaction_groups: InteractionGroups::none(),
         }
     }
@@ -237,9 +240,15 @@ pub struct Tilemap {
     /// An optional field which can contain the tilemaps dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// A chunks dimensions in tiles.
+    #[cfg(not(feature = "bevy_rapier3d"))]
     chunk_dimensions: Dimension2,
+    #[cfg(feature = "bevy_rapier3d")]
+    chunk_dimensions: Dimension3,
     /// A tiles dimensions in pixels.
+    #[cfg(not(feature = "bevy_rapier3d"))]
     tile_dimensions: Dimension2,
+    #[cfg(feature = "bevy_rapier3d")]
+    tile_dimensions: Dimension3,
     /// The layers that are currently set in the tilemap in order from lowest
     /// to highest.
     layers: Vec<Option<TilemapLayer>>,
@@ -249,7 +258,7 @@ pub struct Tilemap {
     auto_spawn: Option<Dimension2>,
     /// Rapier physics scale for colliders and rigid bodies created
     /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
     physics_scale: f32,
     /// Custom flags.
     custom_flags: Vec<u32>,
@@ -264,7 +273,7 @@ pub struct Tilemap {
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The events of the tilemap.
     chunk_events: Events<TilemapChunkEvent>,
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The collision events of the tilemap.
     collision_events: Events<TilemapCollisionEvent>,
@@ -301,7 +310,7 @@ pub struct Tilemap {
 ///
 /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 ///
-/// let builder = TilemapBuilder::new().tile_dimensions(32, 32).texture_atlas(texture_atlas_handle);
+/// let builder = TilemapBuilder::new().texture_dimensions(32, 32).texture_atlas(texture_atlas_handle);
 ///
 /// let tilemap = builder.finish().unwrap();
 /// ```
@@ -314,7 +323,7 @@ pub struct Tilemap {
 ///
 /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 ///
-/// let builder = Tilemap::builder().tile_dimensions(32, 32).texture_atlas(texture_atlas_handle);
+/// let builder = Tilemap::builder().texture_dimensions(32, 32).texture_atlas(texture_atlas_handle);
 ///
 /// let tilemap = builder.finish().unwrap();
 /// ```
@@ -335,9 +344,13 @@ pub struct TilemapBuilder {
     /// An optional field which can contain the tilemaps dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// The chunks dimensions in tiles.
+    #[cfg(not(feature = "bevy_rapier3d"))]
     chunk_dimensions: Dimension2,
-    /// The tiles dimensions in pixels.
-    tile_dimensions: Option<Dimension2>,
+    #[cfg(feature = "bevy_rapier3d")]
+    chunk_dimensions: Dimension3,
+    texture_dimensions: Option<Dimension2>,
+    #[cfg(feature = "bevy_rapier3d")]
+    tile_height: f32,
     /// The amount of z layers.
     z_layers: usize,
     /// The layers to be set. If there are more, it will override `z_layers`.
@@ -350,7 +363,7 @@ pub struct TilemapBuilder {
     auto_spawn: Option<Dimension2>,
     /// Rapier physics scale for colliders and rigid bodies created
     /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
     physics_scale: f32,
 }
 
@@ -360,13 +373,14 @@ impl Default for TilemapBuilder {
             topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
-            tile_dimensions: None,
+            texture_dimensions: None,
+            tile_height: 1.0,
             z_layers: DEFAULT_Z_LAYERS,
             layers: None,
             texture_atlas: None,
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
             physics_scale: 1.0,
         }
     }
@@ -441,8 +455,15 @@ impl TilemapBuilder {
     ///
     /// let builder = TilemapBuilder::new().chunk_dimensions(32, 32);
     /// ```
+    #[cfg(not(feature = "bevy_rapier3d"))]
     pub fn chunk_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
         self.chunk_dimensions = Dimension2::new(width, height);
+        self
+    }
+
+    #[cfg(feature = "bevy_rapier3d")]
+    pub fn chunk_dimensions(mut self, width: u32, height: u32, depth: u32) -> TilemapBuilder {
+        self.chunk_dimensions = Dimension3::new(width, height, depth);
         self
     }
 
@@ -455,10 +476,10 @@ impl TilemapBuilder {
     /// ```
     /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = TilemapBuilder::new().tile_dimensions(32, 32);
+    /// let builder = TilemapBuilder::new().texture_dimensions(32, 32);
     /// ```
-    pub fn tile_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
-        self.tile_dimensions = Some(Dimension2::new(width, height));
+    pub fn texture_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
+        self.texture_dimensions = Some(Dimension2::new(width, height));
         self
     }
 
@@ -565,7 +586,7 @@ impl TilemapBuilder {
 
     /// Sets the Rapier physics scale for colliders and rigid bodies created
     /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
     pub fn physics_scale(mut self, scale: f32) -> Self {
         self.physics_scale = scale;
         self
@@ -588,7 +609,7 @@ impl TilemapBuilder {
     ///
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let builder = TilemapBuilder::new().tile_dimensions(32, 32).texture_atlas(texture_atlas_handle);
+    /// let builder = TilemapBuilder::new().texture_dimensions(32, 32).texture_atlas(texture_atlas_handle);
     ///
     /// assert!(builder.finish().is_ok());
     /// assert!(TilemapBuilder::new().finish().is_err());
@@ -604,7 +625,7 @@ impl TilemapBuilder {
         } else {
             return Err(ErrorKind::MissingTextureAtlas.into());
         };
-        let tile_dimensions = if let Some(dimensions) = self.tile_dimensions {
+        let tile_dimensions = if let Some(dimensions) = self.texture_dimensions {
             dimensions
         } else {
             return Err(ErrorKind::MissingTileDimensions.into());
@@ -628,14 +649,14 @@ impl TilemapBuilder {
             layers: vec![None; z_layers],
             auto_flags: self.auto_flags,
             auto_spawn: self.auto_spawn,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
             physics_scale: self.physics_scale,
             custom_flags: Vec::new(),
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
             chunk_events: Default::default(),
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
             collision_events: Default::default(),
             spawned: Default::default(),
         };
@@ -664,14 +685,14 @@ impl Default for Tilemap {
             layers: vec![None; DEFAULT_Z_LAYERS],
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
             physics_scale: 1.0,
             custom_flags: Vec::new(),
             texture_atlas: Handle::default(),
             chunks: Default::default(),
             entities: Default::default(),
             chunk_events: Default::default(),
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
             collision_events: Default::default(),
             spawned: Default::default(),
         }
@@ -794,7 +815,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(3, 3)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -863,7 +884,7 @@ impl Tilemap {
     pub fn add_layer_with_kind(&mut self, kind: LayerKind, z_order: usize) -> TilemapResult<()> {
         let layer = TilemapLayer {
             kind,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
             interaction_groups: InteractionGroups::default(),
         };
         if let Some(some_kind) = self.layers.get_mut(z_order) {
@@ -954,7 +975,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .z_layers(3)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
     ///     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 3)
     ///     .finish()
@@ -1042,7 +1063,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(1, 1)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1089,7 +1110,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 32)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .dimensions(1, 1)
     ///     .finish()
     ///     .unwrap();
@@ -1129,7 +1150,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(1, 1)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1187,7 +1208,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(3, 3)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1247,6 +1268,7 @@ impl Tilemap {
     }
 
     /// Sorts tiles into the chunks they belong to.
+    #[cfg(not(feature = "bevy_rapier3d"))]
     fn sort_tiles_to_chunks<P, I>(
         &mut self,
         tiles: I,
@@ -1292,6 +1314,53 @@ impl Tilemap {
         Ok(chunk_map)
     }
 
+    /// Sorts tiles into the chunks they belong to.
+    #[cfg(feature = "bevy_rapier3d")]
+    fn sort_tiles_to_chunks<P, I>(
+        &mut self,
+        tiles: I,
+    ) -> TilemapResult<HashMap<Point2, Vec<Tile<Point3>>>>
+    where
+        P: Into<Point3>,
+        I: IntoIterator<Item = Tile<P>>,
+    {
+        let width = self.chunk_dimensions.width as i32;
+        let height = self.chunk_dimensions.height as i32;
+
+        let mut chunk_map: HashMap<Point2, Vec<Tile<Point3>>> = HashMap::default();
+        for tile in tiles.into_iter() {
+            let global_tile_point: Point2 = tile.point.into();
+            let chunk_point: Point2 = self.point_to_chunk_point(global_tile_point).into();
+
+            if let Some(layer) = self.layers.get(tile.z_order as usize) {
+                if layer.as_ref().is_none() {
+                    self.add_layer(TilemapLayer::default(), tile.z_order as usize)?;
+                }
+            } else {
+                return Err(ErrorKind::LayerDoesNotExist(tile.z_order).into());
+            }
+
+            let tile_point = Point2::new(
+                global_tile_point.x - (width * chunk_point.x) + (width / 2),
+                global_tile_point.y - (height * chunk_point.y) + (height / 2),
+            );
+
+            let chunk_tile: Tile<Point3> = Tile {
+                point: tile_point,
+                z_order: tile.z_order,
+                sprite_index: tile.sprite_index,
+                tint: tile.tint,
+            };
+            if let Some(tiles) = chunk_map.get_mut(&chunk_point) {
+                tiles.push(chunk_tile);
+            } else {
+                let tiles = vec![chunk_tile];
+                chunk_map.insert(chunk_point, tiles);
+            }
+        }
+        Ok(chunk_map)
+    }
+
     /// Sets many tiles, creating new chunks if needed.
     ///
     /// If setting a single tile is more preferable, then use the [`insert_tile`]
@@ -1319,7 +1388,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(1, 1)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1341,6 +1410,7 @@ impl Tilemap {
     /// ```
     ///
     /// [`insert_tile`]: Tilemap::insert_tile
+    #[cfg(not(feature = "bevy_rapier3d"))]
     pub fn insert_tiles<P, I>(&mut self, tiles: I) -> TilemapResult<()>
     where
         P: Into<Point2>,
@@ -1381,7 +1451,106 @@ impl Tilemap {
 
             self.chunk_events
                 .send(TilemapChunkEvent::Modified { layers });
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
+            self.collision_events
+                .send(TilemapCollisionEvent::Spawned { chunk_point, tiles });
+        }
+
+        Ok(())
+    }
+
+    #[cfg(feature = "bevy_rapier3d")]
+    /// Sets many tiles, creating new chunks if needed.
+    ///
+    /// If setting a single tile is more preferable, then use the [`insert_tile`]
+    /// method instead.
+    ///
+    /// If the chunk does not yet exist, it will create a new one automatically.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the given coordinate or index is out of bounds, the
+    /// layer or chunk does not exist. If either the layer or chunk error occurs
+    /// then creating what is missing will resolve it.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bevy_asset::{prelude::*, HandleId};
+    /// use bevy_render::prelude::*;
+    /// use bevy_sprite::prelude::*;
+    /// use bevy_tilemap::{prelude::*, chunk::RawTile};
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let mut tilemap = TilemapBuilder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .dimensions(1, 1)
+    ///     .texture_dimensions(32, 32)
+    ///     .finish()
+    ///     .unwrap();
+    ///
+    /// tilemap.insert_chunk((0, 0)).unwrap();
+    ///
+    /// let mut tiles = vec![
+    ///     Tile { point: (1, 1), sprite_index: 0, ..Default::default() },
+    ///     Tile { point: (2, 2), sprite_index: 1, ..Default::default() },
+    ///     Tile { point: (3, 3), sprite_index: 2, ..Default::default() },
+    /// ];
+    ///
+    /// // Set multiple tiles and unwrap the result
+    /// tilemap.insert_tiles(tiles).unwrap();
+    ///
+    /// assert_eq!(tilemap.get_tile((1, 1), 0), Some(&RawTile { index: 0, color: Color::WHITE }));
+    /// assert_eq!(tilemap.get_tile((2, 2), 0), Some(&RawTile { index: 1, color: Color::WHITE }));
+    /// assert_eq!(tilemap.get_tile((3, 3), 0), Some(&RawTile { index: 2, color: Color::WHITE }));
+    /// assert_eq!(tilemap.get_tile((4, 4), 0), None);
+    /// ```
+    ///
+    /// [`insert_tile`]: Tilemap::insert_tile
+    #[cfg(feature = "bevy_rapier3d")]
+    pub fn insert_tiles<P, I>(&mut self, tiles: I) -> TilemapResult<()>
+    where
+        P: Into<Point3>,
+        I: IntoIterator<Item = Tile<P>>,
+    {
+        let chunk_map = self.sort_tiles_to_chunks(tiles)?;
+        for (chunk_point, tiles) in chunk_map.into_iter() {
+            // Is there a better way to do this? Clippy hates if I don't do it
+            // like this talking about constructing regardless yet, here it is,
+            // copying stuff regardless because it doesn't like self in the
+            // `FnOnce`.
+            let layers = self.layers.clone();
+            let chunk_dimensions = self.chunk_dimensions;
+            let chunk = if self.auto_flags.contains(AutoFlags::AUTO_CHUNK) {
+                self.chunks.entry(chunk_point).or_insert_with(|| {
+                    let layer_kinds = layers
+                        .iter()
+                        .map(|x| x.and_then(|y| Some(y.kind)))
+                        .collect::<Vec<Option<LayerKind>>>();
+                    Chunk::new(chunk_point, &layer_kinds, chunk_dimensions)
+                })
+            } else {
+                match self.chunks.get_mut(&chunk_point) {
+                    Some(c) => c,
+                    None => return Err(ErrorKind::MissingChunk.into()),
+                }
+            };
+
+            let mut layers = HashMap::default();
+            for tile in tiles.iter() {
+                let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
+                // TODO: Tile collider must be added to the chunk.
+                chunk.set_tile(index, *tile);
+                if let Some(entity) = chunk.get_entity(tile.z_order) {
+                    layers.entry(tile.z_order).or_insert(entity);
+                }
+            }
+
+            self.chunk_events
+                .send(TilemapChunkEvent::Modified { layers });
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
             self.collision_events
                 .send(TilemapCollisionEvent::Spawned { chunk_point, tiles });
         }
@@ -1501,7 +1670,7 @@ impl Tilemap {
                 }
             }
 
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
             self.collision_events
                 .send(TilemapCollisionEvent::Despawned { chunk_point, tiles });
         }
@@ -1667,7 +1836,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle.clone_weak())
     ///     .dimensions(32, 32)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1705,7 +1874,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle.clone_weak())
     ///     .dimensions(32, 64)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1737,7 +1906,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle.clone_weak())
     ///     .dimensions(32, 64)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1769,7 +1938,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 64)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1795,7 +1964,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 64)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1820,8 +1989,8 @@ impl Tilemap {
     ///
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
-    ///     .tile_dimensions(32, 64)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 64)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1846,7 +2015,7 @@ impl Tilemap {
     ///
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
-    ///     .tile_dimensions(32, 64)
+    ///     .texture_dimensions(32, 64)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1886,7 +2055,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .topology(GridTopology::HexX)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1937,25 +2106,25 @@ impl Tilemap {
     /// [`chunk_events_update`]:
     ///
     ///
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
     pub fn collision_events(&self) -> &Events<TilemapCollisionEvent> {
         &self.collision_events
     }
 
     /// Updates the collision events. This should only be done once per frame.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
     pub(crate) fn collision_events_update(&mut self) {
         self.collision_events.update()
     }
 
     /// Returns a copy of the physics scale.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
     pub fn physics_scale(&self) -> f32 {
         self.physics_scale
     }
 
     /// Sets the physics scale.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
     pub fn set_physics_scale(&mut self, scale: f32) {
         self.physics_scale = scale;
     }
@@ -1976,7 +2145,13 @@ impl Tilemap {
     }
 
     /// Returns a copy of the chunk's tile dimensions.
+    #[cfg(not(feature = "bevy_rapier3d"))]
     pub(crate) fn tile_dimensions(&self) -> Dimension2 {
+        self.tile_dimensions
+    }
+
+    #[cfg(feature = "bevy_rapier3d")]
+    pub(crate) fn tile_dimensions(&self) -> Dimension3 {
         self.tile_dimensions
     }
 

@@ -1,6 +1,6 @@
 //! The tilemap systems.
 
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
 use crate::{chunk::Chunk, TilemapLayer};
 use crate::{
     chunk::{
@@ -191,7 +191,7 @@ pub(crate) fn tilemap_events(
 ///
 /// This is a bit messy and has quite a few inputs but, quite a few parts had
 /// to be cloned. There very likely is a better way to clean this up.
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
 fn spawn_collisions(
     commands: &mut Commands,
     layers: &[Option<TilemapLayer>],
@@ -203,6 +203,7 @@ fn spawn_collisions(
     transform: &Transform,
     physics_tile_width: f32,
     physics_tile_height: f32,
+    #[cfg(feature = "bevy_rapier3d")] physics_tile_depth: f32,
 ) {
     // Don't continue if there is no layer.
     if let Some(layer_opt) = layers.get(z_order) {
@@ -261,9 +262,16 @@ fn spawn_collisions(
                 .and_then(|layer_opt| layer_opt.and_then(|layer| Some(layer.interaction_groups)));
             if let Some(collision_groups) = collision_groups {
                 if collision_groups.with_mask(0).0 != 0 {
+                    #[cfg(not(feature = "bevy_rapier3d"))]
                     let mut collider = ColliderBuilder::cuboid(
                         physics_tile_width / 2.0,
                         physics_tile_height / 2.0,
+                    );
+                    #[cfg(feature = "bevy_rapier3d")]
+                    let mut collider = ColliderBuilder::cuboid(
+                        physics_tile_width / 2.0,
+                        physics_tile_height / 2.0,
+                        physics_tile_depth / 2.0,
                     );
 
                     collider = collider.collision_groups(collision_groups);
@@ -297,7 +305,7 @@ fn spawn_collisions(
 ///
 /// Depending on if a collision needs to be created or not, given a variety of
 /// conditions, collisions are spawned or despawned accordingly.
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
 pub(crate) fn tilemap_collision_events(
     commands: &mut Commands,
     mut tilemap_query: Query<(&mut Tilemap, &Transform)>,
@@ -327,6 +335,7 @@ pub(crate) fn tilemap_collision_events(
             let tile_dimensions = tilemap.tile_dimensions();
             let physics_tile_width = tile_dimensions.width as f32 / tilemap.physics_scale();
             let physics_tile_height = tile_dimensions.height as f32 / tilemap.physics_scale();
+            let physics_tile_depth = tile_dimensions.depth as f32 / tilemap.physics_scale();
             let chunk = if let Some(chunk) = tilemap.chunks_mut().get_mut(&point) {
                 chunk
             } else {

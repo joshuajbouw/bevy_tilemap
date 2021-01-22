@@ -92,7 +92,7 @@ fn load(
         // them.
         let tilemap = Tilemap::builder()
             .dimensions(3, 3)
-            .tile_dimensions(32, 32)
+            .texture_dimensions(32, 32)
             .chunk_dimensions(32, 32)
             .z_layers(2)
             .texture_atlas(atlas_handle)

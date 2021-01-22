@@ -52,7 +52,7 @@ fn load(
             .topology(GridTopology::HexOddRows)
             .dimensions(3, 3)
             .chunk_dimensions(7, 4)
-            .tile_dimensions(32, 37)
+            .texture_dimensions(32, 37)
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();

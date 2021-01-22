@@ -1,7 +1,7 @@
 //! The tilemap events.
 
 use crate::lib::*;
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
 use crate::Tile;
 
 #[derive(Debug)]
@@ -26,7 +26,7 @@ pub enum TilemapChunkEvent {
     },
 }
 
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
 #[derive(Debug)]
 /// Events that can happen to collisions.
 pub enum TilemapCollisionEvent {

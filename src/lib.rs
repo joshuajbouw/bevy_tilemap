@@ -141,7 +141,7 @@ impl Plugin for Tilemap2DPlugin {
                 stage::TILEMAP,
                 crate::chunk::system::chunk_auto_spawn.system(),
             );
-        #[cfg(feature = "bevy_rapier2d")]
+        #[cfg(any(feature = "bevy_rapier2d", feature = "bevy_rapier3d"))]
         app.add_system_to_stage(
             stage::TILEMAP,
             crate::system::tilemap_collision_events.system(),
@@ -165,6 +165,8 @@ mod lib {
     extern crate bevy_math;
     #[cfg(feature = "bevy_rapier2d")]
     extern crate bevy_rapier2d;
+    #[cfg(feature = "bevy_rapier3d")]
+    extern crate bevy_rapier3d;
     extern crate bevy_reflect;
     extern crate bevy_render;
     extern crate bevy_sprite;
@@ -191,6 +193,11 @@ mod lib {
         dynamics::RigidBodyBuilder,
         geometry::{ColliderBuilder, InteractionGroups},
     };
+    #[cfg(feature = "bevy_rapier3d")]
+    pub(crate) use bevy_rapier3d::rapier::{
+        dynamics::RigidBodyBuilder,
+        geometry::{ColliderBuilder, InteractionGroups},
+    };
     pub(crate) use bevy_reflect::{TypeUuid, Uuid};
     pub(crate) use bevy_render::{
         camera::Camera,
@@ -208,10 +215,12 @@ mod lib {
         texture::TextureFormat,
     };
     pub(crate) use bevy_sprite::TextureAtlas;
-    pub(crate) use bevy_tilemap_types::{
-        dimension::{Dimension2, DimensionError},
-        point::Point2,
-    };
+    #[cfg(feature = "bevy_rapier3d")]
+    pub(crate) use bevy_tilemap_types::dimension::Dimension3;
+    pub(crate) use bevy_tilemap_types::dimension::{Dimension2, DimensionError};
+    pub(crate) use bevy_tilemap_types::point::Point2;
+    #[cfg(feature = "bevy_rapier3d")]
+    pub(crate) use bevy_tilemap_types::point::Point3;
     pub(crate) use bevy_transform::{
         components::{GlobalTransform, Parent, Transform},
         hierarchy::{BuildChildren, DespawnRecursiveExt},
