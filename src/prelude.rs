@@ -29,10 +29,9 @@
 /// Version 0 prelude.
 pub mod v0 {
     pub use crate::{
-        chunk::LayerKind,
+        chunk::{render::GridTopology, LayerKind},
         default_plugin::TilemapDefaultPlugins,
         entity::TilemapBundle,
-        render::GridTopology,
         tile::Tile,
         tilemap::{Tilemap, TilemapBuilder, TilemapLayer},
         Tilemap2DPlugin,

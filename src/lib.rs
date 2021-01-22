@@ -90,36 +90,34 @@ pub use bevy_tilemap_types::dimension;
 pub use bevy_tilemap_types::point;
 
 #[no_implicit_prelude]
-pub mod default_plugin;
-// pub mod auto_tile;
-#[no_implicit_prelude]
 pub mod chunk;
-/// Bundles of components for spawning entities.
+#[no_implicit_prelude]
+pub mod default_plugin;
 #[no_implicit_prelude]
 pub mod entity;
-/// Meshes for rendering to vertices.
-#[no_implicit_prelude]
-mod mesh;
 #[no_implicit_prelude]
 pub mod prelude;
-/// Files and helpers for rendering.
-#[no_implicit_prelude]
-pub mod render;
-/// The stages for the tilemap in the bevy app.
 #[no_implicit_prelude]
 pub mod stage {
+    //! The stages for the tilemap in the bevy app.
+
     /// The tilemap stage, set to run before `POST_UPDATE` stage.
     pub const TILEMAP: &str = "tilemap";
 }
-/// Tile traits to implement for a custom tile.
+#[no_implicit_prelude]
+mod event;
+#[no_implicit_prelude]
+mod system;
 #[no_implicit_prelude]
 pub mod tile;
-/// Map traits to implement for a custom map and a basic struct for use.
 #[no_implicit_prelude]
 pub mod tilemap;
 
-pub use crate::tilemap::{ChunkEvent, Tilemap, TilemapLayer};
-use crate::{lib::*, render::TilemapRenderGraphBuilder};
+use crate::{chunk::render::TilemapRenderGraphBuilder, event::TilemapEvent, lib::*};
+pub use crate::{
+    tile::Tile,
+    tilemap::{Tilemap, TilemapLayer},
+};
 
 /// The Bevy Tilemap 2D main plugin.
 #[derive(Default)]
@@ -133,10 +131,18 @@ impl Plugin for Tilemap2DPlugin {
                 stage::TILEMAP,
                 SystemStage::parallel(),
             )
-            .add_system_to_stage(stage::TILEMAP, crate::tilemap::tilemap_events.system())
-            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_update.system())
-            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_auto_radius.system())
-            .add_system_to_stage(stage::TILEMAP, crate::chunk::chunk_auto_spawn.system());
+            .add_event::<TilemapEvent>()
+            // .add_event::<TilemapCollisionEvent>()
+            .add_system_to_stage(stage::TILEMAP, crate::system::tilemap_events.system())
+            .add_system_to_stage(stage::TILEMAP, crate::chunk::system::chunk_update.system())
+            .add_system_to_stage(
+                stage::TILEMAP,
+                crate::chunk::system::chunk_auto_radius.system(),
+            )
+            .add_system_to_stage(
+                stage::TILEMAP,
+                crate::chunk::system::chunk_auto_spawn.system(),
+            );
 
         let resources = app.resources_mut();
         let mut render_graph = resources
