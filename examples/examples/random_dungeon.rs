@@ -222,7 +222,14 @@ fn build_random_dungeon(
         // yet it still works and exists. By default if a layer doesn't exist
         // and tiles need to be written there then a Dense layer is created
         // automatically.
-        map.add_layer_with_kind(LayerKind::Sparse, 1).unwrap();
+        map.add_layer(
+            TilemapLayer {
+                kind: LayerKind::Sparse,
+                ..Default::default()
+            },
+            1,
+        )
+        .unwrap();
 
         // Now lets add in a dwarf friend!
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/square-dwarf.png");
