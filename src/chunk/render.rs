@@ -45,57 +45,126 @@ macro_rules! build_chunk_pipeline {
                 ..PipelineDescriptor::new(ShaderStages {
                     vertex: shaders
                         .add(Shader::from_glsl(ShaderStage::Vertex, include_str!($file))),
-                    fragment: Some(shaders.add(Shader::from_glsl(
-                        ShaderStage::Fragment,
-                        include_str!("tilemap.frag"),
-                    ))),
+                    fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, {
+                        let _wasm = false;
+                        #[cfg(target_arch = "wasm32")]
+                        let _wasm = true;
+
+                        if _wasm {
+                            include_str!("render_web/tilemap.frag")
+                        } else {
+                            include_str!("render_native/tilemap.frag")
+                        }
+                    }))),
                 })
             }
         }
     };
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 build_chunk_pipeline!(
     CHUNK_SQUARE_PIPELINE,
     2110840099625352487,
     build_chunk_square_pipeline,
-    "tilemap-square.vert"
+    "render_native/tilemap-square.vert"
 );
+#[cfg(target_arch = "wasm32")]
+build_chunk_pipeline!(
+    CHUNK_SQUARE_PIPELINE,
+    2110840099625352487,
+    build_chunk_square_pipeline,
+    "render_web/tilemap-square.vert"
+);
+
+#[cfg(not(target_arch = "wasm32"))]
 build_chunk_pipeline!(
     CHUNK_HEX_X_PIPELINE,
     7038597873061171051,
     build_chunk_hex_x,
-    "tilemap-hex-x.vert"
+    "render_native/tilemap-hex-x.vert"
 );
+#[cfg(target_arch = "wasm32")]
+build_chunk_pipeline!(
+    CHUNK_HEX_X_PIPELINE,
+    7038597873061171051,
+    build_chunk_hex_x,
+    "render_web/tilemap-hex-x.vert"
+);
+
+#[cfg(not(target_arch = "wasm32"))]
 build_chunk_pipeline!(
     CHUNK_HEX_Y_PIPELINE,
     4304966217182648108,
     build_chunk_hex_y,
-    "tilemap-hex-y.vert"
+    "render_native/tilemap-hex-y.vert"
 );
+#[cfg(target_arch = "wasm32")]
+build_chunk_pipeline!(
+    CHUNK_HEX_Y_PIPELINE,
+    4304966217182648108,
+    build_chunk_hex_y,
+    "render_web/tilemap-hex-y.vert"
+);
+
+#[cfg(not(target_arch = "wasm32"))]
 build_chunk_pipeline!(
     CHUNK_HEXCOLS_EVEN_PIPELINE,
     7604280309043018950,
     build_chunk_hexcols_even,
-    "tilemap-hexcols-even.vert"
+    "render_native/tilemap-hexcols-even.vert"
 );
+#[cfg(target_arch = "wasm32")]
+build_chunk_pipeline!(
+    CHUNK_HEXCOLS_EVEN_PIPELINE,
+    7604280309043018950,
+    build_chunk_hexcols_even,
+    "render_web/tilemap-hexcols-even.vert"
+);
+
+#[cfg(not(target_arch = "wasm32"))]
 build_chunk_pipeline!(
     CHUNK_HEXCOLS_ODD_PIPELINE,
     3111565682159860869,
     build_chunk_hexcols_odd,
-    "tilemap-hexcols-odd.vert"
+    "render_native/tilemap-hexcols-odd.vert"
 );
+#[cfg(target_arch = "wasm32")]
+build_chunk_pipeline!(
+    CHUNK_HEXCOLS_ODD_PIPELINE,
+    3111565682159860869,
+    build_chunk_hexcols_odd,
+    "render_web/tilemap-hexcols-odd.vert"
+);
+
+#[cfg(not(target_arch = "wasm32"))]
 build_chunk_pipeline!(
     CHUNK_HEXROWS_EVEN_PIPELINE,
     1670470246078408352,
     build_chunk_hexrows_even,
-    "tilemap-hexrows-even.vert"
+    "render_native/tilemap-hexrows-even.vert"
 );
+#[cfg(target_arch = "wasm32")]
+build_chunk_pipeline!(
+    CHUNK_HEXROWS_EVEN_PIPELINE,
+    1670470246078408352,
+    build_chunk_hexrows_even,
+    "render_web/tilemap-hexrows-even.vert"
+);
+
+#[cfg(not(target_arch = "wasm32"))]
 build_chunk_pipeline!(
     CHUNK_HEXROWS_ODD_PIPELINE,
     8160067835497533408,
     build_chunk_hexrows_odd,
-    "tilemap-hexrows-odd.vert"
+    "render_native/tilemap-hexrows-odd.vert"
+);
+#[cfg(target_arch = "wasm32")]
+build_chunk_pipeline!(
+    CHUNK_HEXROWS_ODD_PIPELINE,
+    8160067835497533408,
+    build_chunk_hexrows_odd,
+    "render_web/tilemap-hexrows-odd.vert"
 );
 
 /// Topology of the tilemap grid (square or hex)
