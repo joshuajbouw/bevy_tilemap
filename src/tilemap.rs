@@ -1154,7 +1154,7 @@ impl Tilemap {
         self.spawned.remove(&(point.x, point.y));
 
         if let Some(chunk) = self.chunks.get_mut(&point) {
-            let entities = chunk.get_entities();
+            let entities = chunk.remove_entities();
             self.chunk_events
                 .send(TilemapChunkEvent::Despawned { entities, point })
         }
