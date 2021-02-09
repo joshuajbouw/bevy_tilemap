@@ -257,15 +257,19 @@ impl Chunk {
         self.collision_entities.get(&index).cloned()
     }
 
-    /// Gets all the layers entities for use with bulk despawning.
-    pub(crate) fn get_entities(&self) -> Vec<Entity> {
+    /// Remove all the layers and collision entities and return them for use with bulk despawning.
+    pub(crate) fn remove_entities(&mut self) -> Vec<Entity> {
         let mut entities = Vec::new();
-        for sprite_layer in &self.sprite_layers {
+        for sprite_layer in &mut self.sprite_layers {
             if let Some(layer) = sprite_layer {
-                if let Some(entity) = layer.entity {
+                if let Some(entity) = layer.entity.take() {
                     entities.push(entity);
                 }
             }
+        }
+        #[cfg(feature = "bevy_rapier2d")]
+        for (_, entity) in self.collision_entities.drain() {
+            entities.push(entity)
         }
         entities
     }

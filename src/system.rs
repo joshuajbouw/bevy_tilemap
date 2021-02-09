@@ -194,13 +194,12 @@ pub(crate) fn tilemap_events(
 #[cfg(feature = "bevy_rapier2d")]
 fn spawn_collisions(
     commands: &mut Commands,
+    tilemap_entity: Entity,
     layers: &[Option<TilemapLayer>],
     point: Point2,
     z_order: usize,
     chunk: &mut Chunk,
     chunk_dimensions: Dimension2,
-    tile_dimensions: Dimension2,
-    transform: &Transform,
     physics_tile_width: f32,
     physics_tile_height: f32,
 ) {
@@ -215,11 +214,7 @@ fn spawn_collisions(
             None => return,
         }
     }
-    // Don't continue if there is no entity.
-    let entity = match chunk.get_entity(z_order) {
-        Some(e) => e,
-        None => return,
-    };
+
     // Don't continue if there already is a collision there.
     let index = chunk_dimensions.encode_point_unchecked(point);
     if chunk.get_collision_entity(index).is_some() {
@@ -239,15 +234,8 @@ fn spawn_collisions(
             let mut x = (point.x - chunk_dimensions.width as i32 / 2) as f32;
             let mut y = (point.y - chunk_dimensions.height as i32 / 2) as f32;
             // Adjust by chunk position
-            x += chunk.point().x as f32
-                * chunk_dimensions.width as f32
-                * tile_dimensions.width as f32;
-            y += chunk.point().y as f32
-                * chunk_dimensions.height as f32
-                * tile_dimensions.height as f32;
-            // Add tilemap's translation
-            x += transform.translation.x;
-            y += transform.translation.y;
+            x += chunk.point().x as f32 * chunk_dimensions.width as f32;
+            y += chunk.point().y as f32 * chunk_dimensions.height as f32;
 
             if chunk_dimensions.width % 2 == 0 {
                 x += 0.5;
@@ -289,7 +277,7 @@ fn spawn_collisions(
         for (index, entity) in indices.iter().zip(&collision_entities) {
             chunk.insert_collision_entity(*index, *entity);
         }
-        commands.push_children(entity, &collision_entities);
+        commands.push_children(tilemap_entity, &collision_entities);
     }
 }
 
@@ -300,9 +288,9 @@ fn spawn_collisions(
 #[cfg(feature = "bevy_rapier2d")]
 pub(crate) fn tilemap_collision_events(
     commands: &mut Commands,
-    mut tilemap_query: Query<(&mut Tilemap, &Transform)>,
+    mut tilemap_query: Query<(&mut Tilemap, Entity)>,
 ) {
-    for (mut tilemap, transform) in tilemap_query.iter_mut() {
+    for (mut tilemap, tilemap_entity) in tilemap_query.iter_mut() {
         if tilemap.topology() != GridTopology::Square {
             error!("collision physics are not supported on hex tiles yet");
             continue;
@@ -336,13 +324,12 @@ pub(crate) fn tilemap_collision_events(
             for z_order in 0..layers_len {
                 spawn_collisions(
                     commands,
+                    tilemap_entity,
                     &layers,
                     point,
                     z_order,
                     chunk,
                     chunk_dimensions,
-                    tile_dimensions,
-                    transform,
                     physics_tile_width,
                     physics_tile_height,
                 );
@@ -385,13 +372,12 @@ pub(crate) fn tilemap_collision_events(
             for tile in tiles {
                 spawn_collisions(
                     commands,
+                    tilemap_entity,
                     &layers,
                     tile.point,
                     tile.z_order,
                     chunk,
                     chunk_dimensions,
-                    tile_dimensions,
-                    transform,
                     physics_tile_width,
                     physics_tile_height,
                 );
