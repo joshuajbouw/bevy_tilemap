@@ -16,9 +16,10 @@ pub(crate) use bevy_rapier2d::{
 };
 use bevy_rapier2d::{
     physics::{RapierConfiguration, RigidBodyHandleComponent},
-    rapier::{dynamics::RigidBodySet, ncollide::math::Vector},
+    rapier::dynamics::RigidBodySet,
 };
 use bevy_tilemap::prelude::*;
+use ncollide2d::math::Vector;
 use rand::Rng;
 
 const CHUNK_WIDTH: u32 = 16;
