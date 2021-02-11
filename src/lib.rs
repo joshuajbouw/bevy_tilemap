@@ -198,10 +198,9 @@ mod lib {
         draw::{Draw, Visible},
         mesh::{Indices, Mesh},
         pipeline::{
-            BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
-            CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, PipelineDescriptor,
-            PrimitiveTopology, RasterizationStateDescriptor, RenderPipeline, RenderPipelines,
-            StencilStateDescriptor, StencilStateFaceDescriptor,
+            BlendFactor, BlendOperation, BlendState, ColorTargetState, ColorWrite, CompareFunction,
+            DepthBiasState, DepthStencilState, PipelineDescriptor, PrimitiveTopology,
+            RenderPipeline, RenderPipelines, StencilFaceState, StencilState,
         },
         render_graph::{base::MainPass, RenderGraph},
         shader::{Shader, ShaderStage, ShaderStages},
