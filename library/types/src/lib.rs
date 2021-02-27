@@ -62,6 +62,7 @@ mod lib {
         error::Error,
         fmt::{Debug, Display, Formatter, Result as FmtResult},
         ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+        option::Option::{self, *},
         result::Result::{self, *},
     };
 
