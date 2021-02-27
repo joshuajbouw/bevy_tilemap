@@ -289,6 +289,18 @@ impl From<&Point3> for Point2 {
     }
 }
 
+impl From<Point2> for Point3 {
+    fn from(point: Point2) -> Point3 {
+        Point3::new(point.x, point.y, 0)
+    }
+}
+
+impl From<&Point2> for Point3 {
+    fn from(point: &Point2) -> Point3 {
+        Point3::new(point.x, point.y, 0)
+    }
+}
+
 impl From<&Point3> for Point3 {
     fn from(point: &Point3) -> Point3 {
         *point
@@ -307,36 +319,77 @@ impl From<&Point3> for Vec3 {
     }
 }
 
-macro_rules! point3_glam_impl {
-    ($vec: ty) => {
-        impl From<$vec> for Point3 {
-            fn from(vec: $vec) -> Point3 {
+impl From<Vec2> for Point3 {
+    fn from(vec: Vec2) -> Point3 {
+        Point3::new(vec.x as i32, vec.y as i32, 0)
+    }
+}
+
+impl From<&Vec2> for Point3 {
+    fn from(vec: &Vec2) -> Point3 {
+        Point3::new(vec.x as i32, vec.y as i32, 0)
+    }
+}
+
+impl From<Vec3> for Point3 {
+    fn from(vec: Vec3) -> Point3 {
+        Point3 {
+            x: vec.x as i32,
+            y: vec.y as i32,
+            z: vec.z as i32,
+        }
+    }
+}
+
+impl From<&Vec3> for Point3 {
+    fn from(vec: &Vec3) -> Point3 {
+        Point3 {
+            x: vec.x as i32,
+            y: vec.y as i32,
+            z: vec.z as i32,
+        }
+    }
+}
+
+macro_rules! point2_arr_impl {
+    ($arr: ty) => {
+        impl From<$arr> for Point3 {
+            fn from(arr: $arr) -> Point3 {
                 Point3 {
-                    x: vec.x as i32,
-                    y: vec.y as i32,
-                    z: vec.z as i32,
+                    x: arr[0] as i32,
+                    y: arr[1] as i32,
+                    z: 0,
                 }
             }
         }
 
-        impl From<&$vec> for Point3 {
-            fn from(vec: &$vec) -> Point3 {
+        impl From<&$arr> for Point3 {
+            fn from(arr: &$arr) -> Point3 {
                 Point3 {
-                    x: vec.x as i32,
-                    y: vec.y as i32,
-                    z: vec.z as i32,
+                    x: arr[0] as i32,
+                    y: arr[1] as i32,
+                    z: 0,
                 }
             }
         }
     };
 }
 
-point3_glam_impl!(Vec3);
+point2_arr_impl!([isize; 2]);
+point2_arr_impl!([i64; 2]);
+point2_arr_impl!([i32; 2]);
+point2_arr_impl!([i16; 2]);
+point2_arr_impl!([i8; 2]);
+point2_arr_impl!([usize; 2]);
+point2_arr_impl!([u64; 2]);
+point2_arr_impl!([u32; 2]);
+point2_arr_impl!([u16; 2]);
+point2_arr_impl!([u8; 2]);
 
 macro_rules! point3_arr_impl {
-    ($vec: ty) => {
-        impl From<$vec> for Point3 {
-            fn from(vec: $vec) -> Point3 {
+    ($arr: ty) => {
+        impl From<$arr> for Point3 {
+            fn from(vec: $arr) -> Point3 {
                 Point3 {
                     x: vec[0] as i32,
                     y: vec[1] as i32,
@@ -345,8 +398,8 @@ macro_rules! point3_arr_impl {
             }
         }
 
-        impl From<&$vec> for Point3 {
-            fn from(vec: &$vec) -> Point3 {
+        impl From<&$arr> for Point3 {
+            fn from(vec: &$arr) -> Point3 {
                 Point3 {
                     x: vec[0] as i32,
                     y: vec[1] as i32,
@@ -367,6 +420,41 @@ point3_arr_impl!([u64; 3]);
 point3_arr_impl!([u32; 3]);
 point3_arr_impl!([u16; 3]);
 point3_arr_impl!([u8; 3]);
+
+macro_rules! point3_tuple2_impl {
+    ($t: ty) => {
+        impl From<$t> for Point3 {
+            fn from(int: $t) -> Point3 {
+                Point3 {
+                    x: int.0 as i32,
+                    y: int.1 as i32,
+                    z: 0,
+                }
+            }
+        }
+
+        impl From<&$t> for Point3 {
+            fn from(int: &$t) -> Point3 {
+                Point3 {
+                    x: int.0 as i32,
+                    y: int.1 as i32,
+                    z: 0,
+                }
+            }
+        }
+    };
+}
+
+point3_tuple2_impl!((isize, isize));
+point3_tuple2_impl!((i64, i64));
+point3_tuple2_impl!((i32, i32));
+point3_tuple2_impl!((i16, i16));
+point3_tuple2_impl!((i8, i8));
+point3_tuple2_impl!((usize, usize));
+point3_tuple2_impl!((u64, u64));
+point3_tuple2_impl!((u32, u32));
+point3_tuple2_impl!((u16, u16));
+point3_tuple2_impl!((u8, u8));
 
 macro_rules! point3_impl {
     ($t: ty) => {
