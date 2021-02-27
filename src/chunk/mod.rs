@@ -168,6 +168,7 @@ impl Chunk {
                 }
             }
         }
+        info!("LAYERS len: {}", self.z_layers.len());
     }
 
     /// Returns the point of the location of the chunk.
@@ -263,6 +264,11 @@ impl Chunk {
 
     /// Gets the mesh entity of the chunk.
     pub(crate) fn get_entity(&self) -> Option<Entity> {
+        self.entity
+    }
+
+    /// Gets the mesh entity of the chunk.
+    pub(crate) fn get_entity(&mut self) -> Option<Entity> {
         self.entity
     }
 
