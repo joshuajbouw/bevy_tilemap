@@ -30,7 +30,7 @@ struct Position {
 #[derive(Default)]
 struct Render {
     sprite_index: usize,
-    z_order: usize,
+    sprite_order: usize,
 }
 
 #[derive(Default)]
@@ -99,11 +99,11 @@ fn load(
         // them.
         let tilemap = Tilemap::builder()
             .dimensions(TILEMAP_WIDTH as u32, TILEMAP_HEIGHT as u32)
-            .chunk_dimensions(CHUNK_WIDTH, CHUNK_HEIGHT)
-            .tile_dimensions(32, 32)
+            .chunk_dimensions(CHUNK_WIDTH, CHUNK_HEIGHT, 1)
+            .texture_dimensions(32, 32)
             .auto_chunk()
             .auto_spawn(2, 2)
-            .z_layers(2)
+            .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();
@@ -222,14 +222,7 @@ fn build_random_dungeon(
         // yet it still works and exists. By default if a layer doesn't exist
         // and tiles need to be written there then a Dense layer is created
         // automatically.
-        map.add_layer(
-            TilemapLayer {
-                kind: LayerKind::Sparse,
-                ..Default::default()
-            },
-            1,
-        )
-        .unwrap();
+        map.add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 1).unwrap();
 
         // Now lets add in a dwarf friend!
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/square-dwarf.png");
@@ -238,8 +231,8 @@ fn build_random_dungeon(
         // order 0.
         let dwarf_tile = Tile {
             point: (0, 0),
+            sprite_order: 1,
             sprite_index: dwarf_sprite_index,
-            z_order: 1,
             ..Default::default()
         };
         tiles.push(dwarf_tile);
@@ -249,7 +242,7 @@ fn build_random_dungeon(
             position: Position { x: 0, y: 0 },
             render: Render {
                 sprite_index: dwarf_sprite_index,
-                z_order: 1,
+                sprite_order: 1,
             },
         });
 
@@ -274,7 +267,7 @@ fn move_sprite(
     let tile = Tile {
         point: (position.x, position.y),
         sprite_index: render.sprite_index,
-        z_order: render.z_order,
+        sprite_order: render.sprite_order,
         ..Default::default()
     };
     map.insert_tile(tile).unwrap();
