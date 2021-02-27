@@ -94,7 +94,7 @@ you can not place `bevy` into the dev-dependencies of the Cargo.toml.
 compatibility.
 * `tile::Tile` had the `non_exhaustive` derive added it now that the fields are
 all public.
-* `tile::Tile` added methods `with_tint` and `with_tint_and_z_order`.
+* `tile::Tile` added methods `with_tint` and `with_tint_and_sprite_order`.
 * `chunk_update_system` was added internally to manage chunks and to get them to
 update if needed.
 
@@ -104,7 +104,7 @@ update if needed.
 * `Tilemap::set_tiles` was changed to take in a `IntoIterator<Item = Tile<P, C>`,
 where `C` is `Into<Color>` and P is `Into<Point2>`, from 
 `IntoIterator<Item = (i32, i32, i32), Tile>`.
-* `tile::Tile` was changed to include `z_order`, `sprite_index`, and `point`.
+* `tile::Tile` was changed to include `sprite_order`, `sprite_index`, and `point`.
 Field `color` is now `tint`. All fields were made public.
 * `tile::Tile` methods `default`, `new` updated.
 * `ChunkDimensions` was made private, it should never of been exposed but I also
@@ -117,8 +117,8 @@ very much doubt anyone would have used it.
 
 **Before**
 ```rust
-let z_order = 0;
-let point = (1, 1, z_order)
+let sprite_order = 0;
+let point = (1, 1, sprite_order)
 let tile = Tile::new(0);
 let tiles = vec![(point, tile)];
  
@@ -129,8 +129,8 @@ tilemap.set_tiles(tiles).unwrap();
 **After**
 ```rust
 let point = (1, 1);
-let z_order = 0;
-let tiles = vec![Tile::new(point, z_order)];
+let sprite_order = 0;
+let tiles = vec![Tile::new(point, sprite_order)];
 
 // defined elsewhere
 tilemap.set_tiles(tiles).unwrap();
