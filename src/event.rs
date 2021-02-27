@@ -15,12 +15,10 @@ pub enum TilemapChunkEvent {
     /// An event when a chunk has been modified and needs to reload its layer.
     Modified {
         /// The layers that had been modified.
-        layers: HashMap<usize, Entity>,
+        layers: HashMap<usize, Point2>,
     },
     /// An event when a chunk needs to be despawned.
     Despawned {
-        /// The entities that need to be despawned.
-        entities: Vec<Entity>,
         /// The point of the chunk to despawn.
         point: Point2,
     },
@@ -35,13 +33,13 @@ pub enum TilemapCollisionEvent {
         /// The chunk point that needs a collision spawned.
         chunk_point: Point2,
         /// The point in the chunk that needs a collision spawned.
-        tiles: Vec<Tile<Point2>>,
+        tiles: Vec<Tile<Point3>>,
     },
     /// An event when a collision needs to be despawned.
     Despawned {
         /// The chunk point that needs a collision spawned.
         chunk_point: Point2,
         /// The point in the chunk that needs a collision spawned.
-        tiles: Vec<Tile<Point2>>,
+        tiles: Vec<Tile<Point3>>,
     },
 }

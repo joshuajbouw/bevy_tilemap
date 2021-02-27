@@ -185,7 +185,7 @@ mod lib {
         Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources, SystemStage,
     };
     pub(crate) use bevy_log::{error, info, warn};
-    pub(crate) use bevy_math::Vec3;
+    pub(crate) use bevy_math::{Vec2, Vec3};
     #[cfg(feature = "bevy_rapier2d")]
     pub(crate) use bevy_rapier2d::rapier::{
         dynamics::RigidBodyBuilder,
@@ -209,8 +209,8 @@ mod lib {
     };
     pub(crate) use bevy_sprite::TextureAtlas;
     pub(crate) use bevy_tilemap_types::{
-        dimension::{Dimension2, DimensionError},
-        point::Point2,
+        dimension::{Dimension2, Dimension3, DimensionError},
+        point::{Point2, Point3},
     };
     pub(crate) use bevy_transform::{
         components::{GlobalTransform, Parent, Transform},

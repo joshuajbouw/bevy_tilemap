@@ -35,9 +35,10 @@ pub(crate) fn dense_tiles_to_attributes(tiles: &[RawTile]) -> (Vec<f32>, Vec<[f3
 /// A utility function that takes a sparse map of `Tile`s and splits the indexes
 /// and colors and returns them as separate vectors for use in the renderer.
 pub(crate) fn sparse_tiles_to_attributes(
-    area: usize,
+    dimension: Dimension3,
     tiles: &HashMap<usize, RawTile>,
 ) -> (Vec<f32>, Vec<[f32; 4]>) {
+    let area = (dimension.width * dimension.height) as usize;
     let mut tile_indexes = vec![0.; area * 4];
     // If tiles are set with an alpha of 0, they are discarded.
     let mut tile_colors = vec![[0.0, 0.0, 0.0, 0.0]; area * 4];

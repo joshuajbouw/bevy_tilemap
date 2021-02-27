@@ -2,12 +2,6 @@ use crate::{chunk::raw_tile::RawTile, lib::*};
 
 /// Common methods for layers in a chunk.
 pub(super) trait Layer: 'static {
-    /// Returns the handle of the mesh.
-    fn mesh(&self) -> &Handle<Mesh>;
-
-    /// Sets the mesh for the layer.
-    fn set_mesh(&mut self, mesh: Handle<Mesh>);
-
     /// Sets a raw tile for a layer at an index.
     fn set_tile(&mut self, index: usize, tile: RawTile);
 
@@ -24,7 +18,7 @@ pub(super) trait Layer: 'static {
     fn get_tile_indices(&self) -> Vec<usize>;
 
     /// Takes all the tiles in the layer and returns attributes for the renderer.
-    fn tiles_to_attributes(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>);
+    fn tiles_to_attributes(&self, dimension: Dimension3) -> (Vec<f32>, Vec<[f32; 4]>);
 }
 
 /// A layer with dense sprite tiles.
@@ -34,24 +28,16 @@ pub(super) trait Layer: 'static {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub(super) struct DenseLayer {
-    /// A mesh handle.
-    #[cfg_attr(feature = "serde", serde(skip))]
-    mesh: Handle<Mesh>,
     /// A vector of all the tiles in the chunk.
     tiles: Vec<RawTile>,
+    /// A count of the tiles to keep track if layer is empty or not.
+    tile_count: usize,
 }
 
 impl Layer for DenseLayer {
-    fn mesh(&self) -> &Handle<Mesh> {
-        &self.mesh
-    }
-
-    fn set_mesh(&mut self, mesh: Handle<Mesh>) {
-        self.mesh = mesh;
-    }
-
     fn set_tile(&mut self, index: usize, tile: RawTile) {
         if let Some(inner_tile) = self.tiles.get_mut(index) {
+            self.tile_count += 1;
             *inner_tile = tile;
         } else {
             warn!(
@@ -63,7 +49,10 @@ impl Layer for DenseLayer {
 
     fn remove_tile(&mut self, index: usize) {
         if let Some(tile) = self.tiles.get_mut(index) {
-            tile.color.set_a(0.0);
+            if self.tile_count != 0 {
+                self.tile_count -= 1;
+                tile.color.set_a(0.0);
+            }
         }
     }
 
@@ -98,7 +87,7 @@ impl Layer for DenseLayer {
         indices
     }
 
-    fn tiles_to_attributes(&self, _area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
+    fn tiles_to_attributes(&self, _dimension: Dimension3) -> (Vec<f32>, Vec<[f32; 4]>) {
         crate::chunk::raw_tile::dense_tiles_to_attributes(&self.tiles)
     }
 }
@@ -107,8 +96,8 @@ impl DenseLayer {
     /// Constructs a new dense layer with tiles.
     pub fn new(tiles: Vec<RawTile>) -> DenseLayer {
         DenseLayer {
-            mesh: Default::default(),
             tiles,
+            tile_count: 0,
         }
     }
 }
@@ -117,22 +106,11 @@ impl DenseLayer {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Debug)]
 pub(super) struct SparseLayer {
-    /// A mesh handle.
-    #[cfg_attr(feature = "serde", serde(skip))]
-    mesh: Handle<Mesh>,
     /// A map of all the tiles in the chunk.
     tiles: HashMap<usize, RawTile>,
 }
 
 impl Layer for SparseLayer {
-    fn mesh(&self) -> &Handle<Mesh> {
-        &self.mesh
-    }
-
-    fn set_mesh(&mut self, mesh: Handle<Mesh>) {
-        self.mesh = mesh;
-    }
-
     fn set_tile(&mut self, index: usize, tile: RawTile) {
         if tile.color.a() == 0.0 {
             self.tiles.remove(&index);
@@ -160,18 +138,15 @@ impl Layer for SparseLayer {
         indices
     }
 
-    fn tiles_to_attributes(&self, area: usize) -> (Vec<f32>, Vec<[f32; 4]>) {
-        crate::chunk::raw_tile::sparse_tiles_to_attributes(area, &self.tiles)
+    fn tiles_to_attributes(&self, dimension: Dimension3) -> (Vec<f32>, Vec<[f32; 4]>) {
+        crate::chunk::raw_tile::sparse_tiles_to_attributes(dimension, &self.tiles)
     }
 }
 
 impl SparseLayer {
     /// Constructs a new sparse layer with a tile hashmap.
     pub fn new(tiles: HashMap<usize, RawTile>) -> SparseLayer {
-        SparseLayer {
-            mesh: Default::default(),
-            tiles,
-        }
+        SparseLayer { tiles }
     }
 }
 
