@@ -93,8 +93,6 @@
 //! }
 //! ```
 
-#[cfg(feature = "bevy_rapier2d")]
-use crate::event::TilemapCollisionEvent;
 use crate::{
     chunk::{Chunk, LayerKind, RawTile},
     event::TilemapChunkEvent,
@@ -214,18 +212,12 @@ impl Default for AutoFlags {
 pub struct TilemapLayer {
     /// The kind of layer to create.
     pub kind: LayerKind,
-    /// The interaction group and its mask.
-    #[cfg_attr(feature = "serde", serde(skip))]
-    #[cfg(feature = "bevy_rapier2d")]
-    pub interaction_groups: InteractionGroups,
 }
 
 impl Default for TilemapLayer {
     fn default() -> TilemapLayer {
         TilemapLayer {
             kind: LayerKind::Dense,
-            #[cfg(feature = "bevy_rapier2d")]
-            interaction_groups: InteractionGroups::none(),
         }
     }
 }
@@ -249,10 +241,6 @@ pub struct Tilemap {
     auto_flags: AutoFlags,
     /// Dimensions of chunks to spawn from camera transform.
     auto_spawn: Option<Dimension2>,
-    /// Rapier physics scale for colliders and rigid bodies created
-    /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
-    physics_scale: f32,
     /// Custom flags.
     custom_flags: Vec<u32>,
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -266,10 +254,6 @@ pub struct Tilemap {
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The events of the tilemap.
     chunk_events: Events<TilemapChunkEvent>,
-    #[cfg(feature = "bevy_rapier2d")]
-    #[cfg_attr(feature = "serde", serde(skip))]
-    /// The collision events of the tilemap.
-    collision_events: Events<TilemapCollisionEvent>,
     /// A set of all spawned chunks.
     spawned: HashSet<(i32, i32)>,
 }
@@ -354,10 +338,6 @@ pub struct TilemapBuilder {
     auto_flags: AutoFlags,
     /// The radius of chunks to spawn from a camera's transform.
     auto_spawn: Option<Dimension2>,
-    /// Rapier physics scale for colliders and rigid bodies created
-    /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
-    physics_scale: f32,
 }
 
 impl Default for TilemapBuilder {
@@ -374,8 +354,6 @@ impl Default for TilemapBuilder {
             render_depth: 0,
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
-            #[cfg(feature = "bevy_rapier2d")]
-            physics_scale: 1.0,
         }
     }
 }
@@ -587,14 +565,6 @@ impl TilemapBuilder {
         self
     }
 
-    /// Sets the Rapier physics scale for colliders and rigid bodies created
-    /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub fn physics_scale(mut self, scale: f32) -> Self {
-        self.physics_scale = scale;
-        self
-    }
-
     /// Consumes the builder and returns a result.
     ///
     /// If successful a [`TilemapResult`] is return with [tilemap] on
@@ -652,15 +622,11 @@ impl TilemapBuilder {
             layers: vec![None; z_layers],
             auto_flags: self.auto_flags,
             auto_spawn: self.auto_spawn,
-            #[cfg(feature = "bevy_rapier2d")]
-            physics_scale: self.physics_scale,
             custom_flags: Vec::new(),
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
             chunk_events: Default::default(),
-            #[cfg(feature = "bevy_rapier2d")]
-            collision_events: Default::default(),
             spawned: Default::default(),
         };
 
@@ -688,15 +654,11 @@ impl Default for Tilemap {
             layers: vec![None; DEFAULT_Z_LAYERS],
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
-            #[cfg(feature = "bevy_rapier2d")]
-            physics_scale: 1.0,
             custom_flags: Vec::new(),
             texture_atlas: Handle::default(),
             chunks: Default::default(),
             entities: Default::default(),
             chunk_events: Default::default(),
-            #[cfg(feature = "bevy_rapier2d")]
-            collision_events: Default::default(),
             spawned: Default::default(),
         }
     }
@@ -891,8 +853,6 @@ impl Tilemap {
     ) -> TilemapResult<()> {
         let layer = TilemapLayer {
             kind,
-            #[cfg(feature = "bevy_rapier2d")]
-            interaction_groups: InteractionGroups::default(),
         };
         if let Some(some_kind) = self.layers.get_mut(sprite_order) {
             if some_kind.is_some() {
@@ -1413,9 +1373,6 @@ impl Tilemap {
 
             self.chunk_events
                 .send(TilemapChunkEvent::Modified { layers });
-            #[cfg(feature = "bevy_rapier2d")]
-            self.collision_events
-                .send(TilemapCollisionEvent::Spawned { chunk_point, tiles });
         }
 
         Ok(())
@@ -1530,10 +1487,6 @@ impl Tilemap {
                 chunk.remove_tile(index, tile.sprite_order, tile.point.z as usize);
                 layers.entry(tile.sprite_order).or_insert_with(|| chunk.point());
             }
-
-            #[cfg(feature = "bevy_rapier2d")]
-            self.collision_events
-                .send(TilemapCollisionEvent::Despawned { chunk_point, tiles });
         }
 
         self.chunk_events
@@ -1953,40 +1906,6 @@ impl Tilemap {
     /// Updates the chunk events. This should only be done once per frame.
     pub(crate) fn chunk_events_update(&mut self) {
         self.chunk_events.update()
-    }
-
-    /// Returns a reference to the tilemap collision events.
-    ///
-    /// This is handy if you need to know which collisions were spawned which
-    /// can then be used to trigger other systems. It should be used in
-    /// conjunction with [`chunk_events_update`] as collisions will spawn
-    /// on a chunk spawn and be despawned with a chunk despawn. Those will not
-    /// trigger events.
-    ///
-    /// [`chunk_events_update`]:
-    ///
-    ///
-    #[cfg(feature = "bevy_rapier2d")]
-    pub fn collision_events(&self) -> &Events<TilemapCollisionEvent> {
-        &self.collision_events
-    }
-
-    /// Updates the collision events. This should only be done once per frame.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) fn collision_events_update(&mut self) {
-        self.collision_events.update()
-    }
-
-    /// Returns a copy of the physics scale.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub fn physics_scale(&self) -> f32 {
-        self.physics_scale
-    }
-
-    /// Sets the physics scale.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub fn set_physics_scale(&mut self, scale: f32) {
-        self.physics_scale = scale;
     }
 
     /// Returns an option containing a Dimension2.

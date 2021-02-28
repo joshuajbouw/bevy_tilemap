@@ -18,7 +18,5 @@ publish = false
 
 [dev-dependencies]
 bevy = "0.4"
-bevy_rapier2d = "0.8.0"
-bevy_tilemap = { path = "../", features = ["bevy_rapier2d", "default"] }
-ncollide2d = "0.27.0"
+bevy_tilemap = { path = "../" }
 rand = "0.8"

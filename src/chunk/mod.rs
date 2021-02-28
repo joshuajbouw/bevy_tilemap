@@ -88,9 +88,6 @@ pub(crate) struct Chunk {
     mesh: Handle<Mesh>,
     /// An entity which is tied to this chunk.
     entity: Option<Entity>,
-    /// Contains a map of all collision entities.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub collision_entities: HashMap<usize, Entity>,
 }
 
 impl Chunk {
@@ -112,8 +109,6 @@ impl Chunk {
             user_data: 0,
             mesh: Handle::default(),
             entity: None,
-            #[cfg(feature = "bevy_rapier2d")]
-            collision_entities: HashMap::default(),
         };
 
         for (sprite_order, kind) in layers.iter().enumerate() {
@@ -245,16 +240,6 @@ impl Chunk {
         self.entity = Some(entity);
     }
 
-    /// Adds an entity to a tile index in a layer.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) fn insert_collision_entity(
-        &mut self,
-        index: usize,
-        entity: Entity,
-    ) -> Option<Entity> {
-        self.collision_entities.insert(index, entity)
-    }
-
     /// Gets the mesh entity of the chunk.
     pub(crate) fn get_entity(&mut self) -> Option<Entity> {
         self.entity
@@ -263,27 +248,6 @@ impl Chunk {
     /// Gets the layers entity, if any. Useful for despawning.
     pub(crate) fn take_entity(&mut self) -> Option<Entity> {
         self.entity.take()
-    }
-
-    /// Gets the collision entity if any.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) fn get_collision_entity(&self, index: usize) -> Option<Entity> {
-        self.collision_entities.get(&index).cloned()
-    }
-
-    /// Remove all the layers and collision entities and return them for use with bulk despawning.
-    pub(crate) fn remove_entities(&mut self) -> Vec<Entity> {
-        let mut entities = Vec::new();
-        for sprite_layer in &mut self.sprite_layers.iter_mut().flatten() {
-            if let Some(entity) = sprite_layer.entity.take() {
-                entities.push(entity)
-            }
-        }
-        #[cfg(feature = "bevy_rapier2d")]
-        for (_, entity) in self.collision_entities.drain() {
-            entities.push(entity)
-        }
-        entities
     }
 
     /// Gets a reference to a tile from a provided z order and index.
@@ -311,16 +275,6 @@ impl Chunk {
             z_depth
                 .get_mut(sprite_order)
                 .and_then(|layer| layer.inner.as_mut().get_tile_mut(index))
-        })
-    }
-
-    /// Gets a vec of all the tiles in the layer, if any.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) fn get_tile_indices(&self, sprite_order: usize, z_depth: usize) -> Option<Vec<usize>> {
-        self.z_layers.get(z_depth).and_then(|z_depth| {
-            z_depth.get(sprite_order).and_then(|layer| {
-                Some(layer.inner.as_ref().get_tile_indices())
-            })
         })
     }
 
