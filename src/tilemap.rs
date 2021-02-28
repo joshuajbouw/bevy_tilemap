@@ -1943,6 +1943,11 @@ impl Tilemap {
         self.layers.clone()
     }
 
+    /// Returns a reference to the chunks in the tilemap.
+    pub(crate) fn chunks(&self) -> &HashMap<Point2, Chunk> {
+        &self.chunks
+    }
+
     /// Returns a mutable reference to the inner chunks.
     pub(crate) fn chunks_mut(&mut self) -> &mut HashMap<Point2, Chunk> {
         &mut self.chunks

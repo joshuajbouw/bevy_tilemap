@@ -241,7 +241,7 @@ impl Chunk {
     }
 
     /// Gets the mesh entity of the chunk.
-    pub(crate) fn get_entity(&mut self) -> Option<Entity> {
+    pub(crate) fn get_entity(&self) -> Option<Entity> {
         self.entity
     }
 

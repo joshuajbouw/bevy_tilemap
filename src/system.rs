@@ -22,10 +22,10 @@ use crate::{
 pub(crate) fn tilemap_events(
     commands: &mut Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut tilemap_query: Query<(Entity, &mut Tilemap)>,
+    mut tilemap_query: Query<(Entity, &mut Tilemap, &Visible)>,
     mut modified_query: Query<&mut Modified>,
 ) {
-    for (map_entity, mut tilemap) in tilemap_query.iter_mut() {
+    for (map_entity, mut tilemap, tilemap_visible) in tilemap_query.iter_mut() {
         tilemap.chunk_events_update();
         let mut modified_chunks = Vec::new();
         let mut spawned_chunks = Vec::new();
@@ -124,12 +124,7 @@ pub(crate) fn tilemap_events(
                     transform: Transform::from_translation(translation),
                     render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),
                     draw: Default::default(),
-                    visible: Visible {
-                        // TODO: this would be nice as a config parameter to make
-                        // RapierRenderPlugin's output visible.
-                        is_visible: true,
-                        is_transparent: true,
-                    },
+                    visible: tilemap_visible.clone(),
                     main_pass: MainPass,
                     global_transform: Default::default(),
                     modified: Default::default(),
@@ -146,7 +141,6 @@ pub(crate) fn tilemap_events(
 
             chunk.set_entity(entity);
             entities.push(entity);
-            // }
             commands.push_children(map_entity, &entities);
         }
 
@@ -191,6 +185,24 @@ pub(crate) fn tilemap_events(
                 None => {
                     warn!("Can not take entity from chunk {}, skipping", point);
                     continue;
+                }
+            }
+        }
+    }
+}
+
+/// Checks for tilemap visibility changes and reflects them on all chunks.
+pub fn tilemap_visibility_change(tilemap_visible_query: Query<(Entity, &Tilemap)>, mut visibles: Query<&mut Visible, Changed<Visible>>) {
+    for (entity, tilemap) in tilemap_visible_query.iter() {
+        let tilemap_visible = if let Ok(visible) = visibles.get_mut(entity) {
+            visible.clone()
+        } else {
+            continue;
+        };
+        for chunk in tilemap.chunks().values() {
+            if let Some(entity) = chunk.get_entity() {
+                if let Ok(mut chunk_visible) = visibles.get_mut(entity) {
+                    *chunk_visible = tilemap_visible.clone();
                 }
             }
         }

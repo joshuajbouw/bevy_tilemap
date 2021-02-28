@@ -110,6 +110,7 @@ fn load(
 
         let tilemap_components = TilemapBundle {
             tilemap,
+            visible: Visible { is_visible: true, is_transparent: true },
             transform: Default::default(),
             global_transform: Default::default(),
         };

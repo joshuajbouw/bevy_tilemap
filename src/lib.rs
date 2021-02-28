@@ -140,6 +140,10 @@ impl Plugin for Tilemap2DPlugin {
             .add_system_to_stage(
                 stage::TILEMAP,
                 crate::chunk::system::chunk_auto_spawn.system(),
+            )
+            .add_system_to_stage(
+                stage::TILEMAP,
+                crate::system::tilemap_visibility_change.system(),
             );
 
         let resources = app.resources_mut();
