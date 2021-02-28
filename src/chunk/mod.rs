@@ -73,6 +73,7 @@ pub use layer::LayerKind;
 use layer::{DenseLayer, LayerKindInner, SparseLayer, SpriteLayer};
 pub use raw_tile::RawTile;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 /// A chunk which holds all the tiles to be rendered.
 pub(crate) struct Chunk {
@@ -83,6 +84,7 @@ pub(crate) struct Chunk {
     /// Ephemeral user data that can be used for flags or other purposes.
     user_data: u128,
     /// A chunks mesh used for rendering.
+    #[cfg_attr(feature = "serde", serde(skip))]
     mesh: Handle<Mesh>,
     /// An entity which is tied to this chunk.
     entity: Option<Entity>,

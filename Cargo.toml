@@ -16,7 +16,7 @@ exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 features = ["serialize", "types"]
 
 [features]
-default = []
+default = ["types", "serialize"]
 
 # crate
 types = []
