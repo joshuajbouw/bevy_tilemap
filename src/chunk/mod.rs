@@ -87,8 +87,8 @@ pub(crate) struct Chunk {
     /// An entity which is tied to this chunk.
     entity: Option<Entity>,
     /// Contains a map of all collision entities.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub collision_entities: HashMap<usize, Entity>,
+    #[cfg(feature = "bevy_rapier3d")]
+    pub collision_entities: Vec<HashMap<usize, Entity>>,
 }
 
 impl Chunk {
@@ -110,8 +110,8 @@ impl Chunk {
             user_data: 0,
             mesh: Handle::default(),
             entity: None,
-            #[cfg(feature = "bevy_rapier2d")]
-            collision_entities: HashMap::default(),
+            #[cfg(feature = "bevy_rapier3d")]
+            collision_entities: vec![HashMap::default(); layers.len()],
         };
 
         for (sprite_order, kind) in layers.iter().enumerate() {
@@ -148,7 +148,7 @@ impl Chunk {
                                 entity: None,
                             };
                         } else {
-                            error!("sprite layer {} could not be added?", sprite_order);
+                            error!("sprite layer {} could not be added", sprite_order);
                         }
                     } else {
                         error!("sprite layer {} is out of bounds", sprite_order);
@@ -172,7 +172,6 @@ impl Chunk {
                 }
             }
         }
-        info!("LAYERS len: {}", self.z_layers.len());
     }
 
     /// Returns the point of the location of the chunk.
@@ -244,13 +243,19 @@ impl Chunk {
     }
 
     /// Adds an entity to a tile index in a layer.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     pub(crate) fn insert_collision_entity(
         &mut self,
+        z_depth: usize,
         index: usize,
         entity: Entity,
     ) -> Option<Entity> {
-        self.collision_entities.insert(index, entity)
+        if let Some(layer) = self.collision_entities.get_mut(z_depth) {
+            layer.insert(index, entity)
+        } else {
+            error!("Can not insert collision entity into layer {}", z_depth);
+            None
+        }
     }
 
     /// Gets the mesh entity of the chunk.
@@ -264,23 +269,25 @@ impl Chunk {
     }
 
     /// Gets the collision entity if any.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) fn get_collision_entity(&self, index: usize) -> Option<Entity> {
-        self.collision_entities.get(&index).cloned()
+    #[cfg(feature = "bevy_rapier3d")]
+    pub(crate) fn get_collision_entity(&self, z_depth: usize, index: usize) -> Option<Entity> {
+        if let Some(layer) = self.collision_entities.get(z_depth) {
+            layer.get(&index).cloned()
+        } else {
+            None
+        }
     }
 
-    /// Remove all the layers and collision entities and return them for use with bulk despawning.
-    pub(crate) fn remove_entities(&mut self) -> Vec<Entity> {
-        let mut entities = Vec::new();
-        for sprite_layer in &mut self.sprite_layers.iter_mut().flatten() {
-            if let Some(entity) = sprite_layer.entity.take() {
-                entities.push(entity)
-            }
+    /// Takes all collision entities in the chunk.
+    #[cfg(feature = "bevy_rapier3d")]
+    pub(crate) fn take_collision_entities(&mut self) -> Vec<Entity> {
+        let mut entities = Vec::with_capacity(self.collision_entities.len());
+        for collision_layer in self.collision_entities.iter_mut() {
+           for (_, entity) in collision_layer.drain() {
+               entities.push(entity);
+           }
         }
-        #[cfg(feature = "bevy_rapier2d")]
-        for (_, entity) in self.collision_entities.drain() {
-            entities.push(entity)
-        }
+
         entities
     }
 
@@ -313,7 +320,7 @@ impl Chunk {
     }
 
     /// Gets a vec of all the tiles in the layer, if any.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     pub(crate) fn get_tile_indices(&self, sprite_order: usize, z_depth: usize) -> Option<Vec<usize>> {
         self.z_layers.get(z_depth).and_then(|z_depth| {
             z_depth.get(sprite_order).and_then(|layer| {

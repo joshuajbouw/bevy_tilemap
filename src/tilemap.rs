@@ -93,7 +93,7 @@
 //! }
 //! ```
 
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(feature = "bevy_rapier3d")]
 use crate::event::TilemapCollisionEvent;
 use crate::{
     chunk::{Chunk, LayerKind, RawTile},
@@ -216,7 +216,7 @@ pub struct TilemapLayer {
     pub kind: LayerKind,
     /// The interaction group and its mask.
     #[cfg_attr(feature = "serde", serde(skip))]
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     pub interaction_groups: InteractionGroups,
 }
 
@@ -224,7 +224,7 @@ impl Default for TilemapLayer {
     fn default() -> TilemapLayer {
         TilemapLayer {
             kind: LayerKind::Dense,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(feature = "bevy_rapier3d")]
             interaction_groups: InteractionGroups::none(),
         }
     }
@@ -251,7 +251,7 @@ pub struct Tilemap {
     auto_spawn: Option<Dimension2>,
     /// Rapier physics scale for colliders and rigid bodies created
     /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     physics_scale: f32,
     /// Custom flags.
     custom_flags: Vec<u32>,
@@ -266,7 +266,7 @@ pub struct Tilemap {
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The events of the tilemap.
     chunk_events: Events<TilemapChunkEvent>,
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The collision events of the tilemap.
     collision_events: Events<TilemapCollisionEvent>,
@@ -356,7 +356,7 @@ pub struct TilemapBuilder {
     auto_spawn: Option<Dimension2>,
     /// Rapier physics scale for colliders and rigid bodies created
     /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     physics_scale: f32,
 }
 
@@ -374,7 +374,7 @@ impl Default for TilemapBuilder {
             render_depth: 0,
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(feature = "bevy_rapier3d")]
             physics_scale: 1.0,
         }
     }
@@ -589,7 +589,7 @@ impl TilemapBuilder {
 
     /// Sets the Rapier physics scale for colliders and rigid bodies created
     /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     pub fn physics_scale(mut self, scale: f32) -> Self {
         self.physics_scale = scale;
         self
@@ -652,14 +652,14 @@ impl TilemapBuilder {
             layers: vec![None; z_layers],
             auto_flags: self.auto_flags,
             auto_spawn: self.auto_spawn,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(feature = "bevy_rapier3d")]
             physics_scale: self.physics_scale,
             custom_flags: Vec::new(),
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
             chunk_events: Default::default(),
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(feature = "bevy_rapier3d")]
             collision_events: Default::default(),
             spawned: Default::default(),
         };
@@ -688,14 +688,14 @@ impl Default for Tilemap {
             layers: vec![None; DEFAULT_Z_LAYERS],
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(feature = "bevy_rapier3d")]
             physics_scale: 1.0,
             custom_flags: Vec::new(),
             texture_atlas: Handle::default(),
             chunks: Default::default(),
             entities: Default::default(),
             chunk_events: Default::default(),
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(feature = "bevy_rapier3d")]
             collision_events: Default::default(),
             spawned: Default::default(),
         }
@@ -891,7 +891,7 @@ impl Tilemap {
     ) -> TilemapResult<()> {
         let layer = TilemapLayer {
             kind,
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(feature = "bevy_rapier3d")]
             interaction_groups: InteractionGroups::default(),
         };
         if let Some(some_kind) = self.layers.get_mut(sprite_order) {
@@ -1413,7 +1413,7 @@ impl Tilemap {
 
             self.chunk_events
                 .send(TilemapChunkEvent::Modified { layers });
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(feature = "bevy_rapier3d")]
             self.collision_events
                 .send(TilemapCollisionEvent::Spawned { chunk_point, tiles });
         }
@@ -1531,7 +1531,7 @@ impl Tilemap {
                 layers.entry(tile.sprite_order).or_insert_with(|| chunk.point());
             }
 
-            #[cfg(feature = "bevy_rapier2d")]
+            #[cfg(feature = "bevy_rapier3d")]
             self.collision_events
                 .send(TilemapCollisionEvent::Despawned { chunk_point, tiles });
         }
@@ -1966,25 +1966,25 @@ impl Tilemap {
     /// [`chunk_events_update`]:
     ///
     ///
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     pub fn collision_events(&self) -> &Events<TilemapCollisionEvent> {
         &self.collision_events
     }
 
     /// Updates the collision events. This should only be done once per frame.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     pub(crate) fn collision_events_update(&mut self) {
         self.collision_events.update()
     }
 
     /// Returns a copy of the physics scale.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     pub fn physics_scale(&self) -> f32 {
         self.physics_scale
     }
 
     /// Sets the physics scale.
-    #[cfg(feature = "bevy_rapier2d")]
+    #[cfg(feature = "bevy_rapier3d")]
     pub fn set_physics_scale(&mut self, scale: f32) {
         self.physics_scale = scale;
     }

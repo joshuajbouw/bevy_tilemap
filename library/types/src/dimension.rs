@@ -434,7 +434,7 @@ impl Dimension3 {
     /// # Errors
     ///
     /// If the point does not exist in the dimensions, an error is returned.
-    pub fn decode_coord_unchecked(&self, index: usize) -> Point3 {
+    pub fn decode_point_unchecked(&self, index: usize) -> Point3 {
         let z = index as u32 / (self.width * self.height);
         let index = index as u32 - (z * self.width * self.height);
         let y = self.y_max() - (index / self.width);
@@ -448,9 +448,9 @@ impl Dimension3 {
     ///
     /// If the point does not exist in the dimensions, an error is returned.
 
-    pub fn decode_coord(&self, index: usize) -> DimensionResult<Point3> {
+    pub fn decode_point(&self, index: usize) -> DimensionResult<Point3> {
         self.check_index(index)?;
-        Ok(self.decode_coord_unchecked(index))
+        Ok(self.decode_point_unchecked(index))
     }
 }
 

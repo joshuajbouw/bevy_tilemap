@@ -141,7 +141,7 @@ impl Plugin for Tilemap2DPlugin {
                 stage::TILEMAP,
                 crate::chunk::system::chunk_auto_spawn.system(),
             );
-        #[cfg(feature = "bevy_rapier2d")]
+        #[cfg(feature = "bevy_rapier3d")]
         app.add_system_to_stage(
             stage::TILEMAP,
             crate::system::tilemap_collision_events.system(),
@@ -163,8 +163,8 @@ mod lib {
     extern crate bevy_ecs;
     extern crate bevy_log;
     extern crate bevy_math;
-    #[cfg(feature = "bevy_rapier2d")]
-    extern crate bevy_rapier2d;
+    #[cfg(feature = "bevy_rapier3d")]
+    extern crate bevy_rapier3d;
     extern crate bevy_reflect;
     extern crate bevy_render;
     extern crate bevy_sprite;
@@ -186,8 +186,8 @@ mod lib {
     };
     pub(crate) use bevy_log::{error, info, warn};
     pub(crate) use bevy_math::{Vec2, Vec3};
-    #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) use bevy_rapier2d::rapier::{
+    #[cfg(feature = "bevy_rapier3d")]
+    pub(crate) use bevy_rapier3d::rapier::{
         dynamics::RigidBodyBuilder,
         geometry::{ColliderBuilder, InteractionGroups},
     };

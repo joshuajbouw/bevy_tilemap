@@ -1,6 +1,6 @@
 //! The tilemap systems.
 
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(feature = "bevy_rapier3d")]
 use crate::{chunk::Chunk, TilemapLayer};
 use crate::{
     chunk::{
@@ -203,18 +203,19 @@ pub(crate) fn tilemap_events(
 ///
 /// This is a bit messy and has quite a few inputs but, quite a few parts had
 /// to be cloned. There very likely is a better way to clean this up.
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(feature = "bevy_rapier3d")]
 fn spawn_collisions(
     commands: &mut Commands,
     layers: &[Option<TilemapLayer>],
-    point: Point2,
+    point: Point3,
     sprite_order: usize,
     chunk: &mut Chunk,
-    chunk_dimensions: Dimension2,
+    chunk_dimensions: Dimension3,
     tile_dimensions: Dimension2,
     transform: &Transform,
     physics_tile_width: f32,
     physics_tile_height: f32,
+    // physics_tile_depth: f32,
 ) {
     // Don't continue if there is no layer.
     if let Some(layer_opt) = layers.get(sprite_order) {
@@ -228,17 +229,17 @@ fn spawn_collisions(
         }
     }
     // Don't continue if there is no entity.
-    let entity = match chunk.get_entity(sprite_order) {
+    let entity = match chunk.get_entity() {
         Some(e) => e,
         None => return,
     };
     // Don't continue if there already is a collision there.
     let index = chunk_dimensions.encode_point_unchecked(point);
-    if chunk.get_collision_entity(index).is_some() {
+    if chunk.get_collision_entity(point.z as usize, index).is_some() {
         return;
     }
     let mut collision_entities = Vec::new();
-    if let Some(indices) = chunk.get_tile_indices(sprite_order) {
+    if let Some(indices) = chunk.get_tile_indices(point.z as usize, sprite_order) {
         for index in &indices {
             let point = match chunk_dimensions.decode_point(*index) {
                 Ok(p) => p,
@@ -250,6 +251,7 @@ fn spawn_collisions(
             // Adjust half a width and height back.
             let mut x = (point.x - chunk_dimensions.width as i32 / 2) as f32;
             let mut y = (point.y - chunk_dimensions.height as i32 / 2) as f32;
+            let mut z = (point.z - chunk_dimensions.depth as i32 / 2) as f32;
             // Adjust by chunk position
             x += chunk.point().x as f32
                 * chunk_dimensions.width as f32
@@ -276,14 +278,15 @@ fn spawn_collisions(
                     let mut collider = ColliderBuilder::cuboid(
                         physics_tile_width / 2.0,
                         physics_tile_height / 2.0,
+                        // physics_tile_depth / 2.0,
                     );
 
                     collider = collider.collision_groups(collision_groups);
 
                     let entity = if let Some(entity) = commands
                         .spawn((
-                            RigidBodyBuilder::new_static()
-                                .translation(x * physics_tile_width, y * physics_tile_height),
+                            RigidBodyBuilder::new_static() // TODO: double check point.z
+                                .translation(x * physics_tile_width, y * physics_tile_height, point.z as f32 * physics_tile_depth),
                             collider,
                         ))
                         .current_entity()
@@ -299,7 +302,7 @@ fn spawn_collisions(
             }
         }
         for (index, entity) in indices.iter().zip(&collision_entities) {
-            chunk.insert_collision_entity(*index, *entity);
+            chunk.insert_collision_entity(point.z as usize, *index, *entity);
         }
         commands.push_children(entity, &collision_entities);
     }
@@ -309,7 +312,7 @@ fn spawn_collisions(
 ///
 /// Depending on if a collision needs to be created or not, given a variety of
 /// conditions, collisions are spawned or despawned accordingly.
-#[cfg(feature = "bevy_rapier2d")]
+#[cfg(feature = "bevy_rapier3d")]
 pub(crate) fn tilemap_collision_events(
     commands: &mut Commands,
     mut tilemap_query: Query<(&mut Tilemap, &Transform)>,
@@ -339,6 +342,7 @@ pub(crate) fn tilemap_collision_events(
             let tile_dimensions = tilemap.tile_dimensions();
             let physics_tile_width = tile_dimensions.width as f32 / tilemap.physics_scale();
             let physics_tile_height = tile_dimensions.height as f32 / tilemap.physics_scale();
+            // let physics_tile_depth = tile_dimensions.depth as f32 / tilemap.physics_scale();
             let chunk = if let Some(chunk) = tilemap.chunks_mut().get_mut(&point) {
                 chunk
             } else {
@@ -357,6 +361,7 @@ pub(crate) fn tilemap_collision_events(
                     transform,
                     physics_tile_width,
                     physics_tile_height,
+                    physics_tile_depth,
                 );
             }
         }
