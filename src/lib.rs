@@ -123,9 +123,9 @@ pub use crate::{
 
 /// The Bevy Tilemap 2D main plugin.
 #[derive(Default)]
-pub struct Tilemap2DPlugin;
+pub struct TilemapPlugin;
 
-impl Plugin for Tilemap2DPlugin {
+impl Plugin for TilemapPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
             .add_stage_before(
