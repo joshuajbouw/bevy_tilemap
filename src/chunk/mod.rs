@@ -245,11 +245,6 @@ impl Chunk {
         self.entity
     }
 
-    /// Gets the mesh entity of the chunk.
-    pub(crate) fn get_entity(&mut self) -> Option<Entity> {
-        self.entity
-    }
-
     /// Gets the layers entity, if any. Useful for despawning.
     pub(crate) fn take_entity(&mut self) -> Option<Entity> {
         self.entity.take()
