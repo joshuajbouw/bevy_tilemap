@@ -10,6 +10,46 @@ use crate::{
     Tilemap,
 };
 
+/// Takes a grid topology and returns altered translation coordinates.
+// TODO: set translation Z from somewhere else.
+fn topology_translation(topology: GridTopology, chunk_point: Point2, chunk_dimensions: Dimension3, texture_dimensions: Dimension2) -> (f32, f32) {
+    use GridTopology::*;
+    let translation_x = match topology {
+        HexX | HexEvenCols | HexOddCols => {
+            (((chunk_point.x * texture_dimensions.width as i32) as f32 * 0.75) as i32
+                * chunk_dimensions.width as i32) as f32
+        }
+        HexY => {
+            (chunk_point.x * texture_dimensions.width as i32 * chunk_dimensions.width as i32)
+                as f32
+                + (chunk_point.y as f32 * chunk_dimensions.height as f32 * 0.5)
+                * texture_dimensions.width as f32
+        }
+        Square | HexEvenRows | HexOddRows => {
+            (chunk_point.x * texture_dimensions.width as i32 * chunk_dimensions.width as i32)
+                as f32
+        }
+    };
+    let translation_y = match topology {
+        HexX => {
+            (chunk_point.y * texture_dimensions.height as i32 * chunk_dimensions.height as i32)
+                as f32
+                + (chunk_point.x as f32 * chunk_dimensions.width as f32 * 0.5)
+                * texture_dimensions.height as f32
+        }
+        HexY | HexEvenRows | HexOddRows => {
+            (((chunk_point.y * texture_dimensions.height as i32) as f32 * 0.75) as i32
+                * chunk_dimensions.height as i32) as f32
+        }
+        Square | HexEvenCols | HexOddCols => {
+            (chunk_point.y * texture_dimensions.height as i32 * chunk_dimensions.height as i32)
+                as f32
+        }
+    };
+
+    (translation_x, translation_y)
+}
+
 /// Handles all newly spawned chunks and attempts to spawn them.
 fn handle_spawned_chunks(
     commands: &mut Commands,
@@ -28,7 +68,7 @@ fn handle_spawned_chunks(
 
         let layers_len = tilemap.layers().len();
         let chunk_dimensions = tilemap.chunk_dimensions();
-        let tile_dimensions = tilemap.tile_dimensions();
+        let texture_dimensions = tilemap.texture_dimensions();
         let texture_atlas = tilemap.texture_atlas().clone_weak();
         let pipeline_handle = tilemap.topology().to_pipeline_handle();
         let topology = tilemap.topology();
@@ -50,40 +90,7 @@ fn handle_spawned_chunks(
         let mesh_handle = meshes.add(mesh);
         chunk.set_mesh(mesh_handle.clone());
 
-        use GridTopology::*;
-        let translation_x = match topology {
-            HexX | HexEvenCols | HexOddCols => {
-                (((chunk.point().x * tile_dimensions.width as i32) as f32 * 0.75) as i32
-                    * chunk_dimensions.width as i32) as f32
-            }
-            HexY => {
-                (chunk.point().x * tile_dimensions.width as i32 * chunk_dimensions.width as i32)
-                    as f32
-                    + (chunk.point().y as f32 * chunk_dimensions.height as f32 * 0.5)
-                        * tile_dimensions.width as f32
-            }
-            Square | HexEvenRows | HexOddRows => {
-                (chunk.point().x * tile_dimensions.width as i32 * chunk_dimensions.width as i32)
-                    as f32
-            }
-        };
-        let translation_y = match topology {
-            HexX => {
-                (chunk.point().y * tile_dimensions.height as i32 * chunk_dimensions.height as i32)
-                    as f32
-                    + (chunk.point().x as f32 * chunk_dimensions.width as f32 * 0.5)
-                        * tile_dimensions.height as f32
-            }
-            HexY | HexEvenRows | HexOddRows => {
-                (((chunk.point().y * tile_dimensions.height as i32) as f32 * 0.75) as i32
-                    * chunk_dimensions.height as i32) as f32
-            }
-            Square | HexEvenCols | HexOddCols => {
-                (chunk.point().y * tile_dimensions.height as i32 * chunk_dimensions.height as i32)
-                    as f32
-            }
-        };
-        // TODO: set translation Z from somewhere else.
+        let (translation_x, translation_y) = topology_translation(topology, chunk.point(), chunk_dimensions, texture_dimensions);
         let translation = Vec3::new(translation_x, translation_y, 1.0);
         let pipeline = RenderPipeline::new(pipeline_handle.clone_weak().typed());
         let entity = if let Some(entity) = commands

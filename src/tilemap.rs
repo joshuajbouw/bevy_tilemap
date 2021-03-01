@@ -1922,8 +1922,8 @@ impl Tilemap {
         self.chunk_dimensions
     }
 
-    /// Returns a copy of the chunk's tile dimensions.
-    pub(crate) fn tile_dimensions(&self) -> Dimension2 {
+    /// Returns a copy of the chunk's texture dimensions.
+    pub(crate) fn texture_dimensions(&self) -> Dimension2 {
         self.texture_dimensions
     }
 
