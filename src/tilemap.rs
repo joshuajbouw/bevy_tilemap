@@ -1621,9 +1621,8 @@ impl Tilemap {
         let index = self.chunk_dimensions.encode_point_unchecked(tile_point);
         let mut layers = HashMap::default();
         layers.insert(sprite_order, chunk_point);
-        self.chunk_events.send(TilemapChunkEvent::Modified {
-            point: chunk.point(),
-        });
+        self.chunk_events
+            .send(TilemapChunkEvent::Modified { layers });
         chunk.get_tile_mut(index, sprite_order, point.z as usize)
     }
 
