@@ -85,7 +85,7 @@ pub(crate) struct Chunk {
     user_data: u128,
     /// A chunks mesh used for rendering.
     #[cfg_attr(feature = "serde", serde(skip))]
-    mesh: Handle<Mesh>,
+    mesh: Option<Handle<Mesh>>,
     /// An entity which is tied to this chunk.
     entity: Option<Entity>,
 }
@@ -107,7 +107,7 @@ impl Chunk {
                 layers.len()
             ]],
             user_data: 0,
-            mesh: Handle::default(),
+            mesh: None,
             entity: None,
         };
 
@@ -202,7 +202,12 @@ impl Chunk {
 
     /// Sets the mesh for the chunk layer to use.
     pub(crate) fn set_mesh(&mut self, mesh: Handle<Mesh>) {
-        self.mesh = mesh;
+        self.mesh = Some(mesh);
+    }
+
+    /// Takes the mesh handle.
+    pub(crate) fn take_mesh(&mut self) -> Option<Handle<Mesh>> {
+        self.mesh.take()
     }
 
     /// Sets a single raw tile to be added to a z layer and index.

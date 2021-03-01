@@ -161,6 +161,8 @@ impl Plugin for TilemapPlugin {
 mod lib {
     extern crate bevy_app;
     extern crate bevy_asset;
+    #[cfg(test)]
+    extern crate bevy_core;
     extern crate bevy_ecs;
     extern crate bevy_log;
     extern crate bevy_math;
@@ -176,15 +178,23 @@ mod lib {
     extern crate serde;
     extern crate std;
 
+    #[cfg(test)]
+    pub(crate) use bevy_app::ScheduleRunnerPlugin;
     pub(crate) use bevy_app::{
         stage as app_stage, AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder,
     };
     pub(crate) use bevy_asset::{AddAsset, Assets, Handle, HandleUntyped};
+    #[cfg(test)]
+    pub(crate) use bevy_asset::{AssetPlugin, HandleId};
+    #[cfg(test)]
+    pub(crate) use bevy_core::CorePlugin;
     pub(crate) use bevy_ecs::{
         Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources, SystemStage,
     };
     pub(crate) use bevy_log::{error, info, warn};
     pub(crate) use bevy_math::{Vec2, Vec3};
+    #[cfg(test)]
+    pub(crate) use bevy_reflect::ReflectPlugin;
     pub(crate) use bevy_reflect::{TypeUuid, Uuid};
     pub(crate) use bevy_render::{
         camera::Camera,
@@ -242,4 +252,7 @@ mod lib {
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
     pub(crate) use std::println;
+
+    #[cfg(test)]
+    pub(crate) use std::assert_eq;
 }
