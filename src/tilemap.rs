@@ -40,7 +40,7 @@
 //! let mut tilemap = TilemapBuilder::new()
 //!     .texture_atlas(texture_atlas_handle)
 //!     .chunk_dimensions(64, 64, 1)
-//!     .tile_dimensions(8, 8)
+//!     .texture_dimensions(8, 8)
 //!     .dimensions(32, 32)
 //!     .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
 //!     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 1)
@@ -287,7 +287,7 @@ pub struct Tilemap {
 ///
 /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 ///
-/// let builder = TilemapBuilder::new().tile_dimensions(32, 32).texture_atlas(texture_atlas_handle);
+/// let builder = TilemapBuilder::new().texture_dimensions(32, 32).texture_atlas(texture_atlas_handle);
 ///
 /// let tilemap = builder.finish().unwrap();
 /// ```
@@ -300,7 +300,7 @@ pub struct Tilemap {
 ///
 /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 ///
-/// let builder = Tilemap::builder().tile_dimensions(32, 32).texture_atlas(texture_atlas_handle);
+/// let builder = Tilemap::builder().texture_dimensions(32, 32).texture_atlas(texture_atlas_handle);
 ///
 /// let tilemap = builder.finish().unwrap();
 /// ```
@@ -441,7 +441,7 @@ impl TilemapBuilder {
     /// ```
     /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = TilemapBuilder::new().tile_dimensions(32, 32);
+    /// let builder = TilemapBuilder::new().texture_dimensions(32, 32);
     /// ```
     pub fn texture_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
         self.texture_dimensions = Some(Dimension2::new(width, height));
@@ -582,7 +582,7 @@ impl TilemapBuilder {
     ///
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
     ///
-    /// let builder = TilemapBuilder::new().tile_dimensions(32, 32).texture_atlas(texture_atlas_handle);
+    /// let builder = TilemapBuilder::new().texture_dimensions(32, 32).texture_atlas(texture_atlas_handle);
     ///
     /// assert!(builder.finish().is_ok());
     /// assert!(TilemapBuilder::new().finish().is_err());
@@ -780,7 +780,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(3, 3)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -940,7 +940,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .z_layers(3)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
     ///     .add_layer(TilemapLayer { kind: LayerKind::Sparse, ..Default::default() }, 3)
     ///     .finish()
@@ -1032,7 +1032,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(1, 1)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1079,7 +1079,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 32, 1)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .dimensions(1, 1)
     ///     .finish()
     ///     .unwrap();
@@ -1119,7 +1119,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(1, 1)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1177,7 +1177,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(3, 3)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1310,7 +1310,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .dimensions(1, 1)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1434,9 +1434,9 @@ impl Tilemap {
     /// assert!(tilemap.insert_chunk((0, 0)).is_ok());
     ///
     /// let mut tiles = vec![
-    ///     Tile { point: (1, 1), ..Default::default() },
-    ///     Tile { point: (2, 2), ..Default::default() },
-    ///     Tile { point: (3, 3), ..Default::default() },
+    ///     Tile { point: (1, 1, 0), ..Default::default() },
+    ///     Tile { point: (2, 2, 0), ..Default::default() },
+    ///     Tile { point: (3, 3, 0), ..Default::default() },
     /// ];
     ///
     /// // Set multiple tiles and unwrap the result
@@ -1450,9 +1450,9 @@ impl Tilemap {
     /// ];
     ///
     /// tilemap.clear_tiles(to_remove).unwrap();
-    /// assert_eq!(tilemap.get_tile((1, 1), 0), None);
-    /// assert_eq!(tilemap.get_tile((2, 2), 0), None);
-    /// assert_eq!(tilemap.get_tile((3, 3), 0), Some(&RawTile { index: 0, color: Color::WHITE} ));
+    /// assert_eq!(tilemap.get_tile((1, 1, 0), 0), None);
+    /// assert_eq!(tilemap.get_tile((2, 2, 0), 0), None);
+    /// assert_eq!(tilemap.get_tile((3, 3, 0), 0), Some(&RawTile { index: 0, color: Color::WHITE} ));
     /// ```
     ///
     /// # Errors
@@ -1584,7 +1584,7 @@ impl Tilemap {
         let tile_point = self.point_to_tile_point(point);
         let chunk = self.chunks.get(&chunk_point)?;
         let index = self.chunk_dimensions.encode_point_unchecked(tile_point);
-        chunk.get_tile(sprite_order, index, point.z as usize)
+        chunk.get_tile(index, sprite_order, point.z as usize)
     }
 
     /// Gets a mutable raw tile from a given point and z order.
@@ -1629,7 +1629,7 @@ impl Tilemap {
         layers.insert(sprite_order, chunk_point);
         self.chunk_events
             .send(TilemapChunkEvent::Modified { layers });
-        chunk.get_tile_mut(sprite_order, index, point.z as usize)
+        chunk.get_tile_mut(index, sprite_order, point.z as usize)
     }
 
     /// Returns the center tile, if the tilemap has dimensions.
@@ -1649,7 +1649,7 @@ impl Tilemap {
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle.clone_weak())
     ///     .dimensions(32, 32)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1687,7 +1687,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle.clone_weak())
     ///     .dimensions(32, 64)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1719,7 +1719,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle.clone_weak())
     ///     .dimensions(32, 64)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1751,7 +1751,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 64, 1)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1777,7 +1777,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .chunk_dimensions(32, 64, 1)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1802,8 +1802,7 @@ impl Tilemap {
     ///
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
-    ///     .tile_dimensions(32, 64)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 64)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1828,7 +1827,7 @@ impl Tilemap {
     ///
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
-    ///     .tile_dimensions(32, 64)
+    ///     .texture_dimensions(32, 64)
     ///     .finish()
     ///     .unwrap();
     ///
@@ -1868,7 +1867,7 @@ impl Tilemap {
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
     ///     .topology(GridTopology::HexX)
-    ///     .tile_dimensions(32, 32)
+    ///     .texture_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
     ///
