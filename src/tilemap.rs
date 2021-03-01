@@ -113,7 +113,7 @@ pub enum ErrorKind {
     /// Texture atlas was not set
     MissingTextureAtlas,
     /// The tile dimensions were not set.
-    MissingTileDimensions,
+    MissingTextureDimensions,
     /// The chunk does not exist.
     MissingChunk,
     /// The chunk already exists.
@@ -135,7 +135,7 @@ impl Display for ErrorKind {
                 f,
                 "texture atlas is missing, must use `TilemapBuilder::texture_atlas`"
             ),
-            MissingTileDimensions => {
+            MissingTextureDimensions => {
                 write!(f, "tile dimensions are missing, it is required to set it")
             }
             MissingChunk => write!(f, "the chunk does not exist, try `add_chunk` first"),
@@ -233,7 +233,7 @@ pub struct Tilemap {
     /// A chunks dimensions in tiles.
     chunk_dimensions: Dimension3,
     /// A tiles dimensions in pixels.
-    tile_dimensions: Dimension2,
+    texture_dimensions: Dimension2,
     /// The layers that are currently set in the tilemap in order from lowest
     /// to highest.
     layers: Vec<Option<TilemapLayer>>,
@@ -598,10 +598,10 @@ impl TilemapBuilder {
         } else {
             return Err(ErrorKind::MissingTextureAtlas.into());
         };
-        let tile_dimensions = if let Some(dimensions) = self.texture_dimensions {
+        let texture_dimensions = if let Some(dimensions) = self.texture_dimensions {
             dimensions
         } else {
-            return Err(ErrorKind::MissingTileDimensions.into());
+            return Err(ErrorKind::MissingTextureDimensions.into());
         };
 
         let z_layers = if let Some(layers) = &self.layers {
@@ -618,7 +618,7 @@ impl TilemapBuilder {
             topology: self.topology,
             dimensions: self.dimensions,
             chunk_dimensions: self.chunk_dimensions,
-            tile_dimensions,
+            texture_dimensions,
             layers: vec![None; z_layers],
             auto_flags: self.auto_flags,
             auto_spawn: self.auto_spawn,
@@ -650,7 +650,7 @@ impl Default for Tilemap {
             topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
-            tile_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
+            texture_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
             layers: vec![None; DEFAULT_Z_LAYERS],
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
@@ -687,7 +687,7 @@ impl Tilemap {
     pub fn new(texture_atlas: Handle<TextureAtlas>, tile_width: u32, tile_height: u32) -> Tilemap {
         Tilemap {
             texture_atlas,
-            tile_dimensions: Dimension2::new(tile_width, tile_height),
+            texture_dimensions: Dimension2::new(tile_width, tile_height),
             ..Default::default()
         }
     }
@@ -1811,7 +1811,7 @@ impl Tilemap {
     /// assert_eq!(tile_width, 32);
     /// ```
     pub fn tile_width(&self) -> u32 {
-        self.tile_dimensions.width
+        self.texture_dimensions.width
     }
 
     /// The height of a tile in pixels.
@@ -1836,7 +1836,7 @@ impl Tilemap {
     /// assert_eq!(tile_height, 64);
     /// ```
     pub fn tile_height(&self) -> u32 {
-        self.tile_dimensions.height
+        self.texture_dimensions.height
     }
 
     /// Gets a reference to a chunk.
@@ -1924,7 +1924,7 @@ impl Tilemap {
 
     /// Returns a copy of the chunk's tile dimensions.
     pub(crate) fn tile_dimensions(&self) -> Dimension2 {
-        self.tile_dimensions
+        self.texture_dimensions
     }
 
     /// Returns a reference to the hash set of spawned chunks.
