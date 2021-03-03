@@ -216,6 +216,8 @@ mod lib {
         dimension::{Dimension2, Dimension3, DimensionError},
         point::{Point2, Point3},
     };
+    #[cfg(test)]
+    pub(crate) use bevy_transform::components::Children;
     pub(crate) use bevy_transform::{
         components::{GlobalTransform, Parent, Transform},
         hierarchy::{BuildChildren, DespawnRecursiveExt},

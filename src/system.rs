@@ -56,10 +56,11 @@ fn topology_translation(
 /// Handles all newly spawned chunks and attempts to spawn them.
 fn handle_spawned_chunks(
     commands: &mut Commands,
+    tilemap_entity: Entity,
     meshes: &mut Assets<Mesh>,
     tilemap: &mut Tilemap,
     spawned_chunks: Vec<Point2>,
-) -> Vec<Entity> {
+) {
     let capacity = spawned_chunks.len();
     let mut entities = Vec::with_capacity(capacity);
     for point in spawned_chunks.into_iter() {
@@ -132,39 +133,30 @@ fn handle_spawned_chunks(
         chunk.set_entity(entity);
         entities.push(entity);
     }
-    entities
+    commands.push_children(tilemap_entity, &entities);
 }
 
 /// Handles all modified chunks and flags them.
 fn handle_modified_chunks(
     modified_query: &mut Query<&mut Modified>,
     tilemap: &mut Tilemap,
-    modified_chunks: Vec<HashMap<usize, Point2>>,
+    modified_chunks: Vec<Point2>,
 ) {
-    for layers in modified_chunks.into_iter() {
-        for (_layer, point) in layers.into_iter() {
-            let chunk = if let Some(chunk) = tilemap.chunks_mut().get_mut(&point) {
-                chunk
-            } else {
-                warn!("Can not get chunk at {}, skipping", &point);
-                continue;
-            };
-            if let Some(entity) = chunk.get_entity() {
-                let mut count = if let Ok(count) = modified_query.get_mut(entity) {
-                    count
-                } else {
-                    warn!(
-                        "Can not increment modified count for chunk {}, skipping",
-                        point
-                    );
-                    continue;
-                };
-                count.0 += 1;
-            } else {
-                warn!("Can not take entity from chunk {}, skipping", point);
-                continue;
-            };
-        }
+    for point in modified_chunks.into_iter() {
+        let chunk = if let Some(chunk) = tilemap.chunks_mut().get_mut(&point) {
+            chunk
+        } else {
+            warn!("Can not get chunk at {}, skipping", &point);
+            continue;
+        };
+        if let Some(chunk_entity) = chunk.get_entity() {
+            if let Ok(mut modified) = modified_query.get_mut(chunk_entity) {
+                modified.0 += 1;
+            }
+        } else {
+            warn!("Can not take entity from chunk {}, skipping", point);
+            continue;
+        };
     }
 }
 
@@ -221,8 +213,8 @@ pub(crate) fn tilemap_events(
         for event in reader.iter(&tilemap.chunk_events()) {
             use crate::TilemapChunkEvent::*;
             match event {
-                Modified { ref layers } => {
-                    modified_chunks.push(layers.clone());
+                Modified { ref point } => {
+                    modified_chunks.push(*point);
                 }
                 Spawned { ref point } => {
                     spawned_chunks.push(*point);
@@ -233,8 +225,13 @@ pub(crate) fn tilemap_events(
             }
         }
 
-        let entities = handle_spawned_chunks(commands, &mut meshes, &mut tilemap, spawned_chunks);
-        commands.push_children(map_entity, &entities);
+        handle_spawned_chunks(
+            commands,
+            tilemap_entity,
+            &mut meshes,
+            &mut tilemap,
+            spawned_chunks,
+        );
 
         handle_modified_chunks(&mut modified_query, &mut tilemap, modified_chunks);
 
@@ -245,7 +242,7 @@ pub(crate) fn tilemap_events(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tilemap::TilemapBuilder;
+    use crate::{entity::TilemapBundle, tilemap::TilemapBuilder};
 
     fn new_tilemap() -> Tilemap {
         TilemapBuilder::new()
@@ -360,40 +357,83 @@ mod tests {
             .add_plugin(CorePlugin)
             .add_plugin(ScheduleRunnerPlugin {})
             .add_plugin(AssetPlugin)
+            .add_stage("update", SystemStage::parallel())
+            .add_system_to_stage("update", tilemap_events.system())
             .add_asset::<Mesh>()
             .app;
         let mut commands = Commands::default();
         commands.set_entity_reserver(app.world.get_entity_reserver());
 
-        let mut tilemap = new_tilemap();
-        tilemap.insert_chunk(Point2::new(0, 0)).unwrap();
-        tilemap.insert_chunk(Point2::new(1, 1)).unwrap();
-        tilemap.insert_chunk(Point2::new(-1, -1)).unwrap();
+        let tilemap = new_tilemap();
+        let tilemap_bundle = TilemapBundle {
+            tilemap,
+            transform: Default::default(),
+            global_transform: Default::default(),
+        };
+
+        let tilemap_entity = commands.spawn(tilemap_bundle).current_entity().unwrap();
+
+        commands.apply(&mut app.world, &mut app.resources);
+
+        {
+            let mut tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
+            tilemap.insert_chunk(Point2::new(0, 0)).unwrap();
+            tilemap.insert_chunk(Point2::new(1, 1)).unwrap();
+            tilemap.insert_chunk(Point2::new(-1, -1)).unwrap();
+            tilemap.spawn_chunk(Point2::new(0, 0)).unwrap();
+            tilemap.spawn_chunk(Point2::new(1, 1)).unwrap();
+            tilemap.spawn_chunk(Point2::new(-1, -1)).unwrap();
+        }
+
+        app.update();
 
         {
             let meshes = &mut app.resources.get_mut::<Assets<Mesh>>().unwrap();
-            let spawned_chunks = vec![Point2::new(0, 0), Point2::new(1, 1), Point2::new(-1, -1)];
-            let entities =
-                handle_spawned_chunks(&mut commands, meshes, &mut tilemap, spawned_chunks);
-
-            assert_eq!(entities.len(), 3);
             assert_eq!(meshes.len(), 3);
         }
 
-        commands.apply(&mut app.world, &mut app.resources);
+        {
+            let tilemap_children = app.world.get::<Children>(tilemap_entity).unwrap().len();
+            assert_eq!(tilemap_children, 3);
+        }
+
+        {
+            let mut tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
+            tilemap.modify_chunk(Point2::new(1, 1));
+        }
+
         app.update();
+
+        // This test isn't working as intended as it seems that query_filtered
+        // just might not actually be working. This should be explored.
+        {
+            let modified_query = app.world.query::<&Modified>();
+            // let mut modified_query = app.world.query_filtered::<&Point2, Changed<Modified>>();
+            let mut found = false;
+            for modified in modified_query {
+                if modified.0 == 1 {
+                    found = true;
+                }
+            }
+            assert!(found);
+        }
+
         // then despawn one, both entities and meshes should be -1
+        {
+            let mut tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
+            tilemap.despawn_chunk(Point2::new(-1, -1)).unwrap();
+        }
 
-        let chunk_points = vec![Point2::new(1, 1)];
-        handle_despawned_chunks(&mut commands, &mut tilemap, chunk_points);
+        app.update();
 
-        commands.apply(&mut app.world, &mut app.resources);
+        let chunks = app.world.query::<(Entity, &Modified)>();
+        assert_eq!(chunks.count(), 2);
+
+        // Need to double update to kick the GC.
         app.update();
         app.update();
 
         let meshes = &app.resources.get::<Assets<Mesh>>().unwrap();
-        let chunks = app.world.query::<(Entity, &Modified)>();
-        assert_eq!(chunks.count(), 2);
         assert_eq!(meshes.len(), 2);
     }
 }

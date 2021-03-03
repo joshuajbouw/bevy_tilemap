@@ -1360,17 +1360,14 @@ impl Tilemap {
                 }
             };
 
-            let mut layers = HashMap::default();
             for tile in tiles.iter() {
                 let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
                 chunk.set_tile(index, *tile);
-                layers
-                    .entry(tile.sprite_order)
-                    .or_insert_with(|| chunk.point());
             }
 
-            self.chunk_events
-                .send(TilemapChunkEvent::Modified { layers });
+            self.chunk_events.send(TilemapChunkEvent::Modified {
+                point: chunk.point(),
+            });
         }
 
         Ok(())
@@ -1474,7 +1471,6 @@ impl Tilemap {
             });
         }
         let chunk_map = self.sort_tiles_to_chunks(tiles)?;
-        let mut layers = HashMap::default();
         for (chunk_point, tiles) in chunk_map.into_iter() {
             let chunk = match self.chunks.get_mut(&chunk_point) {
                 Some(c) => c,
@@ -1483,14 +1479,12 @@ impl Tilemap {
             for tile in tiles.iter() {
                 let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
                 chunk.remove_tile(index, tile.sprite_order, tile.point.z as usize);
-                layers
-                    .entry(tile.sprite_order)
-                    .or_insert_with(|| chunk.point());
             }
-        }
 
-        self.chunk_events
-            .send(TilemapChunkEvent::Modified { layers });
+            self.chunk_events.send(TilemapChunkEvent::Modified {
+                point: chunk.point(),
+            });
+        }
 
         Ok(())
     }
@@ -1627,8 +1621,9 @@ impl Tilemap {
         let index = self.chunk_dimensions.encode_point_unchecked(tile_point);
         let mut layers = HashMap::default();
         layers.insert(sprite_order, chunk_point);
-        self.chunk_events
-            .send(TilemapChunkEvent::Modified { layers });
+        self.chunk_events.send(TilemapChunkEvent::Modified {
+            point: chunk.point(),
+        });
         chunk.get_tile_mut(index, sprite_order, point.z as usize)
     }
 
@@ -1955,7 +1950,16 @@ impl Tilemap {
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
+
+    impl Tilemap {
+        /// Flags a tilemap chunk that it has been modified. Intended for testing
+        /// purposes only.
+        pub(crate) fn modify_chunk(&mut self, point: Point2) {
+            self.chunk_events
+                .send(TilemapChunkEvent::Modified { point });
+        }
+    }
 
     // fn new_tilemap_no_auto() -> Tilemap {
     //     let texture_atlas_handle = Handle::weak(Handllet modified_layer = layer_query.get()eId::random::<TextureAtlas>());

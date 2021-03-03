@@ -12,8 +12,8 @@ pub enum TilemapChunkEvent {
     },
     /// An event when a chunk has been modified and needs to reload its layer.
     Modified {
-        /// The layers that had been modified.
-        layers: HashMap<usize, Point2>,
+        /// The chunk point that had been modified.
+        point: Point2,
     },
     /// An event when a chunk needs to be despawned.
     Despawned {
