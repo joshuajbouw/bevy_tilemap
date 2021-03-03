@@ -12,7 +12,12 @@ use crate::{
 
 /// Takes a grid topology and returns altered translation coordinates.
 // TODO: set translation Z from somewhere else.
-fn topology_translation(topology: GridTopology, chunk_point: Point2, chunk_dimensions: Dimension3, texture_dimensions: Dimension2) -> (f32, f32) {
+fn topology_translation(
+    topology: GridTopology,
+    chunk_point: Point2,
+    chunk_dimensions: Dimension3,
+    texture_dimensions: Dimension2,
+) -> (f32, f32) {
     use GridTopology::*;
     let translation_x = match topology {
         HexX | HexEvenCols | HexOddCols => {
@@ -20,14 +25,12 @@ fn topology_translation(topology: GridTopology, chunk_point: Point2, chunk_dimen
                 * chunk_dimensions.width as i32) as f32
         }
         HexY => {
-            (chunk_point.x * texture_dimensions.width as i32 * chunk_dimensions.width as i32)
-                as f32
+            (chunk_point.x * texture_dimensions.width as i32 * chunk_dimensions.width as i32) as f32
                 + (chunk_point.y as f32 * chunk_dimensions.height as f32 * 0.5)
-                * texture_dimensions.width as f32
+                    * texture_dimensions.width as f32
         }
         Square | HexEvenRows | HexOddRows => {
-            (chunk_point.x * texture_dimensions.width as i32 * chunk_dimensions.width as i32)
-                as f32
+            (chunk_point.x * texture_dimensions.width as i32 * chunk_dimensions.width as i32) as f32
         }
     };
     let translation_y = match topology {
@@ -35,7 +38,7 @@ fn topology_translation(topology: GridTopology, chunk_point: Point2, chunk_dimen
             (chunk_point.y * texture_dimensions.height as i32 * chunk_dimensions.height as i32)
                 as f32
                 + (chunk_point.x as f32 * chunk_dimensions.width as f32 * 0.5)
-                * texture_dimensions.height as f32
+                    * texture_dimensions.height as f32
         }
         HexY | HexEvenRows | HexOddRows => {
             (((chunk_point.y * texture_dimensions.height as i32) as f32 * 0.75) as i32
@@ -90,7 +93,12 @@ fn handle_spawned_chunks(
         let mesh_handle = meshes.add(mesh);
         chunk.set_mesh(mesh_handle.clone());
 
-        let (translation_x, translation_y) = topology_translation(topology, chunk.point(), chunk_dimensions, texture_dimensions);
+        let (translation_x, translation_y) = topology_translation(
+            topology,
+            chunk.point(),
+            chunk_dimensions,
+            texture_dimensions,
+        );
         let translation = Vec3::new(translation_x, translation_y, 1.0);
         let pipeline = RenderPipeline::new(pipeline_handle.clone_weak().typed());
         let entity = if let Some(entity) = commands
@@ -245,6 +253,103 @@ mod tests {
             .texture_dimensions(32, 32)
             .finish()
             .unwrap()
+    }
+
+    #[test]
+    fn test_topology_translations() {
+        let topologies = vec![
+            (
+                GridTopology::Square,
+                vec![
+                    (-4096.0, -930.0),
+                    (-2048.0, -465.0),
+                    (0.0, 0.0),
+                    (2048.0, 465.0),
+                    (4096.0, 930.0),
+                ],
+            ),
+            (
+                GridTopology::HexEvenCols,
+                vec![
+                    (-3072.0, -930.0),
+                    (-1536.0, -465.0),
+                    (0.0, 0.0),
+                    (1536.0, 465.0),
+                    (3072.0, 930.0),
+                ],
+            ),
+            (
+                GridTopology::HexEvenRows,
+                vec![
+                    (-4096.0, -682.0),
+                    (-2048.0, -341.0),
+                    (0.0, 0.0),
+                    (2048.0, 341.0),
+                    (4096.0, 682.0),
+                ],
+            ),
+            (
+                GridTopology::HexOddCols,
+                vec![
+                    (-3072.0, -930.0),
+                    (-1536.0, -465.0),
+                    (0.0, 0.0),
+                    (1536.0, 465.0),
+                    (3072.0, 930.0),
+                ],
+            ),
+            (
+                GridTopology::HexOddRows,
+                vec![
+                    (-4096.0, -682.0),
+                    (-2048.0, -341.0),
+                    (0.0, 0.0),
+                    (2048.0, 341.0),
+                    (4096.0, 682.0),
+                ],
+            ),
+            (
+                GridTopology::HexX,
+                vec![
+                    (-3072.0, -1890.0),
+                    (-1536.0, -945.0),
+                    (0.0, 0.0),
+                    (1536.0, 945.0),
+                    (3072.0, 1890.0),
+                ],
+            ),
+            (
+                GridTopology::HexY,
+                vec![
+                    (-5088.0, -682.0),
+                    (-2544.0, -341.0),
+                    (0.0, 0.0),
+                    (2544.0, 341.0),
+                    (5088.0, 682.0),
+                ],
+            ),
+        ];
+        let chunk_points = vec![
+            Point2::new(-2, -2),
+            Point2::new(-1, -1),
+            Point2::new(0, 0),
+            Point2::new(1, 1),
+            Point2::new(2, 2),
+        ];
+        let chunk_dimensions = Dimension3::new(64, 31, 0);
+        let texture_dimensions = Dimension2::new(32, 15);
+
+        for (topology, tests) in topologies.into_iter() {
+            for (chunk_point, test) in chunk_points.iter().zip(tests) {
+                let res = topology_translation(
+                    topology,
+                    *chunk_point,
+                    chunk_dimensions,
+                    texture_dimensions,
+                );
+                assert_eq!(res, test);
+            }
+        }
     }
 
     #[test]
