@@ -70,7 +70,15 @@ fn handle_spawned_chunks(
             tilemap.spawned_chunks_mut().insert((point.x, point.y));
         }
 
-        let layers_len = tilemap.layers().len();
+        let layers_len = {
+            let mut count = 0;
+            for layer in tilemap.layers() {
+                if layer.is_some() {
+                    count += 1;
+                }
+            }
+            count
+        };
         let chunk_dimensions = tilemap.chunk_dimensions();
         let texture_dimensions = tilemap.texture_dimensions();
         let texture_atlas = tilemap.texture_atlas().clone_weak();
