@@ -73,6 +73,9 @@ pub use layer::LayerKind;
 use layer::{DenseLayer, LayerKindInner, SparseLayer, SpriteLayer};
 pub use raw_tile::RawTile;
 
+/// A type for sprite layers.
+type SpriteLayers = Vec<Option<SpriteLayer>>;
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 /// A chunk which holds all the tiles to be rendered.
@@ -80,7 +83,7 @@ pub(crate) struct Chunk {
     /// The point coordinate of the chunk.
     point: Point2,
     /// The sprite layers of the chunk.
-    z_layers: Vec<Vec<SpriteLayer>>,
+    z_layers: Vec<SpriteLayers>,
     /// Ephemeral user data that can be used for flags or other purposes.
     user_data: u128,
     /// A chunks mesh used for rendering.
@@ -94,26 +97,20 @@ impl Chunk {
     /// A newly constructed chunk from a point and the maximum number of layers.
     pub(crate) fn new(
         point: Point2,
-        layers: &[Option<LayerKind>],
+        sprite_layers: &[Option<LayerKind>],
         dimensions: Dimension3,
     ) -> Chunk {
         let mut chunk = Chunk {
             point,
-            z_layers: vec![vec![
-                SpriteLayer {
-                    inner: LayerKindInner::Sparse(SparseLayer::new(HashMap::default())),
-                    entity: None,
-                };
-                layers.len()
-            ]],
+            z_layers: vec![vec![None; sprite_layers.len()]; dimensions.depth as usize],
             user_data: 0,
             mesh: None,
             entity: None,
         };
 
-        for (sprite_order, kind) in layers.iter().enumerate() {
+        for (sprite_order, kind) in sprite_layers.iter().enumerate() {
             if let Some(kind) = kind {
-                chunk.add_layer(kind, sprite_order, dimensions)
+                chunk.add_sprite_layer(kind, sprite_order, dimensions)
             }
         }
 
@@ -122,7 +119,7 @@ impl Chunk {
 
     /// Adds a layer from a layer kind, the z layer, and dimensions of the
     /// chunk.
-    pub(crate) fn add_layer(
+    pub(crate) fn add_sprite_layer(
         &mut self,
         kind: &LayerKind,
         sprite_order: usize,
@@ -140,10 +137,13 @@ impl Chunk {
                     ];
                     if let Some(z_layer) = self.z_layers.get_mut(z) {
                         if let Some(sprite_order_layer) = z_layer.get_mut(sprite_order) {
-                            *sprite_order_layer = SpriteLayer {
-                                inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
-                                entity: None,
-                            };
+                            if sprite_order_layer.is_some() {
+                                error!("sprite layer already exists: {}", sprite_order);
+                            } else {
+                                *sprite_order_layer = Some(SpriteLayer {
+                                    inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
+                                });
+                            }
                         } else {
                             error!("sprite layer {} could not be added?", sprite_order);
                         }
@@ -155,10 +155,15 @@ impl Chunk {
                 LayerKind::Sparse => {
                     if let Some(z_layer) = self.z_layers.get_mut(z) {
                         if let Some(sprite_order_layer) = z_layer.get_mut(sprite_order) {
-                            *sprite_order_layer = SpriteLayer {
-                                inner: LayerKindInner::Sparse(SparseLayer::new(HashMap::default())),
-                                entity: None,
-                            };
+                            if sprite_order_layer.is_some() {
+                                error!("sprite layer already exists: {}", sprite_order);
+                            } else {
+                                *sprite_order_layer = Some(SpriteLayer {
+                                    inner: LayerKindInner::Sparse(SparseLayer::new(
+                                        HashMap::default(),
+                                    )),
+                                });
+                            }
                         } else {
                             error!("sprite layer {} is out of bounds", sprite_order);
                         }
@@ -178,25 +183,22 @@ impl Chunk {
     }
 
     /// Moves a layer from a z layer to another.
-    pub(crate) fn move_sprite_order(&mut self, from_sprite_order: usize, to_sprite_order: usize) {
-        for z in 0..self.z_layers.len() {
-            if self.z_layers.get(from_sprite_order).is_some() {
-                error!(
-                    "sprite layer {} exists and can not be moved",
-                    to_sprite_order
-                );
-                return;
+    pub(crate) fn move_sprite_layer(&mut self, from_layer_z: usize, to_layer_z: usize) {
+        for sprite_layers in &mut self.z_layers {
+            if let Some(layer) = sprite_layers.get(to_layer_z) {
+                if layer.is_some() {
+                    error!("sprite layer {} exists and can not be moved", to_layer_z);
+                    return;
+                }
             }
-            if let Some(sprite_layer) = self.z_layers.get_mut(z) {
-                sprite_layer.swap(from_sprite_order, to_sprite_order);
-            }
+            sprite_layers.swap(from_layer_z, to_layer_z);
         }
     }
 
     /// Removes a layer from the specified layer.
-    pub(crate) fn remove_layer(&mut self, sprite_order: usize) {
-        for _z in 0..self.z_layers.len() {
-            self.z_layers.get_mut(sprite_order).take();
+    pub(crate) fn remove_sprite_layer(&mut self, layer_z: usize) {
+        for z_layer in &mut self.z_layers {
+            z_layer.remove(layer_z);
         }
     }
 
@@ -218,9 +220,17 @@ impl Chunk {
                     index: tile.sprite_index,
                     color: tile.tint,
                 };
-                layer.inner.as_mut().set_tile(index, raw_tile);
+                if let Some(layer) = layer {
+                    layer.inner.as_mut().set_tile(index, raw_tile);
+                } else {
+                    error!("sprite layer {} does not exist", tile.sprite_order);
+                }
             } else {
-                error!("sprite layer {} does not exist", tile.sprite_order);
+                error!(
+                    "{} exceeded max number of sprite layers: {}",
+                    tile.sprite_order,
+                    z_depth.len()
+                );
             }
         } else {
             error!("z layer {} does not exist", tile.point.z);
@@ -228,15 +238,23 @@ impl Chunk {
     }
 
     /// Removes a tile from a sprite layer with a given index and z order.
-    pub(crate) fn remove_tile(&mut self, index: usize, sprite_order: usize, z_depth: usize) {
-        if let Some(z_depth) = self.z_layers.get_mut(z_depth) {
-            if let Some(layer) = z_depth.get_mut(sprite_order) {
-                layer.inner.as_mut().remove_tile(index);
+    pub(crate) fn remove_tile(&mut self, index: usize, sprite_layer: usize, z_depth: usize) {
+        if let Some(layers) = self.z_layers.get_mut(z_depth) {
+            if let Some(layer) = layers.get_mut(sprite_layer) {
+                if let Some(layer) = layer {
+                    layer.inner.as_mut().remove_tile(index);
+                } else {
+                    error!("sprite layer {} does not exist", index);
+                }
             } else {
-                error!("can not remove tile on sprite layer {}", sprite_order);
+                error!(
+                    "{} exceeded max number of sprite layers: {}",
+                    index,
+                    layers.len()
+                );
             }
         } else {
-            error!("sprite layer {} does not exist", sprite_order);
+            error!("sprite layer {} does not exist", sprite_layer);
         }
     }
 
@@ -263,9 +281,11 @@ impl Chunk {
         z_depth: usize,
     ) -> Option<&RawTile> {
         self.z_layers.get(z_depth).and_then(|z_depth| {
-            z_depth
-                .get(sprite_order)
-                .and_then(|layer| layer.inner.as_ref().get_tile(index))
+            z_depth.get(sprite_order).and_then(|layer| {
+                layer
+                    .as_ref()
+                    .and_then(|layer| layer.inner.as_ref().get_tile(index))
+            })
         })
     }
 
@@ -277,9 +297,11 @@ impl Chunk {
         z_depth: usize,
     ) -> Option<&mut RawTile> {
         self.z_layers.get_mut(z_depth).and_then(|z_depth| {
-            z_depth
-                .get_mut(sprite_order)
-                .and_then(|layer| layer.inner.as_mut().get_tile_mut(index))
+            z_depth.get_mut(sprite_order).and_then(|layer| {
+                layer
+                    .as_mut()
+                    .and_then(|layer| layer.inner.as_mut().get_tile_mut(index))
+            })
         })
     }
 
@@ -294,7 +316,7 @@ impl Chunk {
         let mut tile_indices = Vec::new();
         let mut tile_colors = Vec::new();
         for depth in &self.z_layers {
-            for layer in depth {
+            for layer in depth.iter().flatten() {
                 let (mut indices, mut colors) =
                     layer.inner.as_ref().tiles_to_attributes(dimensions);
                 tile_indices.append(&mut indices);
@@ -302,5 +324,45 @@ impl Chunk {
             }
         }
         (tile_indices, tile_colors)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_layer() {
+        let point = Point2::new(0, 0);
+        let layers = vec![
+            Some(LayerKind::Dense),
+            Some(LayerKind::Sparse),
+            None,
+            Some(LayerKind::Sparse),
+            None,
+        ];
+        let dimensions = Dimension3::new(5, 5, 3);
+        let mut chunk = Chunk::new(point, &[None, None, None, None, None], dimensions);
+        for (x, layer) in layers.iter().enumerate() {
+            if let Some(layer) = layer {
+                chunk.add_sprite_layer(&layer, x, dimensions);
+            }
+        }
+
+        assert_eq!(chunk.z_layers.len(), 3);
+        for layer in &chunk.z_layers {
+            assert_eq!(layer.len(), 5);
+        }
+
+        chunk.move_sprite_layer(1, 2);
+        let sprite_layers = chunk.z_layers.get(0).unwrap();
+        assert_eq!(sprite_layers.get(1).unwrap().as_ref(), None);
+        assert!(sprite_layers.get(0).unwrap().as_ref().is_some());
+
+        chunk.remove_sprite_layer(0);
+        assert_eq!(chunk.z_layers.len(), 3);
+        for layer in &chunk.z_layers {
+            assert_eq!(layer.len(), 4);
+        }
     }
 }

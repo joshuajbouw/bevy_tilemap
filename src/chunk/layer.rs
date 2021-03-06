@@ -203,7 +203,4 @@ impl AsMut<dyn Layer> for LayerKindInner {
 pub(super) struct SpriteLayer {
     /// Enum storage of the kind of layer.
     pub inner: LayerKindInner,
-    #[cfg_attr(feature = "serde", serde(skip))]
-    /// Contains an entity if the layer had been spawned.
-    pub entity: Option<Entity>,
 }

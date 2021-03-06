@@ -860,7 +860,7 @@ impl Tilemap {
         }
 
         for chunk in self.chunks.values_mut() {
-            chunk.add_layer(&kind, sprite_order, self.chunk_dimensions);
+            chunk.add_sprite_layer(&kind, sprite_order, self.chunk_dimensions);
         }
 
         Ok(())
@@ -915,7 +915,7 @@ impl Tilemap {
         }
 
         for chunk in self.chunks.values_mut() {
-            chunk.add_layer(&layer.kind, sprite_order, self.chunk_dimensions)
+            chunk.add_sprite_layer(&layer.kind, sprite_order, self.chunk_dimensions)
         }
 
         Ok(())
@@ -968,7 +968,7 @@ impl Tilemap {
 
         self.layers.swap(from_sprite_order, to_sprite_order);
         for chunk in self.chunks.values_mut() {
-            chunk.move_sprite_order(from_sprite_order, to_sprite_order);
+            chunk.move_sprite_layer(from_sprite_order, to_sprite_order);
         }
 
         Ok(())
@@ -1008,7 +1008,7 @@ impl Tilemap {
         }
 
         for chunk in self.chunks.values_mut() {
-            chunk.remove_layer(z);
+            chunk.remove_sprite_layer(z);
         }
     }
 
