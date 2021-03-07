@@ -323,6 +323,24 @@ pub(crate) fn tilemap_events(
     }
 }
 
+/// Checks for tilemap visibility changes and reflects them on all chunks.
+pub fn tilemap_visibility_change(tilemap_visible_query: Query<(Entity, &Tilemap)>, mut visibles: Query<&mut Visible, Changed<Visible>>) {
+    for (entity, tilemap) in tilemap_visible_query.iter() {
+        let tilemap_visible = if let Ok(visible) = visibles.get_mut(entity) {
+            visible.clone()
+        } else {
+            continue;
+        };
+        for chunk in tilemap.chunks().values() {
+            if let Some(entity) = chunk.get_entity() {
+                if let Ok(mut chunk_visible) = visibles.get_mut(entity) {
+                    *chunk_visible = tilemap_visible.clone();
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
