@@ -94,7 +94,7 @@
 //! ```
 
 use crate::{
-    chunk::{Chunk, LayerKind, RawTile},
+    chunk::{mesh::ChunkMesh, Chunk, LayerKind, RawTile},
     event::TilemapChunkEvent,
     lib::*,
     prelude::GridTopology,
@@ -232,6 +232,11 @@ pub struct Tilemap {
     dimensions: Option<Dimension2>,
     /// A chunks dimensions in tiles.
     chunk_dimensions: Dimension3,
+    /// The layer in the chunks offset value as X, Y. Each layer will be offset
+    /// by this.
+    layer_offset: Vec2,
+    /// A mesh for a chunk which is stored here and copied when needed.
+    chunk_mesh: ChunkMesh,
     /// A tiles dimensions in pixels.
     texture_dimensions: Dimension2,
     /// The layers that are currently set in the tilemap in order from lowest
@@ -322,6 +327,9 @@ pub struct TilemapBuilder {
     dimensions: Option<Dimension2>,
     /// The chunks dimensions in tiles.
     chunk_dimensions: Dimension3,
+    /// The layer in the chunks offset value as X, Y. Each layer will be offset
+    /// by this.
+    layer_offset: Vec2,
     /// The tiles dimensions in pixels.
     texture_dimensions: Option<Dimension2>,
     /// The scale of a tile.
@@ -342,14 +350,25 @@ pub struct TilemapBuilder {
 
 impl Default for TilemapBuilder {
     fn default() -> Self {
+        let layers = {
+            let mut map = HashMap::default();
+            map.insert(
+                0,
+                TilemapLayer {
+                    kind: LayerKind::Dense,
+                },
+            );
+            Some(map)
+        };
         TilemapBuilder {
             topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
+            layer_offset: Vec2::new(0., 0.),
             texture_dimensions: None,
             tile_scale: DEFAULT_TILE_SCALE.into(),
             z_layers: DEFAULT_Z_LAYERS,
-            layers: None,
+            layers,
             texture_atlas: None,
             render_depth: 0,
             auto_flags: AutoFlags::NONE,
@@ -429,6 +448,23 @@ impl TilemapBuilder {
     /// ```
     pub fn chunk_dimensions(mut self, width: u32, height: u32, depth: u32) -> TilemapBuilder {
         self.chunk_dimensions = Dimension3::new(width, height, depth);
+        self
+    }
+
+    /// Sets the layer offset as X, Y.
+    ///
+    /// Per layer, this is the offset that will take place. This is generally
+    /// useful for 3D style tilemaps that need to give the illusion of depth.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::prelude::*;
+    /// use bevy_math::Vec2;
+    ///
+    /// let builder = TilemapBuilder::new().layer_offset(Vec2::new(0.5, 0.5));
+    /// ```
+    pub fn layer_offset(mut self, offset: Vec2) -> TilemapBuilder {
+        self.layer_offset = offset;
         self
     }
 
@@ -614,12 +650,30 @@ impl TilemapBuilder {
             self.z_layers
         };
 
-        let mut tilemap = Tilemap {
+        let layer_count = self.layers.iter().count();
+        let chunk_mesh =
+            ChunkMesh::new(self.chunk_dimensions, layer_count as u32, self.layer_offset);
+
+        let layers = {
+            let mut layers = vec![None; z_layers];
+            if let Some(map_layers) = self.layers {
+                for (index, layer) in map_layers {
+                    if let Some(l) = layers.get_mut(index) {
+                        *l = Some(layer)
+                    }
+                }
+            }
+            layers
+        };
+
+        Ok(Tilemap {
             topology: self.topology,
             dimensions: self.dimensions,
             chunk_dimensions: self.chunk_dimensions,
+            layer_offset: self.layer_offset,
+            chunk_mesh,
             texture_dimensions,
-            layers: vec![None; z_layers],
+            layers,
             auto_flags: self.auto_flags,
             auto_spawn: self.auto_spawn,
             custom_flags: Vec::new(),
@@ -628,15 +682,7 @@ impl TilemapBuilder {
             entities: Default::default(),
             chunk_events: Default::default(),
             spawned: Default::default(),
-        };
-
-        if let Some(mut layers) = self.layers {
-            for (z_layer, layer) in layers.drain() {
-                tilemap.add_layer(layer, z_layer)?;
-            }
-        }
-
-        Ok(tilemap)
+        })
     }
 }
 
@@ -650,8 +696,18 @@ impl Default for Tilemap {
             topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
+            layer_offset: Vec2::default(),
+            chunk_mesh: ChunkMesh::default(),
             texture_dimensions: DEFAULT_TEXTURE_DIMENSIONS,
-            layers: vec![None; DEFAULT_Z_LAYERS],
+            layers: vec![
+                Some(TilemapLayer {
+                    kind: LayerKind::Sparse,
+                }),
+                None,
+                None,
+                None,
+                None,
+            ],
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
             custom_flags: Vec::new(),
@@ -868,6 +924,10 @@ impl Tilemap {
 
     /// Adds a layer to the tilemap.
     ///
+    /// ***Warning:*** This is very unwise and costly if there are many chunks
+    /// in the tilemap. You should only add layers when creating the tilemap.
+    /// The meshes for every single chunk has to be recalculated!
+    ///
     /// This method creates a layer across all chunks at the specified Z layer.
     /// For ease of use, it by default makes a layer with a dense
     /// [`LayerKind`] which is ideal for layers full of sprites.
@@ -899,24 +959,34 @@ impl Tilemap {
     /// };
     /// let mut tilemap = Tilemap::new(texture_atlas_handle, 32, 32);
     ///
-    /// assert!(tilemap.add_layer(layer, 1).is_ok());
-    /// assert!(tilemap.add_layer(layer, 1).is_err());
+    /// assert!(tilemap.add_layer(layer, 2).is_ok());
+    /// assert!(tilemap.add_layer(layer, 2).is_err());
     /// ```
     ///
     /// [`add_layer_with_kind`]: Tilemap::add_layer_with_kind
     /// [`LayerKind`]: crate::chunk::LayerKind
     /// [`LayerKind::Sparse`]: crate::chunk::LayerKind::Sparse
-    pub fn add_layer(&mut self, layer: TilemapLayer, sprite_order: usize) -> TilemapResult<()> {
-        if let Some(inner_layer) = self.layers.get_mut(sprite_order) {
+    pub fn add_layer(&mut self, layer: TilemapLayer, sprite_layer: usize) -> TilemapResult<()> {
+        if let Some(inner_layer) = self.layers.get_mut(sprite_layer) {
             if inner_layer.is_some() {
-                return Err(ErrorKind::LayerExists(sprite_order).into());
+                return Err(ErrorKind::LayerExists(sprite_layer).into());
             }
             *inner_layer = Some(layer);
         }
 
-        for chunk in self.chunks.values_mut() {
-            chunk.add_sprite_layer(&layer.kind, sprite_order, self.chunk_dimensions)
+        let mut layers = 0;
+        for layer in self.layers().iter() {
+            if layer.is_some() {
+                layers += 1;
+            }
         }
+        let chunk_mesh = ChunkMesh::new(self.chunk_dimensions, layers, self.layer_offset);
+        self.chunk_mesh = chunk_mesh;
+
+        self.chunk_events.send(TilemapChunkEvent::AddLayer {
+            layer_kind: layer.kind,
+            sprite_layer,
+        });
 
         Ok(())
     }
@@ -1365,9 +1435,11 @@ impl Tilemap {
                 chunk.set_tile(index, *tile);
             }
 
-            self.chunk_events.send(TilemapChunkEvent::Modified {
-                point: chunk.point(),
-            });
+            if chunk.mesh().is_some() {
+                self.chunk_events.send(TilemapChunkEvent::Modified {
+                    point: chunk.point(),
+                });
+            }
         }
 
         Ok(())
@@ -1945,6 +2017,11 @@ impl Tilemap {
     /// Returns a mutable reference to the inner chunks.
     pub(crate) fn chunks_mut(&mut self) -> &mut HashMap<Point2, Chunk> {
         &mut self.chunks
+    }
+
+    /// A reference of a chunk's mesh.
+    pub(crate) fn chunk_mesh(&self) -> &ChunkMesh {
+        &self.chunk_mesh
     }
 }
 

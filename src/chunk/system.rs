@@ -149,7 +149,6 @@ mod tests {
             .add_plugin(CorePlugin)
             .add_plugin(ScheduleRunnerPlugin {})
             .add_plugin(AssetPlugin)
-            .add_stage("update", SystemStage::parallel())
             .add_system_to_stage("update", tilemap_events.system())
             .add_system_to_stage("update", chunk_update.system())
             .add_asset::<Mesh>()

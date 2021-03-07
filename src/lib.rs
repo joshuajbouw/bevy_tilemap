@@ -105,6 +105,7 @@ pub mod stage {
 
     /// The tilemap stage, set to run before `POST_UPDATE` stage.
     pub const TILEMAP: &str = "tilemap";
+    // pub const TILEMAP_UPDATE: &str = "tilemap_update";
 }
 #[no_implicit_prelude]
 pub mod event;

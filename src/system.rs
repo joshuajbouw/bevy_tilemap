@@ -5,6 +5,7 @@ use crate::{
         entity::{ChunkBundle, Modified},
         mesh::ChunkMesh,
         render::GridTopology,
+        Chunk, LayerKind,
     },
     lib::*,
     Tilemap,
@@ -70,19 +71,11 @@ fn handle_spawned_chunks(
             tilemap.spawned_chunks_mut().insert((point.x, point.y));
         }
 
-        let layers_len = {
-            let mut count = 0;
-            for layer in tilemap.layers() {
-                if layer.is_some() {
-                    count += 1;
-                }
-            }
-            count
-        };
         let chunk_dimensions = tilemap.chunk_dimensions();
         let texture_dimensions = tilemap.texture_dimensions();
         let texture_atlas = tilemap.texture_atlas().clone_weak();
         let pipeline_handle = tilemap.topology().to_pipeline_handle();
+        let chunk_mesh = tilemap.chunk_mesh().clone();
         let topology = tilemap.topology();
         let chunk = if let Some(chunk) = tilemap.chunks_mut().get_mut(&point) {
             chunk
@@ -91,11 +84,7 @@ fn handle_spawned_chunks(
             warn!("Can not get chunk at {}, possible bug report me", &point);
             continue;
         };
-        let mut mesh = Mesh::from(&ChunkMesh::new(
-            chunk_dimensions,
-            layers_len as u32,
-            Vec2::new(0., 0.), // TODO: put actual value here
-        ));
+        let mut mesh = Mesh::from(&chunk_mesh);
         let (indexes, colors) = chunk.tiles_to_renderer_parts(chunk_dimensions);
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
@@ -162,7 +151,10 @@ fn handle_modified_chunks(
                 modified.0 += 1;
             }
         } else {
-            warn!("Can not take entity from chunk {}, skipping", point);
+            warn!(
+                "Can not take entity from chunk {} in modified, skipping",
+                point
+            );
             continue;
         };
     }
@@ -190,8 +182,69 @@ fn handle_despawned_chunks(
                 info!("Chunk {} despawned", point);
             }
             None => {
-                warn!("Can not take entity from chunk {}, skipping", point);
+                warn!(
+                    "Can not take entity from chunk {} in despawn, skipping",
+                    point
+                );
                 continue;
+            }
+        }
+    }
+}
+
+/// Recalculates a mesh.
+fn recalculate_mesh(
+    meshes: &mut Assets<Mesh>,
+    mesh: &Handle<Mesh>,
+    chunk: &Chunk,
+    chunk_mesh: &ChunkMesh,
+    chunk_dimensions: Dimension3,
+) {
+    let mesh = match meshes.get_mut(mesh) {
+        None => {
+            error!("tried to get mesh for chunk but failed, this is a bug");
+            return;
+        }
+        Some(m) => m,
+    };
+    let (indexes, colors) = chunk.tiles_to_renderer_parts(chunk_dimensions);
+    mesh.set_indices(Some(Indices::U32(chunk_mesh.indices.clone())));
+    mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, chunk_mesh.vertices.clone());
+    mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
+    mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
+}
+
+/// Adds a sprite layer to all chunks and recalculates the mesh.
+fn handle_add_sprite_layers(
+    meshes: &mut Assets<Mesh>,
+    tilemap: &mut Tilemap,
+    add_sprite_layers: Vec<(LayerKind, usize)>,
+) {
+    let chunk_dimensions = tilemap.chunk_dimensions();
+    let chunk_mesh = tilemap.chunk_mesh().clone();
+    for chunk in tilemap.chunks_mut().values_mut() {
+        for (kind, sprite_layer) in &add_sprite_layers {
+            chunk.add_sprite_layer(&kind, *sprite_layer, chunk_dimensions);
+            if let Some(mesh) = chunk.mesh() {
+                recalculate_mesh(meshes, mesh, chunk, &chunk_mesh, chunk_dimensions);
+            }
+        }
+    }
+}
+
+/// Removes a sprite layer from all chunks and recalculates the mesh if needed.
+fn handle_remove_sprite_layers(
+    meshes: &mut Assets<Mesh>,
+    tilemap: &mut Tilemap,
+    remove_sprite_layers: Vec<usize>,
+) {
+    let chunk_dimensions = tilemap.chunk_dimensions();
+    let chunk_mesh = tilemap.chunk_mesh().clone();
+    for sprite_layer in remove_sprite_layers {
+        for chunk in tilemap.chunks_mut().values_mut() {
+            chunk.remove_sprite_layer(sprite_layer);
+            if let Some(mesh) = chunk.mesh() {
+                recalculate_mesh(meshes, mesh, chunk, &chunk_mesh, chunk_dimensions);
             }
         }
     }
@@ -214,10 +267,13 @@ pub(crate) fn tilemap_events(
 ) {
     for (map_entity, mut tilemap, tilemap_visible) in tilemap_query.iter_mut() {
         tilemap.chunk_events_update();
+        let mut reader = tilemap.chunk_events().get_reader();
+
         let mut modified_chunks = Vec::new();
         let mut spawned_chunks = Vec::new();
         let mut despawned_chunks = Vec::new();
-        let mut reader = tilemap.chunk_events().get_reader();
+        let mut add_sprite_layers = Vec::new();
+        let mut remove_sprite_layers = Vec::new();
         for event in reader.iter(&tilemap.chunk_events()) {
             use crate::TilemapChunkEvent::*;
             match event {
@@ -230,20 +286,43 @@ pub(crate) fn tilemap_events(
                 Despawned { ref point } => {
                     despawned_chunks.push(*point);
                 }
+                AddLayer {
+                    ref layer_kind,
+                    ref sprite_layer,
+                } => {
+                    add_sprite_layers.push((*layer_kind, *sprite_layer));
+                }
+                RemoveLayer { ref sprite_layer } => {
+                    remove_sprite_layers.push(*sprite_layer);
+                }
             }
         }
 
-        handle_spawned_chunks(
-            commands,
-            tilemap_entity,
-            &mut meshes,
-            &mut tilemap,
-            spawned_chunks,
-        );
+        if !spawned_chunks.is_empty() {
+            handle_spawned_chunks(
+                commands,
+                tilemap_entity,
+                &mut meshes,
+                &mut tilemap,
+                spawned_chunks,
+            );
+        }
 
-        handle_modified_chunks(&mut modified_query, &mut tilemap, modified_chunks);
+        if !modified_chunks.is_empty() {
+            handle_modified_chunks(&mut modified_query, &mut tilemap, modified_chunks);
+        }
 
-        handle_despawned_chunks(commands, &mut tilemap, despawned_chunks);
+        if !despawned_chunks.is_empty() {
+            handle_despawned_chunks(commands, &mut tilemap, despawned_chunks);
+        }
+
+        if !add_sprite_layers.is_empty() {
+            handle_add_sprite_layers(&mut meshes, &mut tilemap, add_sprite_layers);
+        }
+
+        if !remove_sprite_layers.is_empty() {
+            handle_remove_sprite_layers(&mut meshes, &mut tilemap, remove_sprite_layers);
+        }
     }
 }
 

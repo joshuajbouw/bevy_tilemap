@@ -137,9 +137,7 @@ impl Chunk {
                     ];
                     if let Some(z_layer) = self.z_layers.get_mut(z) {
                         if let Some(sprite_order_layer) = z_layer.get_mut(sprite_order) {
-                            if sprite_order_layer.is_some() {
-                                error!("sprite layer already exists: {}", sprite_order);
-                            } else {
+                            if !sprite_order_layer.is_some() {
                                 *sprite_order_layer = Some(SpriteLayer {
                                     inner: LayerKindInner::Dense(DenseLayer::new(tiles)),
                                 });
@@ -150,14 +148,11 @@ impl Chunk {
                     } else {
                         error!("sprite layer {} is out of bounds", sprite_order);
                     }
-                    info!("Set a new dense layer at layer: {}", sprite_order);
                 }
                 LayerKind::Sparse => {
                     if let Some(z_layer) = self.z_layers.get_mut(z) {
                         if let Some(sprite_order_layer) = z_layer.get_mut(sprite_order) {
-                            if sprite_order_layer.is_some() {
-                                error!("sprite layer already exists: {}", sprite_order);
-                            } else {
+                            if !sprite_order_layer.is_some() {
                                 *sprite_order_layer = Some(SpriteLayer {
                                     inner: LayerKindInner::Sparse(SparseLayer::new(
                                         HashMap::default(),
@@ -170,11 +165,9 @@ impl Chunk {
                     } else {
                         error!("sprite layer {} is out of bounds", sprite_order);
                     }
-                    info!("Set a new sparse layer at layer: {}", sprite_order);
                 }
             }
         }
-        info!("LAYERS len: {}", self.z_layers.len());
     }
 
     /// Returns the point of the location of the chunk.
@@ -196,15 +189,20 @@ impl Chunk {
     }
 
     /// Removes a layer from the specified layer.
-    pub(crate) fn remove_sprite_layer(&mut self, layer_z: usize) {
+    pub(crate) fn remove_sprite_layer(&mut self, sprite_layer: usize) {
         for z_layer in &mut self.z_layers {
-            z_layer.remove(layer_z);
+            z_layer.remove(sprite_layer);
         }
     }
 
     /// Sets the mesh for the chunk layer to use.
     pub(crate) fn set_mesh(&mut self, mesh: Handle<Mesh>) {
         self.mesh = Some(mesh);
+    }
+
+    /// Returns a reference to the chunk's mesh.
+    pub(crate) fn mesh(&self) -> Option<&Handle<Mesh>> {
+        self.mesh.as_ref()
     }
 
     /// Takes the mesh handle.
