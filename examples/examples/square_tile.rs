@@ -51,9 +51,8 @@ fn load(
             .auto_chunk()
             .topology(GridTopology::Square)
             .dimensions(3, 3)
-            .tile_dimensions(37, 32)
-            .chunk_dimensions(8, 4)
-            .tile_dimensions(32, 35)
+            .chunk_dimensions(8, 4, 1)
+            .texture_dimensions(32, 35)
             .z_layers(3)
             .texture_atlas(atlas_handle)
             .finish()
@@ -61,6 +60,10 @@ fn load(
 
         let tilemap_components = TilemapBundle {
             tilemap,
+            visible: Visible {
+                is_visible: true,
+                is_transparent: true,
+            },
             transform: Default::default(),
             global_transform: Default::default(),
         };

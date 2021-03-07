@@ -147,10 +147,6 @@ fn handle_modified_chunks(
                 modified.0 += 1;
             }
         } else {
-            warn!(
-                "Can not take entity from chunk {} in modified, skipping",
-                point
-            );
             continue;
         };
     }
@@ -178,10 +174,6 @@ fn handle_despawned_chunks(
                 info!("Chunk {} despawned", point);
             }
             None => {
-                warn!(
-                    "Can not take entity from chunk {} in despawn, skipping",
-                    point
-                );
                 continue;
             }
         }

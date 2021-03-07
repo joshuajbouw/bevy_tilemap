@@ -327,26 +327,27 @@ fn character_movement(
 }
 
 fn main() {
-    App::build()
-        .add_resource(WindowDescriptor {
-            title: "Physics Dungeon".to_string(),
-            width: 512.,
-            height: 512.,
-            vsync: false,
-            resizable: true,
-            mode: WindowMode::Windowed,
-            ..Default::default()
-        })
-        .init_resource::<TileSpriteHandles>()
-        .init_resource::<GameState>()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(TilemapDefaultPlugins)
-        .add_plugin(RapierPhysicsPlugin)
-        .add_plugin(RapierRenderPlugin)
-        .add_startup_system(setup.system())
-        .add_system(load.system())
-        .add_system(build_random_dungeon.system())
-        .add_system(character_movement.system())
-        .add_system(bevy::input::system::exit_on_esc_system.system())
-        .run()
+    // App::build()
+    //     .add_resource(WindowDescriptor {
+    //         title: "Physics Dungeon".to_string(),
+    //         width: 512.,
+    //         height: 512.,
+    //         vsync: false,
+    //         resizable: true,
+    //         mode: WindowMode::Windowed,
+    //         ..Default::default()
+    //     })
+    //     .init_resource::<TileSpriteHandles>()
+    //     .init_resource::<GameState>()
+    //     .add_plugins(DefaultPlugins)
+    //     .add_plugins(TilemapDefaultPlugins)
+    //     .add_plugin(RapierPhysicsPlugin)
+    //     .add_plugin(RapierRenderPlugin)
+    //     .add_startup_system(setup.system())
+    //     .add_system(load.system())
+    //     .add_system(build_random_dungeon.system())
+    //     .add_system(character_movement.system())
+    //     .add_system(bevy::input::system::exit_on_esc_system.system())
+    //     .run()
+    println!("This example will come back soon! Stay tuned!");
 }
