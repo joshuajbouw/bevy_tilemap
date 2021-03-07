@@ -168,7 +168,6 @@ impl Chunk {
                 }
             }
         }
-        info!("LAYERS len: {}", self.z_layers.len());
     }
 
     /// Returns the point of the location of the chunk.
