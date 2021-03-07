@@ -62,7 +62,9 @@
 // #![no_implicit_prelude]
 
 // rustc / rustdoc
-#![warn(missing_docs, private_doc_tests)]
+// This won't build on stable releases until it is stable.
+//#![warn(rustdoc::private_doc_tests)]
+#![warn(missing_docs)]
 #![deny(dead_code, unused_imports)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
