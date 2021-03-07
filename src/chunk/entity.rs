@@ -1,7 +1,7 @@
 use crate::lib::*;
 
 /// A component that is used as a flag for dirty chunks that need updating.
-#[derive(Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct Modified(pub usize);
 
 /// A component bundle for `Chunk` entities.

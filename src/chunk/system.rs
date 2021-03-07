@@ -135,3 +135,126 @@ pub(crate) fn chunk_auto_spawn(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{entity::TilemapBundle, system::tilemap_events, tilemap::TilemapBuilder, Tile};
+
+    #[test]
+    fn test_chunk_update() {
+        let mut app = AppBuilder::default();
+        let app = &mut app
+            .add_plugin(ReflectPlugin)
+            .add_plugin(CorePlugin)
+            .add_plugin(ScheduleRunnerPlugin {})
+            .add_plugin(AssetPlugin)
+            .add_system_to_stage("update", tilemap_events.system())
+            .add_system_to_stage("update", chunk_update.system())
+            .add_asset::<Mesh>()
+            .app;
+        let mut commands = Commands::default();
+        commands.set_entity_reserver(app.world.get_entity_reserver());
+
+        let tilemap = TilemapBuilder::new()
+            .texture_atlas(Handle::weak(HandleId::random::<TextureAtlas>()))
+            .texture_dimensions(32, 32)
+            .dimensions(1, 1)
+            .chunk_dimensions(5, 5, 1)
+            .auto_chunk()
+            .z_layers(1)
+            .finish()
+            .unwrap();
+        let tilemap_bundle = TilemapBundle {
+            tilemap,
+            visible: Visible {
+                is_visible: true,
+                is_transparent: true,
+            },
+            transform: Default::default(),
+            global_transform: Default::default(),
+        };
+
+        let _tilemap_entity = commands.spawn(tilemap_bundle).current_entity().unwrap();
+
+        commands.apply(&mut app.world, &mut app.resources);
+
+        let tile_points = vec![
+            Point2::new(-2, -2),
+            Point2::new(-2, 2),
+            Point2::new(2, -2),
+            Point2::new(2, 2),
+            Point2::new(0, 0),
+        ];
+        {
+            let mut tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
+            for tile_point in &tile_points {
+                tilemap
+                    .insert_tile(Tile {
+                        point: *tile_point,
+                        sprite_order: 0,
+                        sprite_index: 1,
+                        tint: Color::RED,
+                    })
+                    .unwrap();
+                tilemap.spawn_chunk(Point2::new(0, 0)).unwrap();
+            }
+        }
+
+        app.update();
+
+        {
+            let tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
+            let meshes = app.resources.get::<Assets<Mesh>>().unwrap();
+            assert_eq!(meshes.len(), 1);
+            let (_, mesh) = meshes.iter().next().unwrap();
+            let tile_index = mesh
+                .attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX)
+                .unwrap()
+                .get_bytes();
+            assert_eq!(tile_index.len(), 5 * 5 * 4 * 4); // chunk * width * f32 size * byte len
+
+            for tile_point in &tile_points {
+                let tile_point = *tile_point + Point2::new(2, 2);
+                let index = tilemap
+                    .chunk_dimensions()
+                    .encode_point(tile_point.into())
+                    .unwrap()
+                    * 4
+                    * 4;
+                let mut bytes = Vec::with_capacity(4);
+                for x in 0..4 {
+                    let byte = tile_index.get(index + x).unwrap();
+                    bytes.push(*byte);
+                }
+                assert_eq!(bytes, [0, 0, 128, 63]);
+            }
+
+            let tile_colors = mesh
+                .attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR)
+                .unwrap()
+                .get_bytes();
+            assert_eq!(tile_colors.len(), 5 * 5 * 4 * 4 * 4); // chunk * width * f32 size * byte len * 4 bytes in a color
+
+            for tile_point in tile_points {
+                let tile_point = tile_point + Point2::new(2, 2);
+                let index = tilemap
+                    .chunk_dimensions()
+                    .encode_point(tile_point.into())
+                    .unwrap()
+                    * 4
+                    * 4
+                    * 4;
+                let mut bytes = Vec::with_capacity(4 * 4);
+                for x in 0..(4 * 4) {
+                    let byte = tile_colors.get(index + x).unwrap();
+                    bytes.push(*byte);
+                }
+                assert_eq!(
+                    bytes,
+                    [255, 255, 127, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 63]
+                );
+            }
+        }
+    }
+}
