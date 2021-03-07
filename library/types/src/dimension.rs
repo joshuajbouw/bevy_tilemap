@@ -333,7 +333,7 @@ impl SubAssign for Dimension2 {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 /// Dimensions of the 3rd kind.
 pub struct Dimension3 {
     /// The width of this dimension.
@@ -346,12 +346,17 @@ pub struct Dimension3 {
 
 impl Dimension3 {
     /// Constructs a new 2nd dimension.
-    pub fn new(width: u32, height: u32, depth: u32) -> Dimension3 {
+    pub const fn new(width: u32, height: u32, depth: u32) -> Dimension3 {
         Dimension3 {
             width,
             height,
             depth,
         }
+    }
+
+    /// The total area of the dimension.
+    pub fn area(&self) -> u32 {
+        self.width * self.height * self.depth
     }
 
     /// The maximum X value of this dimension.

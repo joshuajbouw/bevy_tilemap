@@ -39,7 +39,7 @@
 //!
 //! let mut tilemap = TilemapBuilder::new()
 //!     .texture_atlas(texture_atlas_handle)
-//!     .chunk_dimensions(64, 64)
+//!     .chunk_dimensions(64, 64, 1)
 //!     .tile_dimensions(8, 8)
 //!     .dimensions(32, 32)
 //!     .add_layer(TilemapLayer { kind: LayerKind::Dense, ..Default::default() }, 0)
@@ -93,8 +93,6 @@
 //! }
 //! ```
 
-#[cfg(feature = "bevy_rapier2d")]
-use crate::event::TilemapCollisionEvent;
 use crate::{
     chunk::{Chunk, LayerKind, RawTile},
     event::TilemapChunkEvent,
@@ -196,7 +194,9 @@ bitflags! {
 /// The default texture dimensions in chunks.
 const DEFAULT_TEXTURE_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
 /// The default chunk dimensions in tiles.
-const DEFAULT_CHUNK_DIMENSIONS: Dimension2 = Dimension2::new(32, 32);
+const DEFAULT_CHUNK_DIMENSIONS: Dimension3 = Dimension3::new(32, 32, 1);
+/// The default tile scale.
+const DEFAULT_TILE_SCALE: (f32, f32, f32) = (1.0, 1.0, 1.0);
 /// The default z layers.
 const DEFAULT_Z_LAYERS: usize = 5;
 
@@ -212,18 +212,12 @@ impl Default for AutoFlags {
 pub struct TilemapLayer {
     /// The kind of layer to create.
     pub kind: LayerKind,
-    /// The interaction group and its mask.
-    #[cfg_attr(feature = "serde", serde(skip))]
-    #[cfg(feature = "bevy_rapier2d")]
-    pub interaction_groups: InteractionGroups,
 }
 
 impl Default for TilemapLayer {
     fn default() -> TilemapLayer {
         TilemapLayer {
             kind: LayerKind::Dense,
-            #[cfg(feature = "bevy_rapier2d")]
-            interaction_groups: InteractionGroups::none(),
         }
     }
 }
@@ -237,7 +231,7 @@ pub struct Tilemap {
     /// An optional field which can contain the tilemaps dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// A chunks dimensions in tiles.
-    chunk_dimensions: Dimension2,
+    chunk_dimensions: Dimension3,
     /// A tiles dimensions in pixels.
     tile_dimensions: Dimension2,
     /// The layers that are currently set in the tilemap in order from lowest
@@ -247,10 +241,6 @@ pub struct Tilemap {
     auto_flags: AutoFlags,
     /// Dimensions of chunks to spawn from camera transform.
     auto_spawn: Option<Dimension2>,
-    /// Rapier physics scale for colliders and rigid bodies created
-    /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
-    physics_scale: f32,
     /// Custom flags.
     custom_flags: Vec<u32>,
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -264,10 +254,6 @@ pub struct Tilemap {
     #[cfg_attr(feature = "serde", serde(skip))]
     /// The events of the tilemap.
     chunk_events: Events<TilemapChunkEvent>,
-    #[cfg(feature = "bevy_rapier2d")]
-    #[cfg_attr(feature = "serde", serde(skip))]
-    /// The collision events of the tilemap.
-    collision_events: Events<TilemapCollisionEvent>,
     /// A set of all spawned chunks.
     spawned: HashSet<(i32, i32)>,
 }
@@ -335,23 +321,23 @@ pub struct TilemapBuilder {
     /// An optional field which can contain the tilemaps dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// The chunks dimensions in tiles.
-    chunk_dimensions: Dimension2,
+    chunk_dimensions: Dimension3,
     /// The tiles dimensions in pixels.
-    tile_dimensions: Option<Dimension2>,
+    texture_dimensions: Option<Dimension2>,
+    /// The scale of a tile.
+    tile_scale: Vec3,
     /// The amount of z layers.
     z_layers: usize,
     /// The layers to be set. If there are more, it will override `z_layers`.
     layers: Option<HashMap<usize, TilemapLayer>>,
     /// If the tilemap currently has a sprite sheet handle on it or not.
     texture_atlas: Option<Handle<TextureAtlas>>,
+    /// Sets how many Z layers to render.
+    render_depth: usize,
     /// True if this tilemap will automatically configure.
     auto_flags: AutoFlags,
     /// The radius of chunks to spawn from a camera's transform.
     auto_spawn: Option<Dimension2>,
-    /// Rapier physics scale for colliders and rigid bodies created
-    /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
-    physics_scale: f32,
 }
 
 impl Default for TilemapBuilder {
@@ -360,14 +346,14 @@ impl Default for TilemapBuilder {
             topology: GridTopology::Square,
             dimensions: None,
             chunk_dimensions: DEFAULT_CHUNK_DIMENSIONS,
-            tile_dimensions: None,
+            texture_dimensions: None,
+            tile_scale: DEFAULT_TILE_SCALE.into(),
             z_layers: DEFAULT_Z_LAYERS,
             layers: None,
             texture_atlas: None,
+            render_depth: 0,
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
-            #[cfg(feature = "bevy_rapier2d")]
-            physics_scale: 1.0,
         }
     }
 }
@@ -439,10 +425,10 @@ impl TilemapBuilder {
     /// ```
     /// use bevy_tilemap::prelude::*;
     ///
-    /// let builder = TilemapBuilder::new().chunk_dimensions(32, 32);
+    /// let builder = TilemapBuilder::new().chunk_dimensions(32, 32, 1);
     /// ```
-    pub fn chunk_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
-        self.chunk_dimensions = Dimension2::new(width, height);
+    pub fn chunk_dimensions(mut self, width: u32, height: u32, depth: u32) -> TilemapBuilder {
+        self.chunk_dimensions = Dimension3::new(width, height, depth);
         self
     }
 
@@ -457,8 +443,24 @@ impl TilemapBuilder {
     ///
     /// let builder = TilemapBuilder::new().tile_dimensions(32, 32);
     /// ```
-    pub fn tile_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
-        self.tile_dimensions = Some(Dimension2::new(width, height));
+    pub fn texture_dimensions(mut self, width: u32, height: u32) -> TilemapBuilder {
+        self.texture_dimensions = Some(Dimension2::new(width, height));
+        self
+    }
+
+    /// Sets the tile scale.
+    ///
+    /// By default this is the size of the texture for width and height which
+    /// means that a tile width of 1 is the width in texture pixels for example.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_tilemap::prelude::*;
+    ///
+    /// let builder = TilemapBuilder::new().tile_scale(32.0, 32.0, 32.0);
+    /// ```
+    pub fn tile_scale(mut self, width: f32, height: f32, depth: f32) -> TilemapBuilder {
+        self.tile_scale = Vec3::new(width, height, depth);
         self
     }
 
@@ -497,12 +499,12 @@ impl TilemapBuilder {
     /// ```
     ///
     /// [`LayerKind`]: crate::chunk::LayerKind
-    pub fn add_layer(mut self, layer: TilemapLayer, z_order: usize) -> TilemapBuilder {
+    pub fn add_layer(mut self, layer: TilemapLayer, sprite_order: usize) -> TilemapBuilder {
         if let Some(layers) = &mut self.layers {
-            layers.insert(z_order, layer);
+            layers.insert(sprite_order, layer);
         } else {
             let mut layers = HashMap::default();
-            layers.insert(z_order, layer);
+            layers.insert(sprite_order, layer);
             self.layers = Some(layers);
         }
         self
@@ -563,14 +565,6 @@ impl TilemapBuilder {
         self
     }
 
-    /// Sets the Rapier physics scale for colliders and rigid bodies created
-    /// for layers with colliders.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub fn physics_scale(mut self, scale: f32) -> Self {
-        self.physics_scale = scale;
-        self
-    }
-
     /// Consumes the builder and returns a result.
     ///
     /// If successful a [`TilemapResult`] is return with [tilemap] on
@@ -604,7 +598,7 @@ impl TilemapBuilder {
         } else {
             return Err(ErrorKind::MissingTextureAtlas.into());
         };
-        let tile_dimensions = if let Some(dimensions) = self.tile_dimensions {
+        let tile_dimensions = if let Some(dimensions) = self.texture_dimensions {
             dimensions
         } else {
             return Err(ErrorKind::MissingTileDimensions.into());
@@ -628,15 +622,11 @@ impl TilemapBuilder {
             layers: vec![None; z_layers],
             auto_flags: self.auto_flags,
             auto_spawn: self.auto_spawn,
-            #[cfg(feature = "bevy_rapier2d")]
-            physics_scale: self.physics_scale,
             custom_flags: Vec::new(),
             texture_atlas,
             chunks: Default::default(),
             entities: Default::default(),
             chunk_events: Default::default(),
-            #[cfg(feature = "bevy_rapier2d")]
-            collision_events: Default::default(),
             spawned: Default::default(),
         };
 
@@ -664,15 +654,11 @@ impl Default for Tilemap {
             layers: vec![None; DEFAULT_Z_LAYERS],
             auto_flags: AutoFlags::NONE,
             auto_spawn: None,
-            #[cfg(feature = "bevy_rapier2d")]
-            physics_scale: 1.0,
             custom_flags: Vec::new(),
             texture_atlas: Handle::default(),
             chunks: Default::default(),
             entities: Default::default(),
             chunk_events: Default::default(),
-            #[cfg(feature = "bevy_rapier2d")]
-            collision_events: Default::default(),
             spawned: Default::default(),
         }
     }
@@ -860,21 +846,21 @@ impl Tilemap {
         note = "Please use `add_layer` method instead with the `TilemapLayer` struct"
     )]
     #[doc(hidden)]
-    pub fn add_layer_with_kind(&mut self, kind: LayerKind, z_order: usize) -> TilemapResult<()> {
-        let layer = TilemapLayer {
-            kind,
-            #[cfg(feature = "bevy_rapier2d")]
-            interaction_groups: InteractionGroups::default(),
-        };
-        if let Some(some_kind) = self.layers.get_mut(z_order) {
+    pub fn add_layer_with_kind(
+        &mut self,
+        kind: LayerKind,
+        sprite_order: usize,
+    ) -> TilemapResult<()> {
+        let layer = TilemapLayer { kind };
+        if let Some(some_kind) = self.layers.get_mut(sprite_order) {
             if some_kind.is_some() {
-                return Err(ErrorKind::LayerExists(z_order).into());
+                return Err(ErrorKind::LayerExists(sprite_order).into());
             }
             *some_kind = Some(layer);
         }
 
         for chunk in self.chunks.values_mut() {
-            chunk.add_layer(&kind, z_order, self.chunk_dimensions);
+            chunk.add_layer(&kind, sprite_order, self.chunk_dimensions);
         }
 
         Ok(())
@@ -920,16 +906,16 @@ impl Tilemap {
     /// [`add_layer_with_kind`]: Tilemap::add_layer_with_kind
     /// [`LayerKind`]: crate::chunk::LayerKind
     /// [`LayerKind::Sparse`]: crate::chunk::LayerKind::Sparse
-    pub fn add_layer(&mut self, layer: TilemapLayer, z_order: usize) -> TilemapResult<()> {
-        if let Some(inner_layer) = self.layers.get_mut(z_order) {
+    pub fn add_layer(&mut self, layer: TilemapLayer, sprite_order: usize) -> TilemapResult<()> {
+        if let Some(inner_layer) = self.layers.get_mut(sprite_order) {
             if inner_layer.is_some() {
-                return Err(ErrorKind::LayerExists(z_order).into());
+                return Err(ErrorKind::LayerExists(sprite_order).into());
             }
             *inner_layer = Some(layer);
         }
 
         for chunk in self.chunks.values_mut() {
-            chunk.add_layer(&layer.kind, z_order, self.chunk_dimensions)
+            chunk.add_layer(&layer.kind, sprite_order, self.chunk_dimensions)
         }
 
         Ok(())
@@ -964,21 +950,25 @@ impl Tilemap {
     /// assert!(tilemap.move_layer(0, 2).is_ok());
     /// assert!(tilemap.move_layer(3, 2).is_err());
     /// ```
-    pub fn move_layer(&mut self, from_z: usize, to_z: usize) -> TilemapResult<()> {
-        if let Some(layer) = self.layers.get(to_z) {
+    pub fn move_layer(
+        &mut self,
+        from_sprite_order: usize,
+        to_sprite_order: usize,
+    ) -> TilemapResult<()> {
+        if let Some(layer) = self.layers.get(to_sprite_order) {
             if layer.is_some() {
-                return Err(ErrorKind::LayerExists(to_z).into());
+                return Err(ErrorKind::LayerExists(to_sprite_order).into());
             }
         };
-        if let Some(layer) = self.layers.get(from_z) {
+        if let Some(layer) = self.layers.get(from_sprite_order) {
             if Some(layer).is_none() {
-                return Err(ErrorKind::LayerDoesNotExist(from_z).into());
+                return Err(ErrorKind::LayerDoesNotExist(from_sprite_order).into());
             }
         }
 
-        self.layers.swap(from_z, to_z);
+        self.layers.swap(from_sprite_order, to_sprite_order);
         for chunk in self.chunks.values_mut() {
-            chunk.move_layer(from_z, to_z);
+            chunk.move_sprite_order(from_sprite_order, to_sprite_order);
         }
 
         Ok(())
@@ -1088,7 +1078,7 @@ impl Tilemap {
     ///
     /// let mut tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
-    ///     .chunk_dimensions(32, 32)
+    ///     .chunk_dimensions(32, 32, 1)
     ///     .tile_dimensions(32, 32)
     ///     .dimensions(1, 1)
     ///     .finish()
@@ -1153,13 +1143,13 @@ impl Tilemap {
 
         self.spawned.remove(&(point.x, point.y));
 
-        if let Some(chunk) = self.chunks.get_mut(&point) {
-            let entities = chunk.remove_entities();
+        if self.chunks.get_mut(&point).is_some() {
             self.chunk_events
-                .send(TilemapChunkEvent::Despawned { entities, point })
+                .send(TilemapChunkEvent::Despawned { point });
+            Ok(())
+        } else {
+            Err(ErrorKind::MissingChunk.into())
         }
-
-        Ok(())
     }
 
     /// Destructively removes a chunk at a coordinate position and despawns them
@@ -1250,35 +1240,36 @@ impl Tilemap {
     fn sort_tiles_to_chunks<P, I>(
         &mut self,
         tiles: I,
-    ) -> TilemapResult<HashMap<Point2, Vec<Tile<Point2>>>>
+    ) -> TilemapResult<HashMap<Point2, Vec<Tile<Point3>>>>
     where
-        P: Into<Point2>,
+        P: Into<Point3>,
         I: IntoIterator<Item = Tile<P>>,
     {
         let width = self.chunk_dimensions.width as i32;
         let height = self.chunk_dimensions.height as i32;
 
-        let mut chunk_map: HashMap<Point2, Vec<Tile<Point2>>> = HashMap::default();
+        let mut chunk_map: HashMap<Point2, Vec<Tile<Point3>>> = HashMap::default();
         for tile in tiles.into_iter() {
-            let global_tile_point: Point2 = tile.point.into();
+            let global_tile_point: Point3 = tile.point.into();
             let chunk_point: Point2 = self.point_to_chunk_point(global_tile_point).into();
 
-            if let Some(layer) = self.layers.get(tile.z_order as usize) {
+            if let Some(layer) = self.layers.get(tile.sprite_order as usize) {
                 if layer.as_ref().is_none() {
-                    self.add_layer(TilemapLayer::default(), tile.z_order as usize)?;
+                    self.add_layer(TilemapLayer::default(), tile.sprite_order as usize)?;
                 }
             } else {
-                return Err(ErrorKind::LayerDoesNotExist(tile.z_order).into());
+                return Err(ErrorKind::LayerDoesNotExist(tile.sprite_order).into());
             }
 
-            let tile_point = Point2::new(
+            let tile_point = Point3::new(
                 global_tile_point.x - (width * chunk_point.x) + (width / 2),
                 global_tile_point.y - (height * chunk_point.y) + (height / 2),
+                global_tile_point.z,
             );
 
-            let chunk_tile: Tile<Point2> = Tile {
+            let chunk_tile: Tile<Point3> = Tile {
                 point: tile_point,
-                z_order: tile.z_order,
+                sprite_order: tile.sprite_order,
                 sprite_index: tile.sprite_index,
                 tint: tile.tint,
             };
@@ -1343,7 +1334,7 @@ impl Tilemap {
     /// [`insert_tile`]: Tilemap::insert_tile
     pub fn insert_tiles<P, I>(&mut self, tiles: I) -> TilemapResult<()>
     where
-        P: Into<Point2>,
+        P: Into<Point3>,
         I: IntoIterator<Item = Tile<P>>,
     {
         let chunk_map = self.sort_tiles_to_chunks(tiles)?;
@@ -1372,18 +1363,14 @@ impl Tilemap {
             let mut layers = HashMap::default();
             for tile in tiles.iter() {
                 let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
-                // TODO: Tile collider must be added to the chunk.
                 chunk.set_tile(index, *tile);
-                if let Some(entity) = chunk.get_entity(tile.z_order) {
-                    layers.entry(tile.z_order).or_insert(entity);
-                }
+                layers
+                    .entry(tile.sprite_order)
+                    .or_insert_with(|| chunk.point());
             }
 
             self.chunk_events
                 .send(TilemapChunkEvent::Modified { layers });
-            #[cfg(feature = "bevy_rapier2d")]
-            self.collision_events
-                .send(TilemapCollisionEvent::Spawned { chunk_point, tiles });
         }
 
         Ok(())
@@ -1425,7 +1412,7 @@ impl Tilemap {
     /// # Errors
     ///
     /// Returns an error if the given coordinate or index is out of bounds.
-    pub fn insert_tile<P: Into<Point2>>(&mut self, tile: Tile<P>) -> TilemapResult<()> {
+    pub fn insert_tile<P: Into<Point3>>(&mut self, tile: Tile<P>) -> TilemapResult<()> {
         let tiles = vec![tile];
         self.insert_tiles(tiles)
     }
@@ -1474,15 +1461,15 @@ impl Tilemap {
     /// only happen if the tilemap has dimensions.
     pub fn clear_tiles<P, I>(&mut self, points: I) -> TilemapResult<()>
     where
-        P: Into<Point2>,
+        P: Into<Point3>,
         I: IntoIterator<Item = (P, usize)>,
     {
         let mut tiles = Vec::new();
-        for (point, z_order) in points {
+        for (point, sprite_order) in points {
             tiles.push(Tile {
                 point: point.into(),
                 sprite_index: 0,
-                z_order,
+                sprite_order,
                 tint: Color::rgba(0.0, 0.0, 0.0, 0.0),
             });
         }
@@ -1495,15 +1482,11 @@ impl Tilemap {
             };
             for tile in tiles.iter() {
                 let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
-                chunk.remove_tile(index, tile.z_order);
-                if let Some(entity) = chunk.get_entity(tile.z_order) {
-                    layers.entry(tile.z_order).or_insert(entity);
-                }
+                chunk.remove_tile(index, tile.sprite_order, tile.point.z as usize);
+                layers
+                    .entry(tile.sprite_order)
+                    .or_insert_with(|| chunk.point());
             }
-
-            #[cfg(feature = "bevy_rapier2d")]
-            self.collision_events
-                .send(TilemapCollisionEvent::Despawned { chunk_point, tiles });
         }
 
         self.chunk_events
@@ -1513,13 +1496,14 @@ impl Tilemap {
     }
 
     /// Takes a global tile point and returns a tile point in a chunk.
-    fn point_to_tile_point(&self, point: Point2) -> Point2 {
+    fn point_to_tile_point(&self, point: Point3) -> Point3 {
         let chunk_point: Point2 = self.point_to_chunk_point(point).into();
         let width = self.chunk_dimensions.width as i32;
         let height = self.chunk_dimensions.height as i32;
-        Point2::new(
+        Point3::new(
             point.x - (width * chunk_point.x) + (width / 2),
             point.y - (height * chunk_point.y) + (height / 2),
+            point.z,
         )
     }
 
@@ -1554,11 +1538,11 @@ impl Tilemap {
     ///
     /// An error can occure if the point is outside of the tilemap. This can
     /// only happen if the tilemap has dimensions.
-    pub fn clear_tile<P>(&mut self, point: P, z_order: usize) -> TilemapResult<()>
+    pub fn clear_tile<P>(&mut self, point: P, sprite_order: usize) -> TilemapResult<()>
     where
-        P: Into<Point2>,
+        P: Into<Point3>,
     {
-        let points = vec![(point, z_order)];
+        let points = vec![(point, sprite_order)];
         self.clear_tiles(points)
     }
 
@@ -1591,16 +1575,16 @@ impl Tilemap {
     /// assert_eq!(tilemap.get_tile((9, 3), 0), Some(&RawTile { index: 3, color: Color::WHITE }));
     /// assert_eq!(tilemap.get_tile((10, 4), 0), None);
     /// ```
-    pub fn get_tile<P>(&mut self, point: P, z_order: usize) -> Option<&RawTile>
+    pub fn get_tile<P>(&mut self, point: P, sprite_order: usize) -> Option<&RawTile>
     where
-        P: Into<Point2>,
+        P: Into<Point3>,
     {
-        let point: Point2 = point.into();
+        let point: Point3 = point.into();
         let chunk_point: Point2 = self.point_to_chunk_point(point).into();
         let tile_point = self.point_to_tile_point(point);
         let chunk = self.chunks.get(&chunk_point)?;
         let index = self.chunk_dimensions.encode_point_unchecked(tile_point);
-        chunk.get_tile(z_order, index)
+        chunk.get_tile(sprite_order, index, point.z as usize)
     }
 
     /// Gets a mutable raw tile from a given point and z order.
@@ -1632,22 +1616,20 @@ impl Tilemap {
     /// assert_eq!(tilemap.get_tile_mut((2, 5), 0), Some(&mut RawTile { index: 2, color: Color::WHITE }));
     /// assert_eq!(tilemap.get_tile_mut((1, 4), 0), None);
     /// ```
-    pub fn get_tile_mut<P>(&mut self, point: P, z_order: usize) -> Option<&mut RawTile>
+    pub fn get_tile_mut<P>(&mut self, point: P, sprite_order: usize) -> Option<&mut RawTile>
     where
-        P: Into<Point2>,
+        P: Into<Point3>,
     {
-        let point: Point2 = point.into();
+        let point: Point3 = point.into();
         let chunk_point: Point2 = self.point_to_chunk_point(point).into();
         let tile_point = self.point_to_tile_point(point);
         let chunk = self.chunks.get_mut(&chunk_point)?;
         let index = self.chunk_dimensions.encode_point_unchecked(tile_point);
         let mut layers = HashMap::default();
-        if let Some(entity) = chunk.get_entity(z_order) {
-            layers.insert(z_order, entity);
-            self.chunk_events
-                .send(TilemapChunkEvent::Modified { layers });
-        }
-        chunk.get_tile_mut(z_order, index)
+        layers.insert(sprite_order, chunk_point);
+        self.chunk_events
+            .send(TilemapChunkEvent::Modified { layers });
+        chunk.get_tile_mut(sprite_order, index, point.z as usize)
     }
 
     /// Returns the center tile, if the tilemap has dimensions.
@@ -1768,7 +1750,7 @@ impl Tilemap {
     ///
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
-    ///     .chunk_dimensions(32, 64)
+    ///     .chunk_dimensions(32, 64, 1)
     ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
@@ -1794,7 +1776,7 @@ impl Tilemap {
     ///
     /// let tilemap = TilemapBuilder::new()
     ///     .texture_atlas(texture_atlas_handle)
-    ///     .chunk_dimensions(32, 64)
+    ///     .chunk_dimensions(32, 64, 1)
     ///     .tile_dimensions(32, 32)
     ///     .finish()
     ///     .unwrap();
@@ -1926,40 +1908,6 @@ impl Tilemap {
         self.chunk_events.update()
     }
 
-    /// Returns a reference to the tilemap collision events.
-    ///
-    /// This is handy if you need to know which collisions were spawned which
-    /// can then be used to trigger other systems. It should be used in
-    /// conjunction with [`chunk_events_update`] as collisions will spawn
-    /// on a chunk spawn and be despawned with a chunk despawn. Those will not
-    /// trigger events.
-    ///
-    /// [`chunk_events_update`]:
-    ///
-    ///
-    #[cfg(feature = "bevy_rapier2d")]
-    pub fn collision_events(&self) -> &Events<TilemapCollisionEvent> {
-        &self.collision_events
-    }
-
-    /// Updates the collision events. This should only be done once per frame.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) fn collision_events_update(&mut self) {
-        self.collision_events.update()
-    }
-
-    /// Returns a copy of the physics scale.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub fn physics_scale(&self) -> f32 {
-        self.physics_scale
-    }
-
-    /// Sets the physics scale.
-    #[cfg(feature = "bevy_rapier2d")]
-    pub fn set_physics_scale(&mut self, scale: f32) {
-        self.physics_scale = scale;
-    }
-
     /// Returns an option containing a Dimension2.
     pub(crate) fn auto_spawn(&self) -> Option<Dimension2> {
         self.auto_spawn
@@ -1971,7 +1919,7 @@ impl Tilemap {
     }
 
     /// Returns a copy of the chunk's dimensions.
-    pub(crate) fn chunk_dimensions(&self) -> Dimension2 {
+    pub(crate) fn chunk_dimensions(&self) -> Dimension3 {
         self.chunk_dimensions
     }
 
@@ -1993,6 +1941,11 @@ impl Tilemap {
     /// Returns a reference to the layers in the tilemap.
     pub(crate) fn layers(&self) -> Vec<Option<TilemapLayer>> {
         self.layers.clone()
+    }
+
+    /// Returns a reference to the chunks in the tilemap.
+    pub(crate) fn chunks(&self) -> &HashMap<Point2, Chunk> {
+        &self.chunks
     }
 
     /// Returns a mutable reference to the inner chunks.

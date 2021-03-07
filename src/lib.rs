@@ -62,7 +62,9 @@
 // #![no_implicit_prelude]
 
 // rustc / rustdoc
-#![warn(missing_docs, private_doc_tests)]
+// This won't build on stable releases until it is stable.
+//#![warn(rustdoc::private_doc_tests)]
+#![warn(missing_docs)]
 #![deny(dead_code, unused_imports)]
 // clippy
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -140,12 +142,11 @@ impl Plugin for Tilemap2DPlugin {
             .add_system_to_stage(
                 stage::TILEMAP,
                 crate::chunk::system::chunk_auto_spawn.system(),
+            )
+            .add_system_to_stage(
+                stage::TILEMAP,
+                crate::system::tilemap_visibility_change.system(),
             );
-        #[cfg(feature = "bevy_rapier2d")]
-        app.add_system_to_stage(
-            stage::TILEMAP,
-            crate::system::tilemap_collision_events.system(),
-        );
 
         let resources = app.resources_mut();
         let mut render_graph = resources
@@ -163,8 +164,6 @@ mod lib {
     extern crate bevy_ecs;
     extern crate bevy_log;
     extern crate bevy_math;
-    #[cfg(feature = "bevy_rapier2d")]
-    extern crate bevy_rapier2d;
     extern crate bevy_reflect;
     extern crate bevy_render;
     extern crate bevy_sprite;
@@ -185,12 +184,7 @@ mod lib {
         Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources, SystemStage,
     };
     pub(crate) use bevy_log::{error, info, warn};
-    pub(crate) use bevy_math::Vec3;
-    #[cfg(feature = "bevy_rapier2d")]
-    pub(crate) use bevy_rapier2d::rapier::{
-        dynamics::RigidBodyBuilder,
-        geometry::{ColliderBuilder, InteractionGroups},
-    };
+    pub(crate) use bevy_math::{Vec2, Vec3};
     pub(crate) use bevy_reflect::{TypeUuid, Uuid};
     pub(crate) use bevy_render::{
         camera::Camera,
@@ -209,8 +203,8 @@ mod lib {
     };
     pub(crate) use bevy_sprite::TextureAtlas;
     pub(crate) use bevy_tilemap_types::{
-        dimension::{Dimension2, DimensionError},
-        point::Point2,
+        dimension::{Dimension2, Dimension3, DimensionError},
+        point::{Point2, Point3},
     };
     pub(crate) use bevy_transform::{
         components::{GlobalTransform, Parent, Transform},

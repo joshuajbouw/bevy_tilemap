@@ -1,8 +1,5 @@
 use crate::{
-    chunk::{
-        entity::{ModifiedLayer, ZOrder},
-        mesh::ChunkMesh,
-    },
+    chunk::{entity::Modified, mesh::ChunkMesh},
     lib::*,
     Tilemap,
 };
@@ -12,9 +9,9 @@ use crate::{
 pub(crate) fn chunk_update(
     mut meshes: ResMut<Assets<Mesh>>,
     map_query: Query<&Tilemap>,
-    mut chunk_query: Query<(&Parent, &Point2, &ZOrder, &Handle<Mesh>), Changed<ModifiedLayer>>,
+    mut chunk_query: Query<(&Parent, &Point2, &Handle<Mesh>), Changed<Modified>>,
 ) {
-    for (parent, point, z_order, mesh_handle) in chunk_query.iter_mut() {
+    for (parent, point, mesh_handle) in chunk_query.iter_mut() {
         let tilemap = if let Ok(tilemap) = map_query.get(**parent) {
             tilemap
         } else {
@@ -33,14 +30,7 @@ pub(crate) fn chunk_update(
             error!("`Mesh` is missing, can not update chunk");
             return;
         };
-        let (indexes, colors) = if let Some((index, colors)) =
-            chunk.tiles_to_renderer_parts(z_order.0, tilemap.chunk_dimensions())
-        {
-            (index, colors)
-        } else {
-            error!("Tiles are missing, can not update chunk");
-            return;
-        };
+        let (indexes, colors) = chunk.tiles_to_renderer_parts(tilemap.chunk_dimensions());
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
     }

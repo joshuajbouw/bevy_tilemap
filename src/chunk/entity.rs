@@ -2,18 +2,13 @@ use crate::lib::*;
 
 /// A component that is used as a flag for dirty chunks that need updating.
 #[derive(Default)]
-pub(crate) struct ModifiedLayer(pub usize);
-
-/// The Z Order of a layer in a chunk.
-pub(crate) struct ZOrder(pub usize);
+pub(crate) struct Modified(pub usize);
 
 /// A component bundle for `Chunk` entities.
 #[derive(Bundle)]
 pub(crate) struct ChunkBundle {
     /// The point of the chunk.
     pub point: Point2,
-    /// The z order of the layer.
-    pub z_order: ZOrder,
     /// The handle for a TextureAtlas which contains multiple textures.
     pub texture_atlas: Handle<TextureAtlas>,
     /// A component that indicates how to draw a component.
@@ -32,5 +27,5 @@ pub(crate) struct ChunkBundle {
     /// The global transform location in a space for a component.
     pub global_transform: GlobalTransform,
     /// If a layer has been modified, all are set here.
-    pub modified_layer: ModifiedLayer,
+    pub modified: Modified,
 }
