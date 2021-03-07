@@ -167,6 +167,7 @@ mod tests {
             .unwrap();
         let tilemap_bundle = TilemapBundle {
             tilemap,
+            visible: Visible { is_visible: true, is_transparent: true },
             transform: Default::default(),
             global_transform: Default::default(),
         };

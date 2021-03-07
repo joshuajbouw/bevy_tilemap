@@ -58,6 +58,7 @@ fn topology_translation(
 fn handle_spawned_chunks(
     commands: &mut Commands,
     tilemap_entity: Entity,
+    tilemap_visible: &Visible,
     meshes: &mut Assets<Mesh>,
     tilemap: &mut Tilemap,
     spawned_chunks: Vec<Point2>,
@@ -107,12 +108,7 @@ fn handle_spawned_chunks(
                 transform: Transform::from_translation(translation),
                 render_pipelines: RenderPipelines::from_pipelines(vec![pipeline]),
                 draw: Default::default(),
-                visible: Visible {
-                    // TODO: this would be nice as a config parameter to make
-                    // RapierRenderPlugin's output visible.
-                    is_visible: true,
-                    is_transparent: true,
-                },
+                visible: tilemap_visible.clone(),
                 main_pass: MainPass,
                 global_transform: Default::default(),
                 modified: Default::default(),
@@ -265,7 +261,7 @@ pub(crate) fn tilemap_events(
     mut tilemap_query: Query<(Entity, &mut Tilemap, &Visible)>,
     mut modified_query: Query<&mut Modified>,
 ) {
-    for (map_entity, mut tilemap, tilemap_visible) in tilemap_query.iter_mut() {
+    for (tilemap_entity, mut tilemap, tilemap_visible) in tilemap_query.iter_mut() {
         tilemap.chunk_events_update();
         let mut reader = tilemap.chunk_events().get_reader();
 
@@ -302,6 +298,7 @@ pub(crate) fn tilemap_events(
             handle_spawned_chunks(
                 commands,
                 tilemap_entity,
+                tilemap_visible,
                 &mut meshes,
                 &mut tilemap,
                 spawned_chunks,
@@ -454,6 +451,7 @@ mod tests {
         let tilemap = new_tilemap();
         let tilemap_bundle = TilemapBundle {
             tilemap,
+            visible: Visible { is_visible: true, is_transparent: true },
             transform: Default::default(),
             global_transform: Default::default(),
         };
