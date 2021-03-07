@@ -28,7 +28,7 @@ struct Position {
 #[derive(Default)]
 struct Render {
     sprite_index: usize,
-    z_order: usize,
+    sprite_order: usize,
 }
 
 #[derive(Bundle)]
@@ -92,15 +92,32 @@ fn load(
         // them.
         let tilemap = Tilemap::builder()
             .dimensions(3, 3)
-            .tile_dimensions(32, 32)
-            .chunk_dimensions(32, 32)
-            .z_layers(2)
+            .texture_dimensions(32, 32)
+            .chunk_dimensions(32, 32, 1)
+            .auto_chunk()
+            .auto_spawn(2, 2)
+            .add_layer(
+                TilemapLayer {
+                    kind: LayerKind::Dense,
+                },
+                0,
+            )
+            .add_layer(
+                TilemapLayer {
+                    kind: LayerKind::Sparse,
+                },
+                1,
+            )
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();
 
         let tilemap_components = TilemapBundle {
             tilemap,
+            visible: Visible {
+                is_visible: true,
+                is_transparent: true,
+            },
             transform: Default::default(),
             global_transform: Default::default(),
         };
@@ -125,16 +142,6 @@ fn build_map(
     }
 
     for mut map in query.iter_mut() {
-        let width = map.width().unwrap() as i32;
-        let height = map.height().unwrap() as i32;
-        for y in 0..height as i32 {
-            for x in 0..width as i32 {
-                let x = x - width as i32 / 2;
-                let y = y - height as i32 / 2;
-                map.insert_chunk((x, y)).unwrap();
-            }
-        }
-
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
 
@@ -209,8 +216,6 @@ fn build_map(
             }
         }
 
-        map.add_layer_with_kind(LayerKind::Sparse, 1).unwrap();
-
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/square-dwarf.png");
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
         let mut rng = rand::thread_rng();
@@ -225,30 +230,13 @@ fn build_map(
                 position,
                 render: Render {
                     sprite_index: dwarf_sprite_index,
-                    z_order: 1,
+                    sprite_order: 1,
                 },
             });
-
-            let dwarf_tile = Tile {
-                point: (0, 0),
-                sprite_index: dwarf_sprite_index,
-                z_order: 1,
-                ..Default::default()
-            };
-            tiles.push(dwarf_tile);
         }
         info!("{} drunken dwarves spawned.", DWARF_COUNT);
 
         map.insert_tiles(tiles).unwrap();
-        map.spawn_chunk((0, 0)).unwrap();
-        map.spawn_chunk((0, 1)).unwrap();
-        map.spawn_chunk((1, 1)).unwrap();
-        map.spawn_chunk((1, 0)).unwrap();
-        map.spawn_chunk((1, -1)).unwrap();
-        map.spawn_chunk((0, -1)).unwrap();
-        map.spawn_chunk((-1, -1)).unwrap();
-        map.spawn_chunk((-1, 0)).unwrap();
-        map.spawn_chunk((-1, 1)).unwrap();
         state.map_loaded = true;
     }
 }
@@ -264,7 +252,7 @@ fn move_sprite(
     let tile = Tile {
         point: (position.x, position.y),
         sprite_index: render.sprite_index,
-        z_order: render.z_order,
+        sprite_order: render.sprite_order,
         ..Default::default()
     };
     map.insert_tile(tile).unwrap();

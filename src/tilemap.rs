@@ -650,7 +650,11 @@ impl TilemapBuilder {
             self.z_layers
         };
 
-        let layer_count = self.layers.iter().count();
+        let layer_count = if let Some(layers) = &self.layers {
+            layers.iter().count()
+        } else {
+            0
+        };
         let chunk_mesh =
             ChunkMesh::new(self.chunk_dimensions, layer_count as u32, self.layer_offset);
 

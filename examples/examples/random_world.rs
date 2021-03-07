@@ -93,8 +93,8 @@ fn load(
         let tilemap = Tilemap::builder()
             .topology(GridTopology::HexEvenRows)
             .dimensions(1, 1)
-            .chunk_dimensions(32, 38)
-            .tile_dimensions(32, 37)
+            .chunk_dimensions(32, 38, 1)
+            .texture_dimensions(32, 37)
             .z_layers(3)
             .texture_atlas(atlas_handle)
             .finish()
@@ -102,6 +102,10 @@ fn load(
 
         let tilemap_components = TilemapBundle {
             tilemap,
+            visible: Visible {
+                is_visible: true,
+                is_transparent: true,
+            },
             transform: Default::default(),
             global_transform: Default::default(),
         };

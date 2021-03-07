@@ -51,14 +51,18 @@ fn load(
             .auto_chunk()
             .topology(GridTopology::HexOddCols)
             .dimensions(3, 3)
-            .chunk_dimensions(8, 4)
-            .tile_dimensions(37, 32)
+            .chunk_dimensions(8, 4, 1)
+            .texture_dimensions(37, 32)
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();
 
         let tilemap_components = TilemapBundle {
             tilemap,
+            visible: Visible {
+                is_visible: true,
+                is_transparent: true,
+            },
             transform: Default::default(),
             global_transform: Default::default(),
         };

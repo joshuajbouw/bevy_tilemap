@@ -275,7 +275,6 @@ fn move_sprite(
     previous_position: Position,
     position: Position,
     render: &Render,
-    // camera_translation: &mut Transform,
 ) {
     // We need to first remove where we were prior.
     map.clear_tile((previous_position.x, previous_position.y), 1)
