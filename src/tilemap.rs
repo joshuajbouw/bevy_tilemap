@@ -851,9 +851,7 @@ impl Tilemap {
         kind: LayerKind,
         sprite_order: usize,
     ) -> TilemapResult<()> {
-        let layer = TilemapLayer {
-            kind,
-        };
+        let layer = TilemapLayer { kind };
         if let Some(some_kind) = self.layers.get_mut(sprite_order) {
             if some_kind.is_some() {
                 return Err(ErrorKind::LayerExists(sprite_order).into());
@@ -1485,7 +1483,9 @@ impl Tilemap {
             for tile in tiles.iter() {
                 let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
                 chunk.remove_tile(index, tile.sprite_order, tile.point.z as usize);
-                layers.entry(tile.sprite_order).or_insert_with(|| chunk.point());
+                layers
+                    .entry(tile.sprite_order)
+                    .or_insert_with(|| chunk.point());
             }
         }
 

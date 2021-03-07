@@ -1,4 +1,8 @@
-use crate::{chunk::entity::Modified, chunk::mesh::ChunkMesh, lib::*, Tilemap};
+use crate::{
+    chunk::{entity::Modified, mesh::ChunkMesh},
+    lib::*,
+    Tilemap,
+};
 
 /// The chunk update system that is used to set attributes of the tiles and
 /// tints if they need updating.
