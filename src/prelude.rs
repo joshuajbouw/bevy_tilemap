@@ -15,7 +15,7 @@
 //! holds minimal amount of data for small data sizes.
 //! * [`bevy_tilemap::tilemap`]::{[`Tilemap`], [`TilemapBuilder`]},
 //! the core object that is used for virtually everything in this library.
-//! * [`bevy_tilemap`]::[`Tilemap2DPlugin`], the main plugin with
+//! * [`bevy_tilemap`]::[`TilemapPlugin`], the main plugin with
 //! a collection of systems, components and assets to be used in a Bevy app.
 //!
 //! [`bevy_tilemap::prelude::v0`]: crate::prelude::v0

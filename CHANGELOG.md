@@ -5,11 +5,54 @@ just additions, fixes as well as if the API had been added to.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - 2021-03-08
+
+### Fixed
+
+* Respawn panic and collision tile offsets.
+* Deprecated `ncollide` replaced with `ncollide2` (technically this work was
+  postponed but worth mentioning).
+* Fix deprecated uses of `add_layer_with_kind`.
+* Fixed missing `texture_dimensions` in `physics_dungeon`.
 
 ### Added
 
-* Added `auto_spawn` to the `Tilemap` [#94](https://github.com/joshuajbouw/bevy_tilemap/pull/94)
+* Added 3D capabilities to the tilemap. No more being locked to a 2nd dimension!
+* Added `TilemapBundle` visibility, `Visible`, support which allows the 
+  visibility to be added to the tilemap and changed for all chunks if needed.
+* Added `z_order` and `sprite_order` fields to `Tile`.
+* Added `MissingTextureDimensions` error to `TilemapError`.
+* Added `event` module which allows use of the `TilemapChunkEvent`.
+* Added `auto_spawn` to the `Tilemap`.
+
+### Changed
+
+* Renamed `Tilemap2DPlugin` to `TilemapPlugin` as now the tilemap supports both
+2D and 3D. Lets not get carried away here and go beyond the 3rd dimension!
+* `Chunk` was made private as it never was meant to be public. Oops.
+* Changed `RawTile` to be public. Now you can see raw details of the tiles.
+* Made the `TilemapError` inner public.
+* `TilemapBuilder::chunk_dimensions` now requires an extra argument `depth`. You
+  probably do not want to set this to 0.
+* `Tilemapbuilder::tile_dimensions` was renamed to 
+  `TilemapBuilder::texture_dimensions`. Makes it more exact, especially since 
+  tile dimensions are coming in the next update which are totally different 
+  (sorry, not sorry. It was you that decided to use an experimental game engine
+  with an experimental plugin :D.)
+* `TilemapBuilder::add_layer` now takes in the new `TilemapLayer`. It does only 
+  have 1 field right now but this is expected to change at some point. Yay being 
+  ... prepared?
+* As with the above, `Tilemap::add_layer` also takes in the new `TilemapLayer`.
+* `Tilemap::new` now requires a width and height of the texture.
+* Anywhere that was required to take in a `Point2` for a tile is now a `Point3`
+  and while this technically is breaking, this shouldn't affect the API.
+
+### Removed
+
+* `Tile::new`, all fields were made public instead. That goes with all the many
+  terribly thought out constructor patterns that should've never existed.
+* Removed `render` module from public API.
+* `TilemapBuilder::auto_configure` was purged. It no longer is needed.
 
 ## [0.3.1] - 2021-01-12
 
