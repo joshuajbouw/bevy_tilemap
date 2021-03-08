@@ -744,7 +744,11 @@ impl Tilemap {
     /// ```
     ///
     /// [`default`]: Tilemap::default
-    pub fn new(texture_atlas: Handle<TextureAtlas>, texture_width: u32, texture_height: u32) -> Tilemap {
+    pub fn new(
+        texture_atlas: Handle<TextureAtlas>,
+        texture_width: u32,
+        texture_height: u32,
+    ) -> Tilemap {
         Tilemap {
             texture_atlas,
             texture_dimensions: Dimension2::new(texture_width, texture_height),
