@@ -72,7 +72,7 @@ fn setup(mut tile_sprite_handles: ResMut<TileSpriteHandles>, asset_server: Res<A
 }
 
 fn load(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut sprite_handles: ResMut<TileSpriteHandles>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Texture>>,
@@ -124,17 +124,18 @@ fn load(
             global_transform: Default::default(),
         };
 
-        commands.spawn(Camera2dBundle::default());
+        commands.spawn().insert_bundle(OrthographicCameraBundle::new_2d());
         commands
-            .spawn(tilemap_components)
-            .with(Timer::from_seconds(0.075, true));
+            .spawn()
+            .insert_bundle(tilemap_components)
+            .insert(Timer::from_seconds(0.075, true));
 
         sprite_handles.atlas_loaded = true;
     }
 }
 
 fn build_random_dungeon(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut game_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
@@ -254,7 +255,7 @@ fn build_random_dungeon(
         };
         tiles.push(dwarf_tile);
 
-        commands.spawn(PlayerBundle {
+        commands.spawn().insert_bundle(PlayerBundle {
             player: Player {},
             position: Position { x: 0, y: 0 },
             render: Render {
@@ -302,7 +303,7 @@ fn character_movement(
     }
 
     for (mut map, mut timer) in map_query.iter_mut() {
-        timer.tick(time.delta_seconds());
+        timer.tick(time.delta());
         if !timer.finished() {
             continue;
         }
@@ -381,7 +382,7 @@ fn character_movement(
 
 fn main() {
     App::build()
-        .add_resource(WindowDescriptor {
+        .insert_resource(WindowDescriptor {
             title: "Endless Dungeon".to_string(),
             width: 1024.,
             height: 1024.,

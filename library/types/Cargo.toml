@@ -12,9 +12,6 @@ documentation = "https://docs.rs/bevy_tilemap/latest/bevy_tilemap_types/"
 [package.metadata.docs.rs]
 features = ["serialize"]
 
-[patch.crates-io]
-bevy_app = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-
 [features]
 serialize = ["serde"]
 

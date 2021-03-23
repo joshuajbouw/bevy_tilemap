@@ -28,22 +28,23 @@ serialize = ["bevy_tilemap_types/serialize", "serde"]
 members = ["library/*", "examples"]
 
 [patch.crates-io]
-bevy_app = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_asset = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_core = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_ecs = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_math = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_input = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_pbr = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_render = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_reflect = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_scene = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_sprite = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_text = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_transform = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_ui = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_utils = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
-bevy_window = { git = "https://github.com/bevyengine/bevy.git", branch = "master" }
+bevy_app = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_asset = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_core = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_diagnostic = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_ecs = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_gilrs = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_input = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_log = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_math = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_render = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_reflect = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_sprite = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_transform = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_utils = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_wgpu = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_window = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
+bevy_winit = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
 
 [dependencies]
 bevy_app = "0.4"
@@ -60,7 +61,7 @@ bevy_transform = "0.4"
 bevy_utils = "0.4"
 bevy_window = "0.4"
 bitflags = "1.2"
-hexasphere = "3.1"
+hexasphere = "3.2"
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]

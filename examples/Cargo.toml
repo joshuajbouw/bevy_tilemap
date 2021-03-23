@@ -17,6 +17,6 @@ exclude = ["assets/**/*", ".github/**/*", "doc/**/*"]
 publish = false
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy.git", branch = "master"}
+bevy = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
 bevy_tilemap = { path = "../" }
 rand = "0.8"

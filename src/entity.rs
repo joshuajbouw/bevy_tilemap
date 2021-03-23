@@ -1,9 +1,8 @@
 //! Bundles of components for spawning entities.
 
-use crate::{
-    lib::{Bundle, *},
-    Tilemap,
-};
+use crate::{lib::*, Tilemap};
+use ::bevy_ecs;
+use ::std;
 
 /// A component bundle for `Tilemap` entities.
 #[derive(Debug, Bundle)]
