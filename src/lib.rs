@@ -116,7 +116,7 @@ pub mod tile;
 #[no_implicit_prelude]
 pub mod tilemap;
 
-use crate::{chunk::render::TilemapRenderGraphBuilder, event::TilemapChunkEvent, lib::*};
+use crate::{event::TilemapChunkEvent, lib::*};
 pub use crate::{
     tile::Tile,
     tilemap::{Tilemap, TilemapLayer},
@@ -126,34 +126,57 @@ pub use crate::{
 #[derive(Default)]
 pub struct TilemapPlugin;
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
+pub enum TilemapSystem {
+    Events,
+    AutoSpawn,
+}
+
 impl Plugin for TilemapPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_asset::<Tilemap>()
             .add_stage_before(
-                app_stage::POST_UPDATE,
+                CoreStage::PostUpdate,
                 stage::TILEMAP,
                 SystemStage::parallel(),
             )
-            .add_system_to_stage(stage::TILEMAP, crate::system::tilemap_events.system())
-            .add_system_to_stage(stage::TILEMAP, crate::chunk::system::chunk_update.system())
             .add_system_to_stage(
                 stage::TILEMAP,
-                crate::chunk::system::chunk_auto_radius.system(),
+                crate::system::tilemap_events
+                    .system()
+                    // .label(TilemapSystem::Events),
             )
             .add_system_to_stage(
                 stage::TILEMAP,
-                crate::chunk::system::chunk_auto_spawn.system(),
+                crate::chunk::system::chunk_update
+                    .system()
+                    // .after(TilemapSystem::Events),
+            )
+            .add_system_to_stage(
+                stage::TILEMAP,
+                crate::chunk::system::chunk_auto_radius
+                    .system()
+                    // .after(TilemapSystem::Events),
+            )
+            .add_system_to_stage(
+                stage::TILEMAP,
+                crate::chunk::system::chunk_auto_spawn
+                    .system()
+                    // .label(TilemapSystem::AutoSpawn)
+                    // .before(TilemapSystem::Events),
             )
             .add_system_to_stage(
                 stage::TILEMAP,
                 crate::system::tilemap_visibility_change.system(),
             );
 
-        let resources = app.resources_mut();
-        let mut render_graph = resources
-            .get_mut::<RenderGraph>()
-            .expect("`RenderGraph` is missing.");
-        render_graph.add_tilemap_graph(resources);
+        let world = app.world_mut().cell();
+        // let mut render_graph = world.get_resource_mut::<RenderGraph>().unwrap();
+        let mut pipelines = world
+            .get_resource_mut::<Assets<PipelineDescriptor>>()
+            .unwrap();
+        let mut shaders = world.get_resource_mut::<Assets<Shader>>().unwrap();
+        crate::chunk::render::add_tilemap_graph(&mut pipelines, &mut shaders);
     }
 }
 
@@ -182,7 +205,7 @@ mod lib {
     #[cfg(test)]
     pub(crate) use bevy_app::ScheduleRunnerPlugin;
     pub(crate) use bevy_app::{
-        stage as app_stage, AppBuilder, Events, Plugin, PluginGroup, PluginGroupBuilder,
+        AppBuilder, CoreStage, Events, Plugin, PluginGroup, PluginGroupBuilder,
     };
     pub(crate) use bevy_asset::{AddAsset, Assets, Handle, HandleUntyped};
     #[cfg(test)]
@@ -190,12 +213,14 @@ mod lib {
     #[cfg(test)]
     pub(crate) use bevy_core::CorePlugin;
     pub(crate) use bevy_ecs::{
-        Bundle, Changed, Commands, Entity, IntoSystem, Query, Res, ResMut, Resources, SystemStage,
+        bundle::Bundle,
+        entity::Entity,
+        query::Changed,
+        schedule::{SystemLabel, SystemStage},
+        system::{Commands, IntoSystem, Query, Res, ResMut},
     };
     pub(crate) use bevy_log::{error, info, warn};
     pub(crate) use bevy_math::{Vec2, Vec3};
-    #[cfg(test)]
-    pub(crate) use bevy_reflect::ReflectPlugin;
     pub(crate) use bevy_reflect::{TypeUuid, Uuid};
     pub(crate) use bevy_render::{
         camera::Camera,
@@ -203,12 +228,11 @@ mod lib {
         draw::{Draw, Visible},
         mesh::{Indices, Mesh},
         pipeline::{
-            BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
-            CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, PipelineDescriptor,
-            PrimitiveTopology, RasterizationStateDescriptor, RenderPipeline, RenderPipelines,
-            StencilStateDescriptor, StencilStateFaceDescriptor,
+            BlendFactor, BlendOperation, BlendState, ColorTargetState, ColorWrite, CompareFunction,
+            DepthBiasState, DepthStencilState, PipelineDescriptor, PrimitiveTopology,
+            RenderPipeline, RenderPipelines, StencilFaceState, StencilState,
         },
-        render_graph::{base::MainPass, RenderGraph},
+        render_graph::base::MainPass,
         shader::{Shader, ShaderStage, ShaderStages},
         texture::TextureFormat,
     };
@@ -240,6 +264,7 @@ mod lib {
         error::Error,
         fmt::{Debug, Display, Formatter, Result as FmtResult},
         iter::{Extend, IntoIterator, Iterator},
+        ops::FnMut,
         option::Option::{self, *},
         result::Result::{self, *},
         vec::Vec,

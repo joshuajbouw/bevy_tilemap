@@ -9,38 +9,36 @@ macro_rules! build_chunk_pipeline {
         /// Builds the chunk render pipeline.
         fn $name(shaders: &mut Assets<Shader>) -> PipelineDescriptor {
             PipelineDescriptor {
-                rasterization_state: Some(RasterizationStateDescriptor {
-                    front_face: FrontFace::Ccw,
-                    cull_mode: CullMode::None,
-                    depth_bias: 0,
-                    depth_bias_slope_scale: 0.0,
-                    depth_bias_clamp: 0.0,
-                    clamp_depth: false,
-                }),
-                color_states: vec![ColorStateDescriptor {
+                color_target_states: vec![ColorTargetState {
                     format: TextureFormat::default(),
-                    color_blend: BlendDescriptor {
+                    color_blend: BlendState {
                         src_factor: BlendFactor::SrcAlpha,
                         dst_factor: BlendFactor::OneMinusSrcAlpha,
                         operation: BlendOperation::Add,
                     },
-                    alpha_blend: BlendDescriptor {
+                    alpha_blend: BlendState {
                         src_factor: BlendFactor::One,
                         dst_factor: BlendFactor::One,
                         operation: BlendOperation::Add,
                     },
                     write_mask: ColorWrite::ALL,
                 }],
-                depth_stencil_state: Some(DepthStencilStateDescriptor {
+                depth_stencil: Some(DepthStencilState {
                     format: TextureFormat::Depth32Float,
                     depth_write_enabled: true,
                     depth_compare: CompareFunction::LessEqual,
-                    stencil: StencilStateDescriptor {
-                        front: StencilStateFaceDescriptor::IGNORE,
-                        back: StencilStateFaceDescriptor::IGNORE,
+                    stencil: StencilState {
+                        front: StencilFaceState::IGNORE,
+                        back: StencilFaceState::IGNORE,
                         read_mask: 0,
                         write_mask: 0,
                     },
+                    bias: DepthBiasState {
+                        constant: 0,
+                        slope_scale: 0.0,
+                        clamp: 0.0,
+                    },
+                    clamp_depth: false,
                 }),
                 ..PipelineDescriptor::new(ShaderStages {
                     vertex: shaders
@@ -134,54 +132,22 @@ impl GridTopology {
     }
 }
 
-/// A trait which implements the tilemap graph to a render graph.
-pub trait TilemapRenderGraphBuilder {
-    /// Adds the tilemaps render graph.
-    fn add_tilemap_graph(&mut self, resources: &Resources) -> &mut Self;
-}
-
-impl TilemapRenderGraphBuilder for RenderGraph {
-    fn add_tilemap_graph(&mut self, resources: &Resources) -> &mut Self {
-        let mut pipelines = resources
-            .get_mut::<Assets<PipelineDescriptor>>()
-            .expect("`PipelineDescriptor` is missing.");
-        let mut shaders = resources
-            .get_mut::<Assets<Shader>>()
-            .expect("`Shader` is missing.");
-
-        pipelines.set_untracked(
-            CHUNK_SQUARE_PIPELINE,
-            build_chunk_square_pipeline(&mut shaders),
-        );
-        pipelines.set_untracked(CHUNK_HEX_X_PIPELINE, build_chunk_hex_x(&mut shaders));
-        pipelines.set_untracked(CHUNK_HEX_Y_PIPELINE, build_chunk_hex_y(&mut shaders));
-        pipelines.set_untracked(
-            CHUNK_HEXCOLS_EVEN_PIPELINE,
-            build_chunk_hexcols_even(&mut shaders),
-        );
-        pipelines.set_untracked(
-            CHUNK_HEXCOLS_ODD_PIPELINE,
-            build_chunk_hexcols_odd(&mut shaders),
-        );
-        pipelines.set_untracked(
-            CHUNK_HEXROWS_EVEN_PIPELINE,
-            build_chunk_hexrows_even(&mut shaders),
-        );
-        pipelines.set_untracked(
-            CHUNK_HEXROWS_ODD_PIPELINE,
-            build_chunk_hexrows_odd(&mut shaders),
-        );
-
-        self
-    }
-}
-
-/// Prevents the traits in this module from being implemented outside the crate.
-mod private {
-    use super::RenderGraph;
-
-    /// Seals the type.
-    pub trait Sealed {}
-
-    impl Sealed for RenderGraph {}
+pub(crate) fn add_tilemap_graph(
+    pipelines: &mut Assets<PipelineDescriptor>,
+    shaders: &mut Assets<Shader>,
+) {
+    // Might need graph.add_system_node here...?
+    pipelines.set_untracked(CHUNK_SQUARE_PIPELINE, build_chunk_square_pipeline(shaders));
+    pipelines.set_untracked(CHUNK_HEX_X_PIPELINE, build_chunk_hex_x(shaders));
+    pipelines.set_untracked(CHUNK_HEX_Y_PIPELINE, build_chunk_hex_y(shaders));
+    pipelines.set_untracked(
+        CHUNK_HEXCOLS_EVEN_PIPELINE,
+        build_chunk_hexcols_even(shaders),
+    );
+    pipelines.set_untracked(CHUNK_HEXCOLS_ODD_PIPELINE, build_chunk_hexcols_odd(shaders));
+    pipelines.set_untracked(
+        CHUNK_HEXROWS_EVEN_PIPELINE,
+        build_chunk_hexrows_even(shaders),
+    );
+    pipelines.set_untracked(CHUNK_HEXROWS_ODD_PIPELINE, build_chunk_hexrows_odd(shaders));
 }

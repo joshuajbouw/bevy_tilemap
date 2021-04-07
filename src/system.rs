@@ -100,8 +100,10 @@ fn handle_spawned_chunks(
         );
         let translation = Vec3::new(translation_x, translation_y, 1.0);
         let pipeline = RenderPipeline::new(pipeline_handle.clone_weak().typed());
-        let entity = if let Some(entity) = commands
-            .spawn(ChunkBundle {
+        let entity = commands
+            .spawn()
+            .insert_bundle(
+            ChunkBundle {
                 point,
                 texture_atlas: texture_atlas.clone_weak(),
                 mesh: mesh_handle.clone_weak(),
@@ -113,20 +115,14 @@ fn handle_spawned_chunks(
                 global_transform: Default::default(),
                 modified: Default::default(),
             })
-            .current_entity()
-        {
-            entity
-        } else {
-            error!("Chunk entity does not exist unexpectedly, report this");
-            continue;
-        };
+            .id();
 
         info!("Chunk {} spawned", point);
 
         chunk.set_entity(entity);
         entities.push(entity);
     }
-    commands.push_children(tilemap_entity, &entities);
+    commands.entity(tilemap_entity).push_children(&entities);
 }
 
 /// Handles all modified chunks and flags them.
@@ -170,7 +166,7 @@ fn handle_despawned_chunks(
 
         match chunk.take_entity() {
             Some(e) => {
-                commands.despawn_recursive(e);
+                commands.entity(e).despawn_recursive();
                 info!("Chunk {} despawned", point);
             }
             None => {
@@ -248,7 +244,7 @@ fn handle_remove_sprite_layers(
 /// 1. Modify chunks
 /// 1. Despawn chunks
 pub(crate) fn tilemap_events(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut tilemap_query: Query<(Entity, &mut Tilemap, &Visible)>,
     mut modified_query: Query<&mut Modified>,
@@ -288,7 +284,7 @@ pub(crate) fn tilemap_events(
 
         if !spawned_chunks.is_empty() {
             handle_spawned_chunks(
-                commands,
+                &mut commands,
                 tilemap_entity,
                 tilemap_visible,
                 &mut meshes,
@@ -302,7 +298,7 @@ pub(crate) fn tilemap_events(
         }
 
         if !despawned_chunks.is_empty() {
-            handle_despawned_chunks(commands, &mut tilemap, despawned_chunks);
+            handle_despawned_chunks(&mut commands, &mut tilemap, despawned_chunks);
         }
 
         if !add_sprite_layers.is_empty() {
