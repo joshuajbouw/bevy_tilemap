@@ -1,6 +1,7 @@
 # Release Checklist
 - **API**
     - [ ] Rust lang's [API guidelines]
+    - [ ] run `semver` crate check
 - **Versions**
     - [ ] Bump version [Cargo.toml]
     - [ ] Bump version doc(html_root_url) in [lib.rs]

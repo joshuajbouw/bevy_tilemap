@@ -61,7 +61,7 @@ Add to your `Cargo.toml` file:
 ```toml
 [dependencies]
 bevy = "0.4"
-bevy_tilemap = "0.3"
+bevy_tilemap = "0.4"
 ```
 
 ## Simple tilemap construction
@@ -90,12 +90,14 @@ tilemap.spawn_chunk_containing_point(point);
 Of course, using the `Tilemap::builder()` this can be constructed with many more
 advanced features.
 
+* 3D and 2D tilemaps.
 * Texture atlas.
 * Dimensions of the tilemap.
 * Dimensions of a chunk.
 * Dimensions of a tile.
 * Adding Z render layers
 * Automated chunk creation.
+* Auto-spawning of tiles based on view.
 
 With many more features planned for future updates to bring it up to par with
 other tilemap implementations for other projects.
@@ -106,11 +108,7 @@ There is still a lot to do but the API is now stable and should be fine for a
 while now. The next release is focused on added automated methods and system.
 
 - **Auto-tile**: Picks the right tile based around the neighbours of the tile.
-- **Auto-spawn**: Automatically handles spawning and despawning of chunks
-depending on what the camera is viewing.
 - **Tile import**: Imports tiles from a file from multiple formats.
-- **Tilemap3D**: Multiple tilemaps working together to create 3D slices that
-work together and are aware of each other.
 
 ## Building
 

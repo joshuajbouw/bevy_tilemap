@@ -145,7 +145,6 @@ fn load(
             transform: Default::default(),
             global_transform: Default::default(),
         };
-
         commands
             .spawn()
             .insert_bundle(OrthographicCameraBundle::new_2d());

@@ -53,7 +53,7 @@
 //!
 //! See the library `bevy_tilemap_types` for more information.
 
-#![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.3.1")]
+#![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.4.0")]
 // This was broken even further and no longer will work at all with the previous
 // workaround. There is a fix, might be sometime for it to be included though.
 // Even then, it is just a warning. For now, including it per module seems to
