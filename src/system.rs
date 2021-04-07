@@ -445,7 +445,7 @@ mod tests {
     fn insert_and_spawn_chunk() {
         let mut app = AppBuilder::default();
         let app = &mut app
-            .add_plugin(ReflectPlugin)
+            // .add_plugin(ReflectPlugin)
             .add_plugin(CorePlugin)
             .add_plugin(ScheduleRunnerPlugin {})
             .add_plugin(AssetPlugin)
@@ -453,8 +453,8 @@ mod tests {
             .add_system_to_stage("update", tilemap_events.system())
             .add_asset::<Mesh>()
             .app;
-        let mut commands = Commands::default();
-        commands.set_entity_reserver(app.world.get_entity_reserver());
+        let mut command_queue = CommandQueue::default();
+        let mut commands = Commands::new(&mut command_queue, &app.world);
 
         let tilemap = new_tilemap();
         let tilemap_bundle = TilemapBundle {
@@ -467,12 +467,12 @@ mod tests {
             global_transform: Default::default(),
         };
 
-        let tilemap_entity = commands.spawn(tilemap_bundle).current_entity().unwrap();
+        let tilemap_entity = commands.spawn().insert_bundle(tilemap_bundle).id();
 
-        commands.apply(&mut app.world, &mut app.resources);
+        command_queue.apply(&mut app.world);
 
         {
-            let mut tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
+            let mut tilemap = app.world.query::<&mut Tilemap>().iter_mut(&mut app.world).next().unwrap();
             tilemap.insert_chunk(Point2::new(0, 0)).unwrap();
             tilemap.insert_chunk(Point2::new(1, 1)).unwrap();
             tilemap.insert_chunk(Point2::new(-1, -1)).unwrap();
@@ -484,7 +484,7 @@ mod tests {
         app.update();
 
         {
-            let meshes = &mut app.resources.get_mut::<Assets<Mesh>>().unwrap();
+            let meshes = &mut app.world.get_resource_mut::<Assets<Mesh>>().unwrap();
             assert_eq!(meshes.len(), 3);
         }
 
@@ -494,7 +494,7 @@ mod tests {
         }
 
         {
-            let mut tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
+            let mut tilemap = app.world.query::<&mut Tilemap>().iter_mut(&mut app.world).next().unwrap();
             tilemap.modify_chunk(Point2::new(1, 1));
         }
 
@@ -503,10 +503,9 @@ mod tests {
         // This test isn't working as intended as it seems that query_filtered
         // just might not actually be working. This should be explored.
         {
-            let modified_query = app.world.query::<&Modified>();
             // let mut modified_query = app.world.query_filtered::<&Point2, Changed<Modified>>();
             let mut found = false;
-            for modified in modified_query {
+            for modified in app.world.query::<&Modified>().iter(&app.world) {
                 if modified.0 == 1 {
                     found = true;
                 }
@@ -516,20 +515,20 @@ mod tests {
 
         // then despawn one, both entities and meshes should be -1
         {
-            let mut tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
+            let mut tilemap = app.world.query::<&mut Tilemap>().iter_mut(&mut app.world).next().unwrap();
             tilemap.despawn_chunk(Point2::new(-1, -1)).unwrap();
         }
 
         app.update();
 
-        let chunks = app.world.query::<(Entity, &Modified)>();
-        assert_eq!(chunks.count(), 2);
+        let chunks_count = app.world.query::<(Entity, &Modified)>().iter(&app.world).count();
+        assert_eq!(chunks_count, 2);
 
         // Need to double update to kick the GC.
         app.update();
         app.update();
 
-        let meshes = &app.resources.get::<Assets<Mesh>>().unwrap();
+        let meshes = app.world.get_resource::<Assets<Mesh>>().unwrap();
         assert_eq!(meshes.len(), 2);
     }
 }

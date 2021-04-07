@@ -1957,7 +1957,7 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_app::prelude::*;
+    /// use bevy_app::{prelude::*, Events};
     /// use bevy_asset::{prelude::*, HandleId};
     /// use bevy_sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, event::TilemapChunkEvent};
