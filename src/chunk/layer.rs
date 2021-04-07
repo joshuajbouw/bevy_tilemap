@@ -17,6 +17,9 @@ pub(super) trait Layer: 'static {
     /// Gets all the tile indices in the layer that exist.
     fn get_tile_indices(&self) -> Vec<usize>;
 
+    /// Clears a layer of all sprites.
+    fn clear(&mut self);
+
     /// Takes all the tiles in the layer and returns attributes for the renderer.
     fn tiles_to_attributes(&self, dimension: Dimension3) -> (Vec<f32>, Vec<[f32; 4]>);
 }
@@ -87,6 +90,10 @@ impl Layer for DenseLayer {
         indices
     }
 
+    fn clear(&mut self) {
+        self.tiles.clear();
+    }
+
     fn tiles_to_attributes(&self, _dimension: Dimension3) -> (Vec<f32>, Vec<[f32; 4]>) {
         crate::chunk::raw_tile::dense_tiles_to_attributes(&self.tiles)
     }
@@ -136,6 +143,10 @@ impl Layer for SparseLayer {
             indices.push(*index);
         }
         indices
+    }
+
+    fn clear(&mut self) {
+        self.tiles.clear();
     }
 
     fn tiles_to_attributes(&self, dimension: Dimension3) -> (Vec<f32>, Vec<[f32; 4]>) {

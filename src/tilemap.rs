@@ -1703,6 +1703,50 @@ impl Tilemap {
         chunk.get_tile_mut(index, sprite_order, point.z as usize)
     }
 
+    /// Clears a layer of all the tiles.
+    ///
+    /// # Examples
+    /// ```
+    /// use bevy_asset::{prelude::*, HandleId};
+    /// use bevy_render::prelude::*;
+    /// use bevy_sprite::prelude::*;
+    /// use bevy_tilemap::{prelude::*, chunk::RawTile};
+    ///
+    /// // In production use a strong handle from an actual source.
+    /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
+    ///
+    /// let mut tilemap = TilemapBuilder::new()
+    ///     .texture_atlas(texture_atlas_handle)
+    ///     .dimensions(1, 1)
+    ///     .texture_dimensions(32, 32)
+    ///     .add_layer( TilemapLayer { kind: LayerKind::Dense}, 0)
+    ///     .add_layer( TilemapLayer { kind: LayerKind::Sparse}, 1)
+    ///     .finish()
+    ///     .unwrap();
+    ///
+    /// assert!(tilemap.clear_layer(0).is_ok());
+    /// assert!(tilemap.clear_layer(1).is_ok());
+    /// assert!(tilemap.clear_layer(2).is_err());
+    /// ```
+    ///
+    /// # Errors
+    /// Fails if the layer does not exist.
+    pub fn clear_layer(&mut self, layer: usize) -> Result<(), TilemapError> {
+        if let Some(l) = self.layers.get(layer) {
+            if l.is_none() {
+                return Err(ErrorKind::LayerDoesNotExist(layer).into());
+            }
+        } else {
+            return Err(ErrorKind::LayerDoesNotExist(layer).into());
+        }
+
+        for chunk in self.chunks.values_mut() {
+            chunk.clear_layer(layer);
+        }
+
+        Ok(())
+    }
+
     /// Returns the center tile, if the tilemap has dimensions.
     ///
     /// Returns `None` if the tilemap has no constrainted dimensions.
