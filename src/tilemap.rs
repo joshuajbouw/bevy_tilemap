@@ -270,16 +270,24 @@ pub struct Tilemap {
 ///
 /// The configuration options available are:
 ///
+/// - [`topology`]: sets the topology of the tilemap.
 /// - [`dimensions`]: specifies the dimensions of the tilemap. If this
 /// is not set, then the tilemap will have no dimensions.
 /// - [`chunk_dimensions`]: specifies the chunk's dimensions in tiles.
 /// Default is 32x, 32y.
-/// - [`tile_dimensions`]: specifies the tile's dimensions in pixels.
+/// - [`texture_dimensions`]: specifies the tile's dimensions in pixels.
 /// Default is 32px, 32px.
+/// - [`layer_offset`]: Sets the layer offset as X, Y.
 /// - [`z_layers`]: specifies the maximum number of layers that sprites
 /// can exist on. Default is 20.
 /// - [`texture_atlas`]: specifies the texture atlas handle
 /// to use for the tilemap.
+/// - [`tile_scale`]: sets the tile scale in pixels.
+/// - [`add_layer`]: adds a layer to the tilemap.
+/// - [`auto_chunk`]: set if you want the tilemap to automatically spawn new
+/// chunks.
+/// - [`auto_spawn`]: set if you want the tilemap to automatically spawn and
+/// despawn chunks.
 ///
 /// The [`finish`] method will take ownership and consume the builder returning
 /// a [`TilemapResult`] with either an [`TilemapError`] or the [tilemap].
@@ -314,8 +322,14 @@ pub struct Tilemap {
 /// [`chunk_dimensions`]: TilemapBuilder::chunk_dimensions
 /// [`dimensions`]: TilemapBuilder::dimensions
 /// [`texture_atlas`]: TilemapBuilder::texture_atlas
-/// [`tile_dimensions`]: TilemapBuilder::tile_dimensions
+/// [`texture_dimensions`]: TilemapBuilder::texture_dimensions
 /// [`z_layers`]: TilemapBuilder::z_layers
+/// [`topology`]: TilemapBuilder::topology
+/// [`layer_offset`]: TilemapBuilder::layer_offset
+/// [`tile_scale`]: TilemapBuilder::tile_scale
+/// [`add_layer`]: TilemapBuilder::add_layer
+/// [`auto_chunk`]: TilemapBuilder::auto_chunk
+/// [`auto_spawn`]: TilemapBuilder::auto_spawn
 /// [tilemap]: Tilemap
 /// [`TilemapError`]: TilemapError
 /// [`TilemapResult`]: TilemapResult
@@ -1972,7 +1986,7 @@ impl Tilemap {
     /// is used for war games or world maps. It is easier to define structures
     /// with walls and floors with square but not impossible with hex.
     ///
-    /// [`GridTopology`]: crate::render::GridTopology
+    /// [`GridTopology`]: crate::chunk::render::GridTopology
     ///
     /// # Examples
     /// ```
