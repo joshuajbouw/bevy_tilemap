@@ -303,6 +303,15 @@ impl Chunk {
         })
     }
 
+    /// Clears a given layer of all sprites.
+    pub(crate) fn clear_layer(&mut self, layer: usize) {
+        if let Some(sprite_layer) = self.z_layers.get_mut(layer) {
+           for layer in sprite_layer.iter_mut().flatten() {
+                layer.inner.as_mut().clear();
+           }
+        }
+    }
+
     /// At the given z layer, changes the tiles into attributes for use with
     /// the renderer using the given dimensions.
     ///
