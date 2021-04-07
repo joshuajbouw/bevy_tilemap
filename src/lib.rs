@@ -215,6 +215,8 @@ mod lib {
     pub(crate) use bevy_asset::{AssetPlugin, HandleId};
     #[cfg(test)]
     pub(crate) use bevy_core::CorePlugin;
+    #[cfg(test)]
+    pub(crate) use bevy_ecs::system::CommandQueue;
     pub(crate) use bevy_ecs::{
         bundle::Bundle,
         entity::Entity,
@@ -222,8 +224,6 @@ mod lib {
         schedule::{ParallelSystemDescriptorCoercion, SystemLabel, SystemStage},
         system::{Commands, IntoSystem, Query, Res, ResMut},
     };
-    #[cfg(test)]
-    pub(crate) use bevy_ecs::system::CommandQueue;
     pub(crate) use bevy_log::{error, info, warn};
     pub(crate) use bevy_math::{Vec2, Vec3};
     pub(crate) use bevy_reflect::{TypeUuid, Uuid};

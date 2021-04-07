@@ -472,7 +472,12 @@ mod tests {
         command_queue.apply(&mut app.world);
 
         {
-            let mut tilemap = app.world.query::<&mut Tilemap>().iter_mut(&mut app.world).next().unwrap();
+            let mut tilemap = app
+                .world
+                .query::<&mut Tilemap>()
+                .iter_mut(&mut app.world)
+                .next()
+                .unwrap();
             tilemap.insert_chunk(Point2::new(0, 0)).unwrap();
             tilemap.insert_chunk(Point2::new(1, 1)).unwrap();
             tilemap.insert_chunk(Point2::new(-1, -1)).unwrap();
@@ -494,7 +499,12 @@ mod tests {
         }
 
         {
-            let mut tilemap = app.world.query::<&mut Tilemap>().iter_mut(&mut app.world).next().unwrap();
+            let mut tilemap = app
+                .world
+                .query::<&mut Tilemap>()
+                .iter_mut(&mut app.world)
+                .next()
+                .unwrap();
             tilemap.modify_chunk(Point2::new(1, 1));
         }
 
@@ -515,13 +525,22 @@ mod tests {
 
         // then despawn one, both entities and meshes should be -1
         {
-            let mut tilemap = app.world.query::<&mut Tilemap>().iter_mut(&mut app.world).next().unwrap();
+            let mut tilemap = app
+                .world
+                .query::<&mut Tilemap>()
+                .iter_mut(&mut app.world)
+                .next()
+                .unwrap();
             tilemap.despawn_chunk(Point2::new(-1, -1)).unwrap();
         }
 
         app.update();
 
-        let chunks_count = app.world.query::<(Entity, &Modified)>().iter(&app.world).count();
+        let chunks_count = app
+            .world
+            .query::<(Entity, &Modified)>()
+            .iter(&app.world)
+            .count();
         assert_eq!(chunks_count, 2);
 
         // Need to double update to kick the GC.

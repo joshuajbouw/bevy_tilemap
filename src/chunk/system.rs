@@ -188,7 +188,12 @@ mod tests {
             Point2::new(0, 0),
         ];
         {
-            let mut tilemap = app.world.query::<&mut Tilemap>().iter_mut(&mut app.world).next().unwrap();
+            let mut tilemap = app
+                .world
+                .query::<&mut Tilemap>()
+                .iter_mut(&mut app.world)
+                .next()
+                .unwrap();
             for tile_point in &tile_points {
                 tilemap
                     .insert_tile(Tile {
@@ -205,7 +210,12 @@ mod tests {
         app.update();
 
         {
-            let tilemap = app.world.query::<&Tilemap>().iter(&app.world).next().unwrap();
+            let tilemap = app
+                .world
+                .query::<&Tilemap>()
+                .iter(&app.world)
+                .next()
+                .unwrap();
             let meshes = app.world.get_resource::<Assets<Mesh>>().unwrap();
             assert_eq!(meshes.len(), 1);
             let (_, mesh) = meshes.iter().next().unwrap();
