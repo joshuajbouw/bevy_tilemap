@@ -10,6 +10,28 @@ use bevy::{
 use bevy_tilemap::prelude::*;
 use rand::Rng;
 
+fn main() {
+    App::build()
+        .insert_resource(WindowDescriptor {
+            title: "Endless Dungeon".to_string(),
+            width: 1024.,
+            height: 1024.,
+            vsync: false,
+            resizable: true,
+            mode: WindowMode::Windowed,
+            ..Default::default()
+        })
+        .init_resource::<TileSpriteHandles>()
+        .init_resource::<GameState>()
+        .add_plugins(DefaultPlugins)
+        .add_plugins(TilemapDefaultPlugins)
+        .add_startup_system(setup.system())
+        .add_system(load.system())
+        .add_system(build_random_dungeon.system())
+        .add_system(character_movement.system())
+        .run()
+}
+
 const CHUNK_WIDTH: u32 = 16;
 const CHUNK_HEIGHT: u32 = 16;
 const TILEMAP_WIDTH: i32 = CHUNK_WIDTH as i32 * 40;
@@ -124,7 +146,9 @@ fn load(
             global_transform: Default::default(),
         };
 
-        commands.spawn().insert_bundle(OrthographicCameraBundle::new_2d());
+        commands
+            .spawn()
+            .insert_bundle(OrthographicCameraBundle::new_2d());
         commands
             .spawn()
             .insert_bundle(tilemap_components)
@@ -378,26 +402,4 @@ fn character_movement(
             }
         }
     }
-}
-
-fn main() {
-    App::build()
-        .insert_resource(WindowDescriptor {
-            title: "Endless Dungeon".to_string(),
-            width: 1024.,
-            height: 1024.,
-            vsync: false,
-            resizable: true,
-            mode: WindowMode::Windowed,
-            ..Default::default()
-        })
-        .init_resource::<TileSpriteHandles>()
-        .init_resource::<GameState>()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(TilemapDefaultPlugins)
-        .add_startup_system(setup.system())
-        .add_system(load.system())
-        .add_system(build_random_dungeon.system())
-        .add_system(character_movement.system())
-        .run()
 }

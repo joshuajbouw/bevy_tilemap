@@ -1,3 +1,5 @@
+// NOTE THIS TEST DOES NOT WORK AT THIS MOMENT UNTIL PHYSICS ARE BACK IN.
+
 #![allow(clippy::all)]
 use bevy::{
     asset::LoadState,

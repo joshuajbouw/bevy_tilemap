@@ -1,6 +1,27 @@
 use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode};
 use bevy_tilemap::prelude::*;
 
+fn main() {
+    App::build()
+        .insert_resource(WindowDescriptor {
+            title: "Hex Even Columns".to_string(),
+            width: 1024.,
+            height: 720.,
+            vsync: false,
+            resizable: true,
+            mode: WindowMode::Windowed,
+            ..Default::default()
+        })
+        .init_resource::<SpriteHandles>()
+        .init_resource::<GameState>()
+        .add_plugins(DefaultPlugins)
+        .add_plugins(TilemapDefaultPlugins)
+        .add_startup_system(setup.system())
+        .add_system(load.system())
+        .add_system(build_world.system())
+        .run()
+}
+
 #[derive(Default, Clone)]
 struct SpriteHandles {
     handles: Vec<HandleUntyped>,
@@ -13,18 +34,12 @@ struct GameState {
     spawned: bool,
 }
 
-fn setup(
-    commands: &mut Commands,
-    mut tile_sprite_handles: ResMut<SpriteHandles>,
-    asset_server: Res<AssetServer>,
-) {
+fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-
-    commands.spawn(Camera2dBundle::default());
 }
 
 fn load(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut sprite_handles: ResMut<SpriteHandles>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Texture>>,
@@ -49,6 +64,7 @@ fn load(
 
         let tilemap = Tilemap::builder()
             .auto_chunk()
+            .auto_spawn(2, 2)
             .topology(GridTopology::HexEvenCols)
             .dimensions(3, 3)
             .chunk_dimensions(8, 4, 1)
@@ -68,8 +84,12 @@ fn load(
         };
 
         commands
-            .spawn(tilemap_components)
-            .with(Timer::from_seconds(0.075, true));
+            .spawn()
+            .insert_bundle(OrthographicCameraBundle::new_2d());
+        commands
+            .spawn()
+            .insert_bundle(tilemap_components)
+            .insert(Timer::from_seconds(0.075, true));
 
         sprite_handles.atlas_loaded = true;
     }
@@ -121,25 +141,4 @@ fn build_world(
 
         game_state.map_loaded = true;
     }
-}
-
-fn main() {
-    App::build()
-        .add_resource(WindowDescriptor {
-            title: "Hex Even Columns".to_string(),
-            width: 1024.,
-            height: 720.,
-            vsync: false,
-            resizable: true,
-            mode: WindowMode::Windowed,
-            ..Default::default()
-        })
-        .init_resource::<SpriteHandles>()
-        .init_resource::<GameState>()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(TilemapDefaultPlugins)
-        .add_startup_system(setup.system())
-        .add_system(load.system())
-        .add_system(build_world.system())
-        .run()
 }
