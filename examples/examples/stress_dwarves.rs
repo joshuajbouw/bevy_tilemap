@@ -151,7 +151,6 @@ fn load(
             .insert_bundle(tilemap_components)
             .insert(Timer::from_seconds(0.075, true));
 
-
         sprite_handles.atlas_loaded = true;
     }
 }
