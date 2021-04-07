@@ -31,7 +31,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! bevy_tilemap = { version = "0.3", features = ["serialize"] }
+//! bevy_tilemap = { version = "0.4", features = ["serialize"] }
 //! ```
 //!
 //! # Extra types feature
@@ -48,7 +48,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! bevy_tilemap = { version = "0.3", features = ["types"] }
+//! bevy_tilemap = { version = "0.4", features = ["types"] }
 //! ```
 //!
 //! See the library `bevy_tilemap_types` for more information.

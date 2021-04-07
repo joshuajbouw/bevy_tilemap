@@ -24,9 +24,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Added `MissingTextureDimensions` error to `TilemapError`.
 * Added `event` module which allows use of the `TilemapChunkEvent`.
 * Added `auto_spawn` to the `Tilemap`.
+* Added `clear_layer` to the `Tilemap` which enables clearing of whole layers.
 
 ### Changed
 
+* Updated to Bevy 0.5
 * Renamed `Tilemap2DPlugin` to `TilemapPlugin` as now the tilemap supports both
 2D and 3D. Lets not get carried away here and go beyond the 3rd dimension!
 * `Chunk` was made private as it never was meant to be public. Oops.

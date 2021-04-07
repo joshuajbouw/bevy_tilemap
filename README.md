@@ -60,7 +60,7 @@ Less time fiddling, more time building
 Add to your `Cargo.toml` file:
 ```toml
 [dependencies]
-bevy = "0.4"
+bevy = "0.5"
 bevy_tilemap = "0.4"
 ```
 
