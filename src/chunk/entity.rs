@@ -1,4 +1,6 @@
 use crate::lib::*;
+use ::bevy_ecs;
+use ::std;
 
 /// A component that is used as a flag for dirty chunks that need updating.
 #[derive(Debug, Default, PartialEq, Eq)]

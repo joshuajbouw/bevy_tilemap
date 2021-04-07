@@ -145,16 +145,17 @@ mod tests {
     fn test_chunk_update() {
         let mut app = AppBuilder::default();
         let app = &mut app
-            .add_plugin(ReflectPlugin)
+            // .add_plugin(ReflectPlugin)
             .add_plugin(CorePlugin)
             .add_plugin(ScheduleRunnerPlugin {})
             .add_plugin(AssetPlugin)
+            .add_stage("update", SystemStage::parallel())
             .add_system_to_stage("update", tilemap_events.system())
             .add_system_to_stage("update", chunk_update.system())
             .add_asset::<Mesh>()
             .app;
-        let mut commands = Commands::default();
-        commands.set_entity_reserver(app.world.get_entity_reserver());
+        let mut command_queue = CommandQueue::default();
+        let mut commands = Commands::new(&mut command_queue, &app.world);
 
         let tilemap = TilemapBuilder::new()
             .texture_atlas(Handle::weak(HandleId::random::<TextureAtlas>()))
@@ -175,9 +176,9 @@ mod tests {
             global_transform: Default::default(),
         };
 
-        let _tilemap_entity = commands.spawn(tilemap_bundle).current_entity().unwrap();
+        let _tilemap_entity = commands.spawn().insert_bundle(tilemap_bundle).id();
 
-        commands.apply(&mut app.world, &mut app.resources);
+        command_queue.apply(&mut app.world);
 
         let tile_points = vec![
             Point2::new(-2, -2),
@@ -187,14 +188,19 @@ mod tests {
             Point2::new(0, 0),
         ];
         {
-            let mut tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
+            let mut tilemap = app
+                .world
+                .query::<&mut Tilemap>()
+                .iter_mut(&mut app.world)
+                .next()
+                .unwrap();
             for tile_point in &tile_points {
                 tilemap
                     .insert_tile(Tile {
                         point: *tile_point,
                         sprite_order: 0,
                         sprite_index: 1,
-                        tint: Color::RED,
+                        tint: Color::BLUE,
                     })
                     .unwrap();
                 tilemap.spawn_chunk(Point2::new(0, 0)).unwrap();
@@ -204,8 +210,13 @@ mod tests {
         app.update();
 
         {
-            let tilemap = app.world.query_mut::<&mut Tilemap>().next().unwrap();
-            let meshes = app.resources.get::<Assets<Mesh>>().unwrap();
+            let tilemap = app
+                .world
+                .query::<&Tilemap>()
+                .iter(&app.world)
+                .next()
+                .unwrap();
+            let meshes = app.world.get_resource::<Assets<Mesh>>().unwrap();
             assert_eq!(meshes.len(), 1);
             let (_, mesh) = meshes.iter().next().unwrap();
             let tile_index = mesh
@@ -252,7 +263,7 @@ mod tests {
                 }
                 assert_eq!(
                     bytes,
-                    [255, 255, 127, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 63]
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 63, 0, 0, 128, 63]
                 );
             }
         }

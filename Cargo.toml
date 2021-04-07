@@ -28,22 +28,22 @@ serialize = ["bevy_tilemap_types/serialize", "serde"]
 members = ["library/*", "examples"]
 
 [dependencies]
-bevy_app = "0.4"
-bevy_asset = "0.4"
-bevy_core = "0.4"
-bevy_ecs = "0.4"
-bevy_log = "0.4"
-bevy_math = "0.4"
-bevy_render = "0.4"
-bevy_reflect = "0.4"
-bevy_sprite = "0.4"
+bevy_app = "0.5"
+bevy_asset = "0.5"
+bevy_core = "0.5"
+bevy_ecs = "0.5"
+bevy_log = "0.5"
+bevy_math = "0.5"
+bevy_render = "0.5"
+bevy_reflect = "0.5"
+bevy_sprite = "0.5"
 bevy_tilemap_types = { path = "library/types", version = "0.4" }
-bevy_transform = "0.4"
-bevy_utils = "0.4"
-bevy_window = "0.4"
+bevy_transform = "0.5"
+bevy_utils = "0.5"
+bevy_window = "0.5"
 bitflags = "1.2"
-hexasphere = "3.1"
+hexasphere = "3.2"
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
-bevy_core = "0.4"
+bevy_core = "0.5"

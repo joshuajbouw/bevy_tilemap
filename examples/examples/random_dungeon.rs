@@ -10,6 +10,28 @@ use bevy::{
 use bevy_tilemap::prelude::*;
 use rand::Rng;
 
+fn main() {
+    App::build()
+        .insert_resource(WindowDescriptor {
+            title: "Endless Dungeon".to_string(),
+            width: 1024.,
+            height: 1024.,
+            vsync: false,
+            resizable: true,
+            mode: WindowMode::Windowed,
+            ..Default::default()
+        })
+        .init_resource::<TileSpriteHandles>()
+        .init_resource::<GameState>()
+        .add_plugins(DefaultPlugins)
+        .add_plugins(TilemapDefaultPlugins)
+        .add_startup_system(setup.system())
+        .add_system(load.system())
+        .add_system(build_random_dungeon.system())
+        .add_system(character_movement.system())
+        .run()
+}
+
 const CHUNK_WIDTH: u32 = 16;
 const CHUNK_HEIGHT: u32 = 16;
 const TILEMAP_WIDTH: i32 = CHUNK_WIDTH as i32 * 40;
@@ -72,7 +94,7 @@ fn setup(mut tile_sprite_handles: ResMut<TileSpriteHandles>, asset_server: Res<A
 }
 
 fn load(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut sprite_handles: ResMut<TileSpriteHandles>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Texture>>,
@@ -124,17 +146,20 @@ fn load(
             global_transform: Default::default(),
         };
 
-        commands.spawn(Camera2dBundle::default());
         commands
-            .spawn(tilemap_components)
-            .with(Timer::from_seconds(0.075, true));
+            .spawn()
+            .insert_bundle(OrthographicCameraBundle::new_2d());
+        commands
+            .spawn()
+            .insert_bundle(tilemap_components)
+            .insert(Timer::from_seconds(0.075, true));
 
         sprite_handles.atlas_loaded = true;
     }
 }
 
 fn build_random_dungeon(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut game_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
@@ -254,7 +279,7 @@ fn build_random_dungeon(
         };
         tiles.push(dwarf_tile);
 
-        commands.spawn(PlayerBundle {
+        commands.spawn().insert_bundle(PlayerBundle {
             player: Player {},
             position: Position { x: 0, y: 0 },
             render: Render {
@@ -302,7 +327,7 @@ fn character_movement(
     }
 
     for (mut map, mut timer) in map_query.iter_mut() {
-        timer.tick(time.delta_seconds());
+        timer.tick(time.delta());
         if !timer.finished() {
             continue;
         }
@@ -377,26 +402,4 @@ fn character_movement(
             }
         }
     }
-}
-
-fn main() {
-    App::build()
-        .add_resource(WindowDescriptor {
-            title: "Endless Dungeon".to_string(),
-            width: 1024.,
-            height: 1024.,
-            vsync: false,
-            resizable: true,
-            mode: WindowMode::Windowed,
-            ..Default::default()
-        })
-        .init_resource::<TileSpriteHandles>()
-        .init_resource::<GameState>()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(TilemapDefaultPlugins)
-        .add_startup_system(setup.system())
-        .add_system(load.system())
-        .add_system(build_random_dungeon.system())
-        .add_system(character_movement.system())
-        .run()
 }

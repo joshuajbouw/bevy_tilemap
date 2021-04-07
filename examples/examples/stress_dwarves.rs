@@ -11,6 +11,30 @@ use bevy::{
 use bevy_tilemap::prelude::*;
 use rand::Rng;
 
+fn main() {
+    App::build()
+        .insert_resource(WindowDescriptor {
+            title: "Drunk Stressed Dwarves".to_string(),
+            width: 1024.,
+            height: 1024.,
+            vsync: false,
+            resizable: true,
+            mode: WindowMode::Windowed,
+            ..Default::default()
+        })
+        .init_resource::<TileSpriteHandles>()
+        .init_resource::<State>()
+        .add_plugins(DefaultPlugins)
+        .add_plugins(TilemapDefaultPlugins)
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_startup_system(setup_system.system())
+        .add_system(load.system())
+        .add_system(build_map.system())
+        .add_system(drunk_stumbles.system())
+        .add_system(counter.system())
+        .run()
+}
+
 const DWARF_COUNT: usize = 10_000;
 
 #[derive(Default, Clone)]
@@ -55,17 +79,14 @@ impl State {
 }
 
 fn setup_system(
-    commands: &mut Commands,
     mut tile_sprite_handles: ResMut<TileSpriteHandles>,
     asset_server: Res<AssetServer>,
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-
-    commands.spawn(Camera2dBundle::default());
 }
 
 fn load(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut sprite_handles: ResMut<TileSpriteHandles>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Texture>>,
@@ -123,15 +144,19 @@ fn load(
         };
 
         commands
-            .spawn(tilemap_components)
-            .with(Timer::from_seconds(0.1, true));
+            .spawn()
+            .insert_bundle(OrthographicCameraBundle::new_2d());
+        commands
+            .spawn()
+            .insert_bundle(tilemap_components)
+            .insert(Timer::from_seconds(0.075, true));
 
         sprite_handles.atlas_loaded = true;
     }
 }
 
 fn build_map(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut state: ResMut<State>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
@@ -226,7 +251,7 @@ fn build_map(
                 y: rng.gen_range((-chunk_height / 2 + 1)..(chunk_height / 2 - 1)),
             };
 
-            commands.spawn(StressDwarfBundle {
+            commands.spawn().insert_bundle(StressDwarfBundle {
                 position,
                 render: Render {
                     sprite_index: dwarf_sprite_index,
@@ -283,7 +308,7 @@ fn drunk_stumbles(
 fn counter(diagnostics: Res<Diagnostics>, time: Res<Time>, mut query: Query<&mut Timer>) {
     if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
         for mut timer in query.iter_mut() {
-            timer.tick(time.delta_seconds());
+            timer.tick(time.delta());
             if !timer.finished() {
                 return;
             }
@@ -292,28 +317,4 @@ fn counter(diagnostics: Res<Diagnostics>, time: Res<Time>, mut query: Query<&mut
             }
         }
     }
-}
-
-fn main() {
-    App::build()
-        .add_resource(WindowDescriptor {
-            title: "Drunk Stressed Dwarves".to_string(),
-            width: 1024.,
-            height: 1024.,
-            vsync: false,
-            resizable: true,
-            mode: WindowMode::Windowed,
-            ..Default::default()
-        })
-        .init_resource::<TileSpriteHandles>()
-        .init_resource::<State>()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(TilemapDefaultPlugins)
-        .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_startup_system(setup_system.system())
-        .add_system(load.system())
-        .add_system(build_map.system())
-        .add_system(drunk_stumbles.system())
-        .add_system(counter.system())
-        .run()
 }

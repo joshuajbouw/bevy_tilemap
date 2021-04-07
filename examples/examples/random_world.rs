@@ -9,6 +9,28 @@ use bevy::{
 use bevy_tilemap::prelude::*;
 use rand::Rng;
 
+fn main() {
+    App::build()
+        .insert_resource(WindowDescriptor {
+            title: "Random Hex World".to_string(),
+            width: 1036.,
+            height: 1036.,
+            vsync: false,
+            resizable: true,
+            mode: WindowMode::Windowed,
+            ..Default::default()
+        })
+        .init_resource::<SpriteHandles>()
+        .init_resource::<GameState>()
+        .add_plugins(DefaultPlugins)
+        .add_plugins(TilemapDefaultPlugins)
+        .add_startup_system(setup.system())
+        .add_system(load.system())
+        .add_system(build_random_world.system())
+        .add_system(character_movement.system())
+        .run()
+}
+
 #[derive(Default, Clone)]
 struct SpriteHandles {
     handles: Vec<HandleUntyped>,
@@ -54,18 +76,12 @@ impl GameState {
     }
 }
 
-fn setup(
-    commands: &mut Commands,
-    mut tile_sprite_handles: ResMut<SpriteHandles>,
-    asset_server: Res<AssetServer>,
-) {
+fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-
-    commands.spawn(Camera2dBundle::default());
 }
 
 fn load(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut sprite_handles: ResMut<SpriteHandles>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Texture>>,
@@ -95,7 +111,27 @@ fn load(
             .dimensions(1, 1)
             .chunk_dimensions(32, 38, 1)
             .texture_dimensions(32, 37)
-            .z_layers(3)
+            .add_layer(
+                TilemapLayer {
+                    kind: LayerKind::Dense,
+                    ..Default::default()
+                },
+                0,
+            )
+            .add_layer(
+                TilemapLayer {
+                    kind: LayerKind::Sparse,
+                    ..Default::default()
+                },
+                1,
+            )
+            .add_layer(
+                TilemapLayer {
+                    kind: LayerKind::Sparse,
+                    ..Default::default()
+                },
+                2,
+            )
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();
@@ -111,15 +147,19 @@ fn load(
         };
 
         commands
-            .spawn(tilemap_components)
-            .with(Timer::from_seconds(0.075, true));
+            .spawn()
+            .insert_bundle(OrthographicCameraBundle::new_2d());
+        commands
+            .spawn()
+            .insert_bundle(tilemap_components)
+            .insert(Timer::from_seconds(0.075, true));
 
         sprite_handles.atlas_loaded = true;
     }
 }
 
 fn build_random_world(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut game_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
@@ -176,13 +216,13 @@ fn build_random_world(
             tiles.push(Tile {
                 point: tile_a,
                 sprite_index: boulder_index,
-                z_order: 1,
+                sprite_order: 1,
                 ..Default::default()
             });
             tiles.push(Tile {
                 point: tile_b,
                 sprite_index: boulder_index,
-                z_order: 1,
+                sprite_order: 1,
                 ..Default::default()
             });
             game_state.collisions.insert(tile_a);
@@ -197,13 +237,13 @@ fn build_random_world(
             tiles.push(Tile {
                 point: tile_a,
                 sprite_index: boulder_index,
-                z_order: 1,
+                sprite_order: 1,
                 ..Default::default()
             });
             tiles.push(Tile {
                 point: tile_b,
                 sprite_index: boulder_index,
-                z_order: 1,
+                sprite_order: 1,
                 ..Default::default()
             });
             game_state.collisions.insert(tile_a);
@@ -222,14 +262,14 @@ fn build_random_world(
                     tiles.push(Tile {
                         point: (x, y),
                         sprite_index: boulder_index,
-                        z_order: 1,
+                        sprite_order: 1,
                         ..Default::default()
                     });
                 } else {
                     tiles.push(Tile {
                         point: (x, y),
                         sprite_index: trees_index,
-                        z_order: 1,
+                        sprite_order: 1,
                         ..Default::default()
                     });
                 }
@@ -247,20 +287,6 @@ fn build_random_world(
             });
         }
 
-        // The above should give us a neat little randomized world! However,
-        // we are missing a hero! First, we need to add a layer. We must make
-        // this layer `Sparse` else we will lose efficiency with our data!
-        //
-        // You might've noticed that we didn't create a layer for z_layer 0 but
-        // yet it still works and exists. By default if a layer doesn't exist
-        // and tiles need to be written there then a Dense layer is created
-        // automatically.
-        //
-        // Create a sparse layer for trees and boulders.
-        map.add_layer_with_kind(LayerKind::Sparse, 1).unwrap();
-        // Create a sparse layer for our player.
-        map.add_layer_with_kind(LayerKind::Sparse, 2).unwrap();
-
         // Now lets add in a dwarf friend!
         let dwarf_sprite: Handle<Texture> = asset_server.get_handle("textures/hex-dwarf.png");
         let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
@@ -269,12 +295,12 @@ fn build_random_world(
         let dwarf_tile = Tile {
             point: (0, 0),
             sprite_index: dwarf_sprite_index,
-            z_order: 2,
+            sprite_order: 2,
             ..Default::default()
         };
         tiles.push(dwarf_tile);
 
-        commands.spawn(PlayerBundle {
+        commands.spawn().insert_bundle(PlayerBundle {
             player: Player {},
             position: Position { x: 0, y: 0 },
             render: Render {
@@ -307,7 +333,7 @@ fn move_sprite(
     let tile = Tile {
         point: (position.x, position.y),
         sprite_index: render.sprite_index,
-        z_order: render.z_order,
+        sprite_order: render.z_order,
         ..Default::default()
     };
     map.insert_tile(tile).unwrap();
@@ -325,7 +351,7 @@ fn character_movement(
     }
 
     for (mut map, mut timer) in map_query.iter_mut() {
-        timer.tick(time.delta_seconds());
+        timer.tick(time.delta());
         if !timer.finished() {
             continue;
         }
@@ -399,26 +425,4 @@ fn character_movement(
             }
         }
     }
-}
-
-fn main() {
-    App::build()
-        .add_resource(WindowDescriptor {
-            title: "Random Hex World".to_string(),
-            width: 1036.,
-            height: 1036.,
-            vsync: false,
-            resizable: true,
-            mode: WindowMode::Windowed,
-            ..Default::default()
-        })
-        .init_resource::<SpriteHandles>()
-        .init_resource::<GameState>()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(TilemapDefaultPlugins)
-        .add_startup_system(setup.system())
-        .add_system(load.system())
-        .add_system(build_random_world.system())
-        .add_system(character_movement.system())
-        .run()
 }
