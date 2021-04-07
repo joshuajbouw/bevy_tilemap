@@ -144,26 +144,26 @@ impl Plugin for TilemapPlugin {
                 stage::TILEMAP,
                 crate::system::tilemap_events
                     .system()
-                    // .label(TilemapSystem::Events),
+                    .label(TilemapSystem::Events),
             )
             .add_system_to_stage(
                 stage::TILEMAP,
                 crate::chunk::system::chunk_update
                     .system()
-                    // .after(TilemapSystem::Events),
+                    .after(TilemapSystem::Events),
             )
             .add_system_to_stage(
                 stage::TILEMAP,
                 crate::chunk::system::chunk_auto_radius
                     .system()
-                    // .after(TilemapSystem::Events),
+                    .after(TilemapSystem::Events),
             )
             .add_system_to_stage(
                 stage::TILEMAP,
                 crate::chunk::system::chunk_auto_spawn
                     .system()
-                    // .label(TilemapSystem::AutoSpawn)
-                    // .before(TilemapSystem::Events),
+                    .label(TilemapSystem::AutoSpawn)
+                    .after(TilemapSystem::Events),
             )
             .add_system_to_stage(
                 stage::TILEMAP,
@@ -216,7 +216,7 @@ mod lib {
         bundle::Bundle,
         entity::Entity,
         query::Changed,
-        schedule::{SystemLabel, SystemStage},
+        schedule::{SystemLabel, SystemStage, ParallelSystemDescriptorCoercion},
         system::{Commands, IntoSystem, Query, Res, ResMut},
     };
     pub(crate) use bevy_log::{error, info, warn};
