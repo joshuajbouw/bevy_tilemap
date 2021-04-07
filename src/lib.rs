@@ -126,9 +126,12 @@ pub use crate::{
 #[derive(Default)]
 pub struct TilemapPlugin;
 
+/// The tilemap system stages.
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
 pub enum TilemapSystem {
+    /// The events stage.
     Events,
+    /// The auto spawn stage.
     AutoSpawn,
 }
 

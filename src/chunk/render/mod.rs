@@ -132,6 +132,7 @@ impl GridTopology {
     }
 }
 
+/// Adds the tilemap graph to the pipeline and shaders.
 pub(crate) fn add_tilemap_graph(
     pipelines: &mut Assets<PipelineDescriptor>,
     shaders: &mut Assets<Shader>,
