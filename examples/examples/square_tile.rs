@@ -34,10 +34,7 @@ struct GameState {
     spawned: bool,
 }
 
-fn setup(
-    mut tile_sprite_handles: ResMut<SpriteHandles>,
-    asset_server: Res<AssetServer>,
-) {
+fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
 }
 

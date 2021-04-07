@@ -219,7 +219,7 @@ mod lib {
         bundle::Bundle,
         entity::Entity,
         query::Changed,
-        schedule::{SystemLabel, SystemStage, ParallelSystemDescriptorCoercion},
+        schedule::{ParallelSystemDescriptorCoercion, SystemLabel, SystemStage},
         system::{Commands, IntoSystem, Query, Res, ResMut},
     };
     pub(crate) use bevy_log::{error, info, warn};

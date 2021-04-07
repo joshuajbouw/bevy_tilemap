@@ -102,8 +102,7 @@ fn handle_spawned_chunks(
         let pipeline = RenderPipeline::new(pipeline_handle.clone_weak().typed());
         let entity = commands
             .spawn()
-            .insert_bundle(
-            ChunkBundle {
+            .insert_bundle(ChunkBundle {
                 point,
                 texture_atlas: texture_atlas.clone_weak(),
                 mesh: mesh_handle.clone_weak(),
