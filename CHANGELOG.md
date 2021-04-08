@@ -5,7 +5,7 @@ just additions, fixes as well as if the API had been added to.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] - 2021-03-08
+## [0.4.0] - 2021-04-08
 
 ### Fixed
 
