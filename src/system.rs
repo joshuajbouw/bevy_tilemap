@@ -75,7 +75,7 @@ fn handle_spawned_chunks(
         let chunk_dimensions = tilemap.chunk_dimensions();
         let texture_dimensions = tilemap.texture_dimensions();
         let texture_atlas = tilemap.texture_atlas().clone_weak();
-        let pipeline_handle = tilemap.topology().to_pipeline_handle();
+        let pipeline_handle = tilemap.topology().into_pipeline_handle();
         let chunk_mesh = tilemap.chunk_mesh().clone();
         let topology = tilemap.topology();
         let chunk = if let Some(chunk) = tilemap.chunks_mut().get_mut(&point) {
