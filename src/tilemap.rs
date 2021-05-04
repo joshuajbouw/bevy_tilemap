@@ -228,7 +228,7 @@ impl Default for TilemapLayer {
 pub struct Tilemap {
     /// The type of grid to use.
     topology: GridTopology,
-    /// An optional field which can contain the tilemaps dimensions in chunks.
+    /// An optional field which can contain the tilemap's dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// A chunks dimensions in tiles.
     chunk_dimensions: Dimension3,
@@ -337,7 +337,7 @@ pub struct Tilemap {
 pub struct TilemapBuilder {
     /// The type of grid to use.
     topology: GridTopology,
-    /// An optional field which can contain the tilemaps dimensions in chunks.
+    /// An optional field which can contain the tilemap's dimensions in chunks.
     dimensions: Option<Dimension2>,
     /// The chunks dimensions in tiles.
     chunk_dimensions: Dimension3,
@@ -434,7 +434,7 @@ impl TilemapBuilder {
         self
     }
 
-    /// Sets the dimensions of the tilemap.
+    /// Sets the dimensions of the tilemap in chunks.
     ///
     /// If this is not set then the tilemap will be boundless entirely.
     ///
