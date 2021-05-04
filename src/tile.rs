@@ -3,7 +3,7 @@
 use crate::lib::*;
 
 /// A tile with an index value and color.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Tile<P: Into<Point3>> {
     /// A point where the tile will exist.

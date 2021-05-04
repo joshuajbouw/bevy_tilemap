@@ -118,7 +118,7 @@ pub enum GridTopology {
 
 impl GridTopology {
     /// Takes a grid topology and returns a handle.
-    pub(crate) fn to_pipeline_handle(&self) -> HandleUntyped {
+    pub(crate) fn into_pipeline_handle(self) -> HandleUntyped {
         use GridTopology::*;
         match self {
             Square => CHUNK_SQUARE_PIPELINE,
