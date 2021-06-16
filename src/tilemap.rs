@@ -436,7 +436,7 @@ impl TilemapBuilder {
 
     /// Sets the dimensions of the tilemap in chunks.
     ///
-    /// If this is not set then the tilemap will be boundless entirely.
+    /// If this is not set then the tilemap will be boundless.
     ///
     /// # Examples
     /// ```
@@ -514,7 +514,7 @@ impl TilemapBuilder {
         self
     }
 
-    /// Sets the amount of render layers that sprites can exist on.
+    /// Sets the number of render layers that sprites can exist on.
     ///
     /// By default there are 20 if this is not set.
     ///
@@ -536,7 +536,7 @@ impl TilemapBuilder {
     /// If there are more layers than Z layers is set, builder will construct
     /// a tilemap with that many layers instead. In the case that a layer is
     /// added twice to the same Z layer, the first layer will be overwritten by
-    /// the later.
+    /// the latter.
     ///
     /// # Examples
     /// ```
@@ -577,7 +577,7 @@ impl TilemapBuilder {
         self
     }
 
-    /// Sets if you want the tilemap to automatically spawn new chunks.
+    /// Set auto_chunk if you want the tilemap to automatically spawn new chunks.
     ///
     /// This is useful if the tilemap map is meant to be endless or nearly
     /// endless with a defined size. Otherwise, it probably is better to spawn
@@ -772,7 +772,7 @@ impl Tilemap {
 
     /// Configures the builder with the default settings.
     ///
-    /// Is equivalent to [`default`] and [`builder`] method in the
+    /// This is equivalent to [`default`] and [`builder`] method in the
     /// [tilemap]. Start with this then you are able to method chain.
     ///
     /// [`default`]: TilemapBuilder::default
@@ -799,8 +799,7 @@ impl Tilemap {
 
     /// Sets the sprite sheet for use in the tilemap.
     ///
-    /// This can be used if the need to swap the sprite sheet for another is
-    /// wanted.
+    /// This can be used if one wants to swap the sprite sheet for another.
     ///
     /// # Examples
     /// ```
@@ -842,7 +841,7 @@ impl Tilemap {
 
     /// Constructs a new chunk and stores it at a coordinate position.
     ///
-    /// It requires that you give it either a point. It then automatically sets
+    /// It requires that you give it a point. It then automatically sets
     /// both a sized mesh and chunk for use based on the parameters set in the
     /// parent tilemap.
     ///
@@ -897,7 +896,7 @@ impl Tilemap {
         }
     }
 
-    /// Returns `true` if the chunk is included in the tilemap.
+    /// Returns `true` if the chunk is contained in the tilemap.
     ///
     /// # Examples
     /// ```
@@ -1470,8 +1469,8 @@ impl Tilemap {
     /// Sets a single tile at a coordinate position, creating a chunk if necessary.
     ///
     /// If you are setting more than one tile at a time, it is highly
-    /// recommended not to run this method! If that is preferred, do use
-    /// [`insert_tiles`] instead. Every single tile that is created creates a new
+    /// recommended not to run this method! Instead use
+    /// [`insert_tiles`]. Every single tile that is created creates a new
     /// event. With bulk tiles, it creates 1 event for all.
     ///
     /// If the chunk does not yet exist, it will create a new one automatically.
@@ -1767,7 +1766,7 @@ impl Tilemap {
 
     /// Returns the center tile, if the tilemap has dimensions.
     ///
-    /// Returns `None` if the tilemap has no constrainted dimensions.
+    /// Returns `None` if the tilemap has no constrained dimensions.
     ///
     /// # Examples
     ///
