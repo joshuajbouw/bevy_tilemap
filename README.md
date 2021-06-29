@@ -81,7 +81,7 @@ let mut tilemap = Tilemap::default();
 let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
 
 // Set the texture atlas for the Tilemap
-tilemap.set_default_texture_atlas(texture_atlas_handle);
+tilemap.set_texture_atlas(texture_atlas_handle);
 
 // Create tile data
 let tile = Tile {
@@ -89,10 +89,10 @@ let tile = Tile {
     point: (16,16),
     
     // Which tile from the TextureAtlas
-    sprite_index = 0,
+    sprite_index: 0,
     
     // Which z-layer in the Tilemap (0-up)
-    sprite_order = 0,
+    sprite_order: 0,
     
     // Give the tile an optional green tint
     tint: bevy::render::color::Color::GREEN,
