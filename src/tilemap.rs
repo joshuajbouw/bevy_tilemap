@@ -2013,8 +2013,9 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_app::{prelude::*, Events};
+    /// use bevy::prelude::*;
     /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::ecs::event::Events;
     /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, event::TilemapChunkEvent};
     ///

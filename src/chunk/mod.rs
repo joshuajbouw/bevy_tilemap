@@ -351,7 +351,7 @@ mod tests {
         let mut chunk = Chunk::new(point, &[None, None, None, None, None], dimensions);
         for (x, layer) in layers.iter().enumerate() {
             if let Some(layer) = layer {
-                chunk.add_sprite_layer(&layer, x, dimensions);
+                chunk.add_sprite_layer(layer, x, dimensions);
             }
         }
 

@@ -143,9 +143,8 @@ mod tests {
 
     #[test]
     fn test_chunk_update() {
-        let mut app = App::new()
-            // .add_plugin(ReflectPlugin)
-            .add_plugin(CorePlugin)
+        let mut app = App::new();
+        app.add_plugin(CorePlugin)
             .add_plugin(ScheduleRunnerPlugin {})
             .add_plugin(AssetPlugin)
             .add_stage("update", SystemStage::parallel())

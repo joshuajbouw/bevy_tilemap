@@ -92,7 +92,7 @@ fn load(
     {
         for handle in sprite_handles.handles.iter() {
             let texture = textures.get(handle).unwrap();
-            texture_atlas_builder.add_texture(handle.clone_weak().typed::<Texture>(), &texture);
+            texture_atlas_builder.add_texture(handle.clone_weak().typed::<Texture>(), texture);
         }
 
         let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
@@ -108,21 +108,18 @@ fn load(
             .add_layer(
                 TilemapLayer {
                     kind: LayerKind::Dense,
-                    ..Default::default()
                 },
                 0,
             )
             .add_layer(
                 TilemapLayer {
                     kind: LayerKind::Sparse,
-                    ..Default::default()
                 },
                 1,
             )
             .add_layer(
                 TilemapLayer {
                     kind: LayerKind::Sparse,
-                    ..Default::default()
                 },
                 2,
             )
