@@ -100,7 +100,7 @@ fn load(
     {
         for handle in sprite_handles.handles.iter() {
             let texture = textures.get(handle).unwrap();
-            texture_atlas_builder.add_texture(handle.clone_weak().typed::<Texture>(), &texture);
+            texture_atlas_builder.add_texture(handle.clone_weak().typed::<Texture>(), texture);
         }
 
         let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();

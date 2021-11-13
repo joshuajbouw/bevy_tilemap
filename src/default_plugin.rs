@@ -8,7 +8,7 @@
 //! use bevy::prelude::*;
 //! use bevy_tilemap::prelude::*;
 //!
-//! App::build()
+//! App::new()
 //!     .add_plugins(TilemapDefaultPlugins)
 //!     .run()
 //! ```

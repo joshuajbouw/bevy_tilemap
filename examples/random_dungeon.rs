@@ -75,10 +75,10 @@ impl GameState {
     ) {
         let new_pos = (position.x + delta_xy.0, position.y + delta_xy.1);
         if !self.collisions.contains(&new_pos) {
-            position.x = position.x + delta_xy.0;
-            position.y = position.y + delta_xy.1;
-            camera_translation.x = camera_translation.x + (delta_xy.0 as f32 * 32.);
-            camera_translation.y = camera_translation.y + (delta_xy.1 as f32 * 32.);
+            position.x += delta_xy.0;
+            position.y += delta_xy.1;
+            camera_translation.x += delta_xy.0 as f32 * 32.;
+            camera_translation.y += delta_xy.1 as f32 * 32.;
         }
     }
 }
@@ -105,7 +105,7 @@ fn load(
     {
         for handle in sprite_handles.handles.iter() {
             let texture = textures.get(handle).unwrap();
-            texture_atlas_builder.add_texture(handle.clone_weak().typed::<Texture>(), &texture);
+            texture_atlas_builder.add_texture(handle.clone_weak().typed::<Texture>(), texture);
         }
 
         let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
@@ -122,7 +122,6 @@ fn load(
             .add_layer(
                 TilemapLayer {
                     kind: LayerKind::Dense,
-                    ..Default::default()
                 },
                 0,
             )
@@ -253,7 +252,6 @@ fn build_random_dungeon(
         map.add_layer(
             TilemapLayer {
                 kind: LayerKind::Sparse,
-                ..Default::default()
             },
             1,
         )
