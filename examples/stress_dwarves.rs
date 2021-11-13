@@ -1,18 +1,16 @@
-#![allow(clippy::all)]
 use bevy::{
     asset::LoadState,
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
-    log::info,
     prelude::*,
-    sprite::{TextureAtlas, TextureAtlasBuilder},
+    sprite::TextureAtlasBuilder,
     utils::HashSet,
     window::WindowMode,
 };
-use bevy_tilemap::prelude::*;
+use bevy_tilemap::{prelude::*, Tilemap, TilemapLayer};
 use rand::Rng;
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
             title: "Drunk Stressed Dwarves".to_string(),
             width: 1024.,
@@ -43,13 +41,13 @@ struct TileSpriteHandles {
     atlas_loaded: bool,
 }
 
-#[derive(Default, Copy, Clone, PartialEq)]
+#[derive(Component, Default, Copy, Clone, PartialEq)]
 struct Position {
     x: i32,
     y: i32,
 }
 
-#[derive(Default)]
+#[derive(Component, Default)]
 struct Render {
     sprite_index: usize,
     sprite_order: usize,
@@ -64,7 +62,6 @@ struct StressDwarfBundle {
 #[derive(Default, Clone)]
 struct State {
     map_loaded: bool,
-    spawned: bool,
     collisions: HashSet<(i32, i32)>,
 }
 

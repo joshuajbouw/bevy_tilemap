@@ -4,13 +4,6 @@
 //! all contained here.
 
 #![doc(html_root_url = "https://docs.rs/bevy_tilemap_types/0.4.0")]
-// This was broken even further and no longer will work at all with the previous
-// workaround. There is a fix, might be sometime for it to be included though.
-// Even then, it is just a warning. For now, including it per module seems to
-// fix it.
-// See: https://github.com/rust-lang/rust/pull/80372
-// #![no_implicit_prelude]
-
 // rustc / rustdoc
 // This won't build on stable releases until it is stable.
 //#![warn(rustdoc::private_doc_tests)]
@@ -30,28 +23,19 @@
     clippy::unwrap_in_result
 )]
 
-#[no_implicit_prelude]
 pub mod dimension;
-#[no_implicit_prelude]
 pub mod point;
-#[no_implicit_prelude]
 pub mod prelude;
 
 /// A custom prelude around all the types we need from `std`, `bevy`, and `serde`.
-#[no_implicit_prelude]
 mod lib {
-    extern crate bevy_math;
-    extern crate bevy_render;
-    #[cfg(feature = "serde")]
-    extern crate serde;
-    extern crate std;
-
-    pub(crate) use self::{
-        bevy_math::{Vec2, Vec3},
-        bevy_render::texture::Extent3d,
+    pub(crate) use bevy::{
+        ecs::{component::Component, reflect::ReflectComponent},
+        math::{Vec2, Vec3},
+        reflect::{Reflect, ReflectDeserialize},
+        render::texture::Extent3d,
     };
 
-    #[cfg(feature = "serde")]
     pub(crate) use serde::{Deserialize, Serialize};
 
     pub(crate) use std::{

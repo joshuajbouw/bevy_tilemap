@@ -1,16 +1,11 @@
-#![allow(clippy::all)]
 use bevy::{
-    asset::LoadState,
-    prelude::*,
-    sprite::{TextureAtlas, TextureAtlasBuilder},
-    utils::HashSet,
-    window::WindowMode,
+    asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, utils::HashSet, window::WindowMode,
 };
-use bevy_tilemap::prelude::*;
+use bevy_tilemap::{prelude::*, Tilemap, TilemapLayer};
 use rand::Rng;
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
             title: "Random Hex World".to_string(),
             width: 1036.,
@@ -37,19 +32,19 @@ struct SpriteHandles {
     atlas_loaded: bool,
 }
 
-#[derive(Default, Copy, Clone, PartialEq)]
+#[derive(Component, Default, Copy, Clone, PartialEq)]
 struct Position {
     x: i32,
     y: i32,
 }
 
-#[derive(Default)]
+#[derive(Component, Default)]
 struct Render {
     sprite_index: usize,
     z_order: usize,
 }
 
-#[derive(Default)]
+#[derive(Component, Default)]
 struct Player {}
 
 #[derive(Bundle)]
@@ -62,7 +57,6 @@ struct PlayerBundle {
 #[derive(Default, Clone)]
 struct GameState {
     map_loaded: bool,
-    spawned: bool,
     collisions: HashSet<(i32, i32)>,
 }
 

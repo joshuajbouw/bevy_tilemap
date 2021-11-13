@@ -191,8 +191,14 @@ fn recalculate_mesh(
         Some(m) => m,
     };
     let (indexes, colors) = chunk.tiles_to_renderer_parts(chunk_dimensions);
+    let vertices: Vec<[f32; 3]> = chunk_mesh
+        .vertices
+        .clone()
+        .iter()
+        .map(|v| [v.x, v.y, v.z])
+        .collect();
     mesh.set_indices(Some(Indices::U32(chunk_mesh.indices.clone())));
-    mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, chunk_mesh.vertices.clone());
+    mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
     mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
     mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
 }
@@ -207,7 +213,7 @@ fn handle_add_sprite_layers(
     let chunk_mesh = tilemap.chunk_mesh().clone();
     for chunk in tilemap.chunks_mut().values_mut() {
         for (kind, sprite_layer) in &add_sprite_layers {
-            chunk.add_sprite_layer(&kind, *sprite_layer, chunk_dimensions);
+            chunk.add_sprite_layer(kind, *sprite_layer, chunk_dimensions);
             if let Some(mesh) = chunk.mesh() {
                 recalculate_mesh(meshes, mesh, chunk, &chunk_mesh, chunk_dimensions);
             }
@@ -257,7 +263,7 @@ pub(crate) fn tilemap_events(
         let mut despawned_chunks = Vec::new();
         let mut add_sprite_layers = Vec::new();
         let mut remove_sprite_layers = Vec::new();
-        for event in reader.iter(&tilemap.chunk_events()) {
+        for event in reader.iter(tilemap.chunk_events()) {
             use crate::TilemapChunkEvent::*;
             match event {
                 Modified { ref point } => {

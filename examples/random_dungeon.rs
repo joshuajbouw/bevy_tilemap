@@ -1,17 +1,12 @@
-#![allow(clippy::all)]
 use bevy::{
-    asset::LoadState,
-    prelude::*,
-    render::camera::Camera,
-    sprite::{TextureAtlas, TextureAtlasBuilder},
-    utils::HashSet,
-    window::WindowMode,
+    asset::LoadState, prelude::*, render::camera::Camera, sprite::TextureAtlasBuilder,
+    utils::HashSet, window::WindowMode,
 };
-use bevy_tilemap::prelude::*;
+use bevy_tilemap::{prelude::*, Tilemap, TilemapLayer};
 use rand::Rng;
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
             title: "Endless Dungeon".to_string(),
             width: 1024.,
@@ -25,10 +20,10 @@ fn main() {
         .init_resource::<GameState>()
         .add_plugins(DefaultPlugins)
         .add_plugins(TilemapDefaultPlugins)
-        .add_startup_system(setup.system())
-        .add_system(load.system())
-        .add_system(build_random_dungeon.system())
-        .add_system(character_movement.system())
+        .add_startup_system(setup)
+        .add_system(load)
+        .add_system(build_random_dungeon)
+        .add_system(character_movement)
         .run()
 }
 
@@ -43,19 +38,19 @@ struct TileSpriteHandles {
     atlas_loaded: bool,
 }
 
-#[derive(Default, Copy, Clone, PartialEq)]
+#[derive(Component, Default, Copy, Clone, PartialEq)]
 struct Position {
     x: i32,
     y: i32,
 }
 
-#[derive(Default)]
+#[derive(Component, Default)]
 struct Render {
     sprite_index: usize,
     sprite_order: usize,
 }
 
-#[derive(Default)]
+#[derive(Component, Default)]
 struct Player {}
 
 #[derive(Bundle)]
@@ -68,7 +63,6 @@ struct PlayerBundle {
 #[derive(Default, Clone)]
 struct GameState {
     map_loaded: bool,
-    spawned: bool,
     collisions: HashSet<(i32, i32)>,
 }
 

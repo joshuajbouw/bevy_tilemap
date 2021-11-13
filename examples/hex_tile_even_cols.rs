@@ -1,10 +1,10 @@
 use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode};
-use bevy_tilemap::prelude::*;
+use bevy_tilemap::{prelude::*, Tilemap};
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
-            title: "Hex X".to_string(),
+            title: "Hex Even Columns".to_string(),
             width: 1024.,
             height: 720.,
             vsync: false,
@@ -31,7 +31,6 @@ struct SpriteHandles {
 #[derive(Default, Clone)]
 struct GameState {
     map_loaded: bool,
-    spawned: bool,
 }
 
 fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {
@@ -65,9 +64,9 @@ fn load(
         let tilemap = Tilemap::builder()
             .auto_chunk()
             .auto_spawn(2, 2)
-            .topology(GridTopology::HexX)
+            .topology(GridTopology::HexEvenCols)
             .dimensions(3, 3)
-            .chunk_dimensions(7, 4, 1)
+            .chunk_dimensions(8, 4, 1)
             .texture_dimensions(37, 32)
             .texture_atlas(atlas_handle)
             .finish()

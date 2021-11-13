@@ -28,8 +28,8 @@ pub(super) trait Layer: 'static {
 ///
 /// The difference between a dense layer and a sparse layer is simply the
 /// storage types.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Component, Clone, Default, Debug, PartialEq, Serialize, Deserialize, Reflect)]
+#[reflect(Component, PartialEq, Serialize, Deserialize)]
 pub(super) struct DenseLayer {
     /// A vector of all the tiles in the chunk.
     tiles: Vec<RawTile>,
@@ -110,8 +110,7 @@ impl DenseLayer {
 }
 
 /// A layer with sparse sprite tiles.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub(super) struct SparseLayer {
     /// A map of all the tiles in the chunk.
     tiles: HashMap<usize, RawTile>,
@@ -171,8 +170,10 @@ impl SparseLayer {
 ///
 /// It is highly recommended to adhere to the above principles to get the lowest
 /// amount of byte usage.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(
+    Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize, Reflect,
+)]
+#[reflect_value(PartialEq, Serialize, Deserialize)]
 pub enum LayerKind {
     /// Specifies the tilemap to add a dense sprite layer.
     Dense,
@@ -180,8 +181,8 @@ pub enum LayerKind {
     Sparse,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Component, Clone, PartialEq, Debug, Serialize, Deserialize, Reflect)]
+#[reflect_value(PartialEq, Serialize, Deserialize)]
 /// Inner enum used for storing either a dense or sparse layer.
 pub(super) enum LayerKindInner {
     /// Inner dense layer storage.
@@ -208,10 +209,18 @@ impl AsMut<dyn Layer> for LayerKindInner {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Component, Clone, PartialEq, Debug, Serialize, Deserialize, Reflect)]
+#[reflect(Component, PartialEq, Serialize, Deserialize)]
 /// A sprite layer which can either store a sparse or dense layer.
 pub(super) struct SpriteLayer {
     /// Enum storage of the kind of layer.
     pub inner: LayerKindInner,
+}
+
+impl Default for SpriteLayer {
+    fn default() -> Self {
+        SpriteLayer {
+            inner: LayerKindInner::Dense(DenseLayer::default()),
+        }
+    }
 }

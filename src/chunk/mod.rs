@@ -13,8 +13,8 @@
 //!
 //! # Simple chunk creation
 //! ```
-//! use bevy_asset::{prelude::*, HandleId};
-//! use bevy_sprite::prelude::*;
+//! use bevy::asset::{prelude::*, HandleId};
+//! use bevy::sprite::prelude::*;
 //! use bevy_tilemap::prelude::*;
 //!
 //! // This must be set in Asset<TextureAtlas>.
@@ -37,8 +37,8 @@
 //!
 //! # Specifying what kind of chunk
 //! ```
-//! use bevy_asset::{prelude::*, HandleId};
-//! use bevy_sprite::prelude::*;
+//! use bevy::asset::{prelude::*, HandleId};
+//! use bevy::sprite::prelude::*;
 //! use bevy_tilemap::prelude::*;
 //!
 //! // This must be set in Asset<TextureAtlas>.
@@ -76,8 +76,7 @@ pub use raw_tile::RawTile;
 /// A type for sprite layers.
 type SpriteLayers = Vec<Option<SpriteLayer>>;
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 /// A chunk which holds all the tiles to be rendered.
 pub(crate) struct Chunk {
     /// The point coordinate of the chunk.
@@ -87,7 +86,7 @@ pub(crate) struct Chunk {
     /// Ephemeral user data that can be used for flags or other purposes.
     user_data: u128,
     /// A chunks mesh used for rendering.
-    #[cfg_attr(feature = "serde", serde(skip))]
+    #[serde(skip)]
     mesh: Option<Handle<Mesh>>,
     /// An entity which is tied to this chunk.
     entity: Option<Entity>,

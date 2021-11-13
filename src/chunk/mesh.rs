@@ -1,13 +1,13 @@
 use crate::lib::*;
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, PartialEq, PartialOrd, Debug, Default)]
+#[derive(Component, Clone, PartialEq, Debug, Default, Serialize, Deserialize, Reflect)]
+#[reflect(Component, Deserialize, PartialEq)]
 /// The mesh of a chunk layer.
 pub struct ChunkMesh {
     /// The indices of a chunk's mesh.
     pub(crate) indices: Vec<u32>,
     /// The vertices of a chunk's mesh.
-    pub(crate) vertices: Vec<[f32; 3]>,
+    pub(crate) vertices: Vec<Vec3>,
 }
 
 impl ChunkMesh {
@@ -35,10 +35,10 @@ impl ChunkMesh {
                         let x1 = (x + 1) as f32 - chunk_width as f32 / 2.0 + offset_x;
 
                         let depth = ((z * l) + l) as f32;
-                        vertices.push([x0, y0, depth]);
-                        vertices.push([x0, y1, depth]);
-                        vertices.push([x1, y1, depth]);
-                        vertices.push([x1, y0, depth]);
+                        vertices.push(Vec3::new(x0, y0, depth));
+                        vertices.push(Vec3::new(x0, y1, depth));
+                        vertices.push(Vec3::new(x1, y1, depth));
+                        vertices.push(Vec3::new(x1, y0, depth));
                     }
                 }
             }
@@ -58,8 +58,14 @@ impl ChunkMesh {
 impl From<&ChunkMesh> for Mesh {
     fn from(chunk_mesh: &ChunkMesh) -> Mesh {
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let vertices: Vec<[f32; 3]> = chunk_mesh
+            .vertices
+            .clone()
+            .iter()
+            .map(|v| [v.x, v.y, v.z])
+            .collect();
         mesh.set_indices(Some(Indices::U32(chunk_mesh.indices.clone())));
-        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, chunk_mesh.vertices.clone());
+        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
 
         mesh
     }

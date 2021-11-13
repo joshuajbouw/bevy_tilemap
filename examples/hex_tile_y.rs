@@ -1,8 +1,8 @@
 use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode};
-use bevy_tilemap::prelude::*;
+use bevy_tilemap::{prelude::*, Tilemap};
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
             title: "Hex Y".to_string(),
             width: 1024.,
@@ -31,7 +31,6 @@ struct SpriteHandles {
 #[derive(Default, Clone)]
 struct GameState {
     map_loaded: bool,
-    spawned: bool,
 }
 
 fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {

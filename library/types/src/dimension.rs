@@ -1,7 +1,7 @@
 //! Dimension helpers with encoding and decoding to and from indexes.
 
 use crate::{
-    lib::*,
+    lib::{Reflect, *},
     point::{Point2, Point3},
 };
 
@@ -42,8 +42,22 @@ impl From<ErrorKind> for DimensionError {
 /// A dimension result which is of the type `Result<T, DimensionError>`.
 pub type DimensionResult<T> = Result<T, DimensionError>;
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(
+    Component,
+    Default,
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Hash,
+    Debug,
+    Serialize,
+    Deserialize,
+    Reflect,
+)]
+#[reflect(Component)]
 /// Dimensions of the 2nd kind.
 pub struct Dimension2 {
     /// The width of this dimension.
@@ -169,6 +183,7 @@ impl From<Extent3d> for Dimension2 {
     }
 }
 
+/// Dimension2 implementations for glam.
 macro_rules! dimension2_glam_impl {
     ($vec: ty) => {
         impl From<$vec> for Dimension2 {
@@ -191,6 +206,7 @@ macro_rules! dimension2_glam_impl {
 dimension2_glam_impl!(Vec2);
 dimension2_glam_impl!(Vec3);
 
+/// Dimension2 implementations for arrays.
 macro_rules! dimension2_arr_impl {
     ($arr: ty) => {
         impl From<$arr> for Dimension2 {
@@ -232,6 +248,7 @@ dimension2_arr_impl!([u32; 3]);
 dimension2_arr_impl!([u16; 3]);
 dimension2_arr_impl!([u8; 3]);
 
+/// Dimension2 implementations for tuples.
 macro_rules! dimension2_tuple_impl {
     ($t: ty) => {
         impl From<$t> for Dimension2 {
@@ -332,8 +349,22 @@ impl SubAssign for Dimension2 {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(
+    Component,
+    Default,
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Hash,
+    Debug,
+    Serialize,
+    Deserialize,
+    Reflect,
+)]
+#[reflect(Component, PartialEq, Serialize, Deserialize)]
 /// Dimensions of the 3rd kind.
 pub struct Dimension3 {
     /// The width of this dimension.
@@ -478,7 +509,7 @@ impl From<Dimension3> for Dimension2 {
 
 impl From<Extent3d> for Dimension3 {
     fn from(ext: Extent3d) -> Dimension3 {
-        Dimension3::new(ext.width, ext.height, ext.depth)
+        Dimension3::new(ext.width, ext.height, ext.depth_or_array_layers)
     }
 }
 
@@ -488,6 +519,7 @@ impl From<Dimension3> for Extent3d {
     }
 }
 
+/// Dimension3 implementations for glam.
 macro_rules! dimension3_glam_impl {
     ($vec: ty) => {
         impl From<$vec> for Dimension3 {
@@ -510,6 +542,7 @@ macro_rules! dimension3_glam_impl {
 
 dimension3_glam_impl!(Vec3);
 
+/// Dimension3 implementations for arrays.
 macro_rules! dimension3_arr_impl {
     ($arr: ty) => {
         impl From<$arr> for Dimension3 {
@@ -541,6 +574,7 @@ dimension3_arr_impl!([u32; 3]);
 dimension3_arr_impl!([u16; 3]);
 dimension3_arr_impl!([u8; 3]);
 
+/// Dimension3 implementations for tuples.
 macro_rules! dimension3_tuple_impl {
     ($t: ty) => {
         impl From<$t> for Dimension3 {
