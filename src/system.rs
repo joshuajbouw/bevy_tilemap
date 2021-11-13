@@ -449,16 +449,13 @@ mod tests {
 
     #[test]
     fn insert_and_spawn_chunk() {
-        let mut app = AppBuilder::default();
-        let app = &mut app
-            // .add_plugin(ReflectPlugin)
-            .add_plugin(CorePlugin)
+        let mut app = App::new();
+        app.add_plugin(CorePlugin)
             .add_plugin(ScheduleRunnerPlugin {})
             .add_plugin(AssetPlugin)
             .add_stage("update", SystemStage::parallel())
             .add_system_to_stage("update", tilemap_events.system())
-            .add_asset::<Mesh>()
-            .app;
+            .add_asset::<Mesh>();
         let mut command_queue = CommandQueue::default();
         let mut commands = Commands::new(&mut command_queue, &app.world);
 
@@ -549,7 +546,8 @@ mod tests {
             .count();
         assert_eq!(chunks_count, 2);
 
-        // Need to double update to kick the GC.
+        // Need to triple update to kick the GC.
+        app.update();
         app.update();
         app.update();
 

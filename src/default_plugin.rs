@@ -5,7 +5,7 @@
 //!
 //! # Using the default plugin
 //! ```no_run
-//! use bevy_app::prelude::*;
+//! use bevy::prelude::*;
 //! use bevy_tilemap::prelude::*;
 //!
 //! App::build()
