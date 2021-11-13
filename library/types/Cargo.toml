@@ -2,7 +2,7 @@
 name = "bevy_tilemap_types"
 version = "0.4.0"
 authors = ["Joshua J. Bouw <dev@joshuajbouw.com>"]
-edition = "2018"
+edition = "2021"
 description = "Common types used across Bevy Tilemaps"
 repository = "https://github.com/joshuajbouw/bevy_tilemap"
 license = "MIT"
