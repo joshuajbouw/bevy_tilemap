@@ -4,8 +4,8 @@
 //! rush or want to build a conceptual game.
 //!
 //! ```
-//! use bevy_asset::{prelude::*, HandleId};
-//! use bevy_sprite::prelude::*;
+//! use bevy::asset::{prelude::*, HandleId};
+//! use bevy::sprite::prelude::*;
 //! use bevy_tilemap::prelude::*;
 //!
 //! // This must be set in Asset<TextureAtlas>.
@@ -30,8 +30,8 @@
 //! [`TilemapBuilder`]: crate::tilemap::TilemapBuilder
 //!
 //! ```
-//! use bevy_asset::{prelude::*, HandleId};
-//! use bevy_sprite::prelude::*;
+//! use bevy::asset::{prelude::*, HandleId};
+//! use bevy::sprite::prelude::*;
 //! use bevy_tilemap::prelude::*;
 //!
 //! // This must be set in Asset<TextureAtlas>.
@@ -66,8 +66,8 @@
 //! [`insert_tiles`]: crate::tilemap::Tilemap::insert_tiles
 //!
 //! ```
-//! use bevy_asset::{prelude::*, HandleId};
-//! use bevy_sprite::prelude::*;
+//! use bevy::asset::{prelude::*, HandleId};
+//! use bevy::sprite::prelude::*;
 //! use bevy_tilemap::prelude::*;
 //!
 //! // This must be set in Asset<TextureAtlas>.
@@ -99,6 +99,7 @@ use crate::{
     lib::*,
     prelude::GridTopology,
     tile::Tile,
+    Component, Reflect, ReflectComponent,
 };
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -182,7 +183,7 @@ impl From<DimensionError> for TilemapError {
 pub type TilemapResult<T> = Result<T, TilemapError>;
 
 bitflags! {
-    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[derive(Serialize, Deserialize, Reflect)]
     struct AutoFlags: u16 {
         const NONE = 0b0;
         const AUTO_CONFIGURE = 0b0000_0000_0000_0001;
@@ -207,8 +208,8 @@ impl Default for AutoFlags {
 }
 
 /// A layer configuration for a tilemap.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Component, Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, Reflect)]
+#[reflect(Component, PartialEq, Deserialize)]
 pub struct TilemapLayer {
     /// The kind of layer to create.
     pub kind: LayerKind,
@@ -223,8 +224,7 @@ impl Default for TilemapLayer {
 }
 
 /// A Tilemap which maintains chunks and its tiles within.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug)]
+#[derive(Component, Debug, Serialize, Deserialize)]
 pub struct Tilemap {
     /// The type of grid to use.
     topology: GridTopology,
@@ -248,15 +248,12 @@ pub struct Tilemap {
     auto_spawn: Option<Dimension2>,
     /// Custom flags.
     custom_flags: Vec<u32>,
-    #[cfg_attr(feature = "serde", serde(skip))]
+    #[serde(skip)]
     /// The handle of the texture atlas.
     texture_atlas: Handle<TextureAtlas>,
     /// A map of all the chunks at points.
     chunks: HashMap<Point2, Chunk>,
-    #[cfg_attr(feature = "serde", serde(skip))]
-    /// A map of all currently spawned entities.
-    entities: HashMap<usize, Vec<Entity>>,
-    #[cfg_attr(feature = "serde", serde(skip))]
+    #[serde(skip)]
     /// The events of the tilemap.
     chunk_events: Events<TilemapChunkEvent>,
     /// A set of all spawned chunks.
@@ -294,8 +291,8 @@ pub struct Tilemap {
 ///
 /// # Examples
 /// ```
-/// use bevy_asset::{prelude::*, HandleId};
-/// use bevy_sprite::prelude::*;
+/// use bevy::asset::{prelude::*, HandleId};
+/// use bevy::sprite::prelude::*;
 /// use bevy_tilemap::prelude::*;
 ///
 /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
@@ -307,8 +304,8 @@ pub struct Tilemap {
 ///
 /// Can also get a builder like this:
 /// ```
-/// use bevy_asset::{prelude::*, HandleId};
-/// use bevy_sprite::prelude::*;
+/// use bevy::asset::{prelude::*, HandleId};
+/// use bevy::sprite::prelude::*;
 /// use bevy_tilemap::prelude::*;
 ///
 /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
@@ -473,7 +470,7 @@ impl TilemapBuilder {
     /// # Examples
     /// ```
     /// use bevy_tilemap::prelude::*;
-    /// use bevy_math::Vec2;
+    /// use bevy::math::Vec2;
     ///
     /// let builder = TilemapBuilder::new().layer_offset(Vec2::new(0.5, 0.5));
     /// ```
@@ -564,8 +561,8 @@ impl TilemapBuilder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
@@ -626,8 +623,8 @@ impl TilemapBuilder {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// let texture_atlas_handle = Handle::weak(HandleId::random::<TextureAtlas>());
@@ -697,7 +694,6 @@ impl TilemapBuilder {
             custom_flags: Vec::new(),
             texture_atlas,
             chunks: Default::default(),
-            entities: Default::default(),
             chunk_events: Default::default(),
             spawned: Default::default(),
         })
@@ -731,7 +727,6 @@ impl Default for Tilemap {
             custom_flags: Vec::new(),
             texture_atlas: Handle::default(),
             chunks: Default::default(),
-            entities: Default::default(),
             chunk_events: Default::default(),
             spawned: Default::default(),
         }
@@ -747,8 +742,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -803,8 +798,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// let mut tilemap = Tilemap::default();
@@ -825,8 +820,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -847,8 +842,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -900,8 +895,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -967,8 +962,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1021,8 +1016,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1076,8 +1071,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1113,8 +1108,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1160,8 +1155,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1200,8 +1195,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1258,8 +1253,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1293,8 +1288,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1390,9 +1385,9 @@ impl Tilemap {
     /// # Examples
     ///
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_render::prelude::*;
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::render::prelude::*;
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, chunk::RawTile};
     ///
     /// // In production use a strong handle from an actual source.
@@ -1479,9 +1474,9 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_render::prelude::*;
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::render::prelude::*;
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, chunk::RawTile};
     ///
     /// // In production use a strong handle from an actual source.
@@ -1511,9 +1506,9 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_render::prelude::*;
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::render::prelude::*;
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, chunk::RawTile};
     ///
     /// // In production use a strong handle from an actual source.
@@ -1598,8 +1593,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, chunk::RawTile};
     ///
     /// // In production use a strong handle from an actual source.
@@ -1642,9 +1637,9 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_render::prelude::*;
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::render::prelude::*;
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, chunk::RawTile};
     ///
     /// // In production use a strong handle from an actual source.
@@ -1683,9 +1678,9 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_render::prelude::*;
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::render::prelude::*;
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, chunk::RawTile};
     ///
     /// // In production use a strong handle from an actual source.
@@ -1724,9 +1719,9 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_render::prelude::*;
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::render::prelude::*;
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, chunk::RawTile};
     ///
     /// // In production use a strong handle from an actual source.
@@ -1771,8 +1766,8 @@ impl Tilemap {
     /// # Examples
     ///
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1809,8 +1804,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1841,8 +1836,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1873,8 +1868,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1899,8 +1894,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1925,8 +1920,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1950,8 +1945,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -1989,8 +1984,8 @@ impl Tilemap {
     ///
     /// # Examples
     /// ```
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::prelude::*;
     ///
     /// // In production use a strong handle from an actual source.
@@ -2019,8 +2014,8 @@ impl Tilemap {
     /// # Examples
     /// ```
     /// use bevy_app::{prelude::*, Events};
-    /// use bevy_asset::{prelude::*, HandleId};
-    /// use bevy_sprite::prelude::*;
+    /// use bevy::asset::{prelude::*, HandleId};
+    /// use bevy::sprite::prelude::*;
     /// use bevy_tilemap::{prelude::*, event::TilemapChunkEvent};
     ///
     /// // In production use a strong handle from an actual source.

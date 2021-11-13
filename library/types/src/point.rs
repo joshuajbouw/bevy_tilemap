@@ -3,8 +3,22 @@
 use crate::lib::*;
 
 /// A point which contains a X,Y coordinate.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+#[derive(
+    Component,
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Hash,
+    Debug,
+    Default,
+    Reflect,
+    Serialize,
+    Deserialize,
+)]
+#[reflect(Component)]
 pub struct Point2 {
     /// X value of a point.
     pub x: i32,
@@ -43,6 +57,7 @@ impl From<&Point2> for Vec2 {
     }
 }
 
+/// Point2 implementations for glam.
 macro_rules! point2_glam_impl {
     ($vec: ty) => {
         impl From<$vec> for Point2 {
@@ -68,6 +83,7 @@ macro_rules! point2_glam_impl {
 point2_glam_impl!(Vec2);
 point2_glam_impl!(Vec3);
 
+/// Point2 implementations for arrays.
 macro_rules! point2_arr_impl {
     ($arr: ty) => {
         impl From<$arr> for Point2 {
@@ -112,6 +128,7 @@ point2_arr_impl!([u32; 3]);
 point2_arr_impl!([u16; 3]);
 point2_arr_impl!([u8; 3]);
 
+/// Point2 implementations for tuples.
 macro_rules! point2_tuple_impl {
     ($t: ty) => {
         impl From<$t> for Point2 {
@@ -248,8 +265,9 @@ impl SubAssign for Point2 {
 }
 
 /// A point which contains a X,Y,Z coordinate.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+#[derive(
+    Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default, Serialize, Deserialize,
+)]
 pub struct Point3 {
     /// X value of a point.
     pub x: i32,
@@ -351,6 +369,7 @@ impl From<&Vec3> for Point3 {
     }
 }
 
+/// Point2 implementations for arrays.
 macro_rules! point2_arr_impl {
     ($arr: ty) => {
         impl From<$arr> for Point3 {
@@ -386,6 +405,7 @@ point2_arr_impl!([u32; 2]);
 point2_arr_impl!([u16; 2]);
 point2_arr_impl!([u8; 2]);
 
+/// Point3 implementations for arrays.
 macro_rules! point3_arr_impl {
     ($arr: ty) => {
         impl From<$arr> for Point3 {
@@ -421,6 +441,7 @@ point3_arr_impl!([u32; 3]);
 point3_arr_impl!([u16; 3]);
 point3_arr_impl!([u8; 3]);
 
+/// Point3 implementations for tuples.
 macro_rules! point3_tuple2_impl {
     ($t: ty) => {
         impl From<$t> for Point3 {
@@ -456,6 +477,7 @@ point3_tuple2_impl!((u32, u32));
 point3_tuple2_impl!((u16, u16));
 point3_tuple2_impl!((u8, u8));
 
+/// Point3 implementations.
 macro_rules! point3_impl {
     ($t: ty) => {
         impl From<$t> for Point3 {

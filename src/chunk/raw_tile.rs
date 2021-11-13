@@ -1,7 +1,7 @@
 use crate::lib::*;
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Component, Copy, Clone, PartialEq, Debug, Serialize, Deserialize, Reflect)]
+#[reflect(Component, Serialize, Deserialize, PartialEq)]
 /// A raw tile composed of simply an index and a color.
 pub struct RawTile {
     /// The index of the tile in the sprite sheet.

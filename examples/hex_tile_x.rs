@@ -1,10 +1,10 @@
 use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode};
-use bevy_tilemap::prelude::*;
+use bevy_tilemap::{prelude::*, Tilemap};
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
-            title: "Hex Odd Rows".to_string(),
+            title: "Hex X".to_string(),
             width: 1024.,
             height: 720.,
             vsync: false,
@@ -31,7 +31,6 @@ struct SpriteHandles {
 #[derive(Default, Clone)]
 struct GameState {
     map_loaded: bool,
-    spawned: bool,
 }
 
 fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {
@@ -65,10 +64,10 @@ fn load(
         let tilemap = Tilemap::builder()
             .auto_chunk()
             .auto_spawn(2, 2)
-            .topology(GridTopology::HexOddRows)
+            .topology(GridTopology::HexX)
             .dimensions(3, 3)
             .chunk_dimensions(7, 4, 1)
-            .texture_dimensions(32, 37)
+            .texture_dimensions(37, 32)
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();
@@ -109,7 +108,8 @@ fn build_world(
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
 
-        let grass_floor: Handle<Texture> = asset_server.get_handle("textures/hex-floor-grass.png");
+        let grass_floor: Handle<Texture> =
+            asset_server.get_handle("textures/hex-floor-grass_alt.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let grass_index = texture_atlas.get_texture_index(&grass_floor).unwrap();
 

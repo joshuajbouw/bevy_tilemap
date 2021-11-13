@@ -54,13 +54,6 @@
 //! See the library `bevy_tilemap_types` for more information.
 
 #![doc(html_root_url = "https://docs.rs/bevy_tilemap/0.4.0")]
-// This was broken even further and no longer will work at all with the previous
-// workaround. There is a fix, might be sometime for it to be included though.
-// Even then, it is just a warning. For now, including it per module seems to
-// fix it.
-// See: https://github.com/rust-lang/rust/pull/80372
-// #![no_implicit_prelude]
-
 // rustc / rustdoc
 // This won't build on stable releases until it is stable.
 //#![warn(rustdoc::private_doc_tests)]
@@ -91,15 +84,10 @@ pub use bevy_tilemap_types::dimension;
 #[doc(inline)]
 pub use bevy_tilemap_types::point;
 
-#[no_implicit_prelude]
 pub mod chunk;
-#[no_implicit_prelude]
 pub mod default_plugin;
-#[no_implicit_prelude]
 pub mod entity;
-#[no_implicit_prelude]
 pub mod prelude;
-#[no_implicit_prelude]
 pub mod stage {
     //! The stages for the tilemap in the bevy app.
 
@@ -107,13 +95,9 @@ pub mod stage {
     pub const TILEMAP: &str = "tilemap";
     // pub const TILEMAP_UPDATE: &str = "tilemap_update";
 }
-#[no_implicit_prelude]
 pub mod event;
-#[no_implicit_prelude]
 mod system;
-#[no_implicit_prelude]
 pub mod tile;
-#[no_implicit_prelude]
 pub mod tilemap;
 
 use crate::{event::TilemapChunkEvent, lib::*};
@@ -136,7 +120,7 @@ pub enum TilemapSystem {
 }
 
 impl Plugin for TilemapPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_asset::<Tilemap>()
             .add_stage_before(
                 CoreStage::PostUpdate,
@@ -173,7 +157,7 @@ impl Plugin for TilemapPlugin {
                 crate::system::tilemap_visibility_change.system(),
             );
 
-        let world = app.world_mut().cell();
+        let world = app.world.cell();
         // let mut render_graph = world.get_resource_mut::<RenderGraph>().unwrap();
         let mut pipelines = world
             .get_resource_mut::<Assets<PipelineDescriptor>>()
@@ -184,80 +168,61 @@ impl Plugin for TilemapPlugin {
 }
 
 /// A custom prelude around everything that we only need to use.
-#[no_implicit_prelude]
 mod lib {
-    extern crate bevy_app;
-    extern crate bevy_asset;
     #[cfg(test)]
-    extern crate bevy_core;
-    extern crate bevy_ecs;
-    extern crate bevy_log;
-    extern crate bevy_math;
-    extern crate bevy_reflect;
-    extern crate bevy_render;
-    extern crate bevy_sprite;
-    extern crate bevy_tilemap_types;
-    extern crate bevy_transform;
-    extern crate bevy_utils;
-    extern crate bevy_window;
-    pub extern crate bitflags;
-    #[cfg(feature = "serde")]
-    extern crate serde;
-    extern crate std;
-
+    pub(crate) use bevy::app::ScheduleRunnerPlugin;
     #[cfg(test)]
-    pub(crate) use bevy_app::ScheduleRunnerPlugin;
-    pub(crate) use bevy_app::{
-        AppBuilder, CoreStage, Events, Plugin, PluginGroup, PluginGroupBuilder,
-    };
-    pub(crate) use bevy_asset::{AddAsset, Assets, Handle, HandleUntyped};
+    pub(crate) use bevy::asset::{AssetPlugin, HandleId};
     #[cfg(test)]
-    pub(crate) use bevy_asset::{AssetPlugin, HandleId};
+    pub(crate) use bevy::core::CorePlugin;
     #[cfg(test)]
-    pub(crate) use bevy_core::CorePlugin;
+    pub(crate) use bevy::ecs::system::CommandQueue;
     #[cfg(test)]
-    pub(crate) use bevy_ecs::system::CommandQueue;
-    pub(crate) use bevy_ecs::{
-        bundle::Bundle,
-        entity::Entity,
-        query::Changed,
-        schedule::{ParallelSystemDescriptorCoercion, SystemLabel, SystemStage},
-        system::{Commands, IntoSystem, Query, Res, ResMut},
-    };
-    pub(crate) use bevy_log::{error, info, warn};
-    pub(crate) use bevy_math::{Vec2, Vec3};
-    pub(crate) use bevy_reflect::{TypeUuid, Uuid};
-    pub(crate) use bevy_render::{
-        camera::Camera,
-        color::Color,
-        draw::{Draw, Visible},
-        mesh::{Indices, Mesh},
-        pipeline::{
-            BlendFactor, BlendOperation, BlendState, ColorTargetState, ColorWrite, CompareFunction,
-            DepthBiasState, DepthStencilState, PipelineDescriptor, PrimitiveTopology,
-            RenderPipeline, RenderPipelines, StencilFaceState, StencilState,
+    pub(crate) use bevy::transform::components::Children;
+    pub(crate) use bevy::{
+        app::{App, CoreStage, Events, Plugin, PluginGroup, PluginGroupBuilder},
+        asset::{AddAsset, Assets, Handle, HandleUntyped},
+        ecs::{
+            bundle::Bundle,
+            component::Component,
+            entity::Entity,
+            query::Changed,
+            reflect::ReflectComponent,
+            schedule::{ParallelSystemDescriptorCoercion, SystemLabel, SystemStage},
+            system::{Commands, IntoSystem, Query, Res, ResMut},
         },
-        render_graph::base::MainPass,
-        shader::{Shader, ShaderStage, ShaderStages},
-        texture::TextureFormat,
+        log::{error, info, warn},
+        math::{Vec2, Vec3},
+        reflect::{Reflect, ReflectDeserialize, TypeUuid, Uuid},
+        render::{
+            camera::Camera,
+            color::Color,
+            draw::{Draw, Visible},
+            mesh::{Indices, Mesh},
+            pipeline::{
+                BlendComponent, BlendFactor, BlendOperation, BlendState, ColorTargetState,
+                ColorWrite, CompareFunction, DepthBiasState, DepthStencilState, PipelineDescriptor,
+                PrimitiveTopology, RenderPipeline, RenderPipelines, StencilFaceState, StencilState,
+            },
+            render_graph::base::MainPass,
+            shader::{Shader, ShaderStage, ShaderStages},
+            texture::TextureFormat,
+        },
+        sprite::TextureAtlas,
+        transform::{
+            components::{GlobalTransform, Parent, Transform},
+            hierarchy::{BuildChildren, DespawnRecursiveExt},
+        },
+        utils::{HashMap, HashSet},
+        window::WindowResized,
     };
-    pub(crate) use bevy_sprite::TextureAtlas;
     pub(crate) use bevy_tilemap_types::{
         dimension::{Dimension2, Dimension3, DimensionError},
         point::{Point2, Point3},
     };
-    #[cfg(test)]
-    pub(crate) use bevy_transform::components::Children;
-    pub(crate) use bevy_transform::{
-        components::{GlobalTransform, Parent, Transform},
-        hierarchy::{BuildChildren, DespawnRecursiveExt},
-    };
-    pub(crate) use bevy_utils::{HashMap, HashSet};
-    pub(crate) use bevy_window::WindowResized;
 
-    pub(crate) use crate::bitflags::*;
+    pub(crate) use bitflags::*;
 
-    #[cfg(feature = "serde")]
     pub(crate) use serde::{Deserialize, Serialize};
 
     pub(crate) use std::{
@@ -280,7 +245,7 @@ mod lib {
 
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]
-    pub(crate) use bevy_log::debug;
+    pub(crate) use bevy::log::debug;
 
     #[cfg(debug_assertions)]
     #[allow(unused_imports)]

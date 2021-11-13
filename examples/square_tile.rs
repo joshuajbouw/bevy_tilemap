@@ -1,10 +1,10 @@
 use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, window::WindowMode};
-use bevy_tilemap::prelude::*;
+use bevy_tilemap::{prelude::*, Tilemap};
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
-            title: "Hex Odd Columns".to_string(),
+            title: "Square Tiles".to_string(),
             width: 1024.,
             height: 720.,
             vsync: false,
@@ -31,7 +31,6 @@ struct SpriteHandles {
 #[derive(Default, Clone)]
 struct GameState {
     map_loaded: bool,
-    spawned: bool,
 }
 
 fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {
@@ -64,11 +63,11 @@ fn load(
 
         let tilemap = Tilemap::builder()
             .auto_chunk()
-            .auto_spawn(2, 2)
-            .topology(GridTopology::HexOddCols)
+            .topology(GridTopology::Square)
             .dimensions(3, 3)
             .chunk_dimensions(8, 4, 1)
-            .texture_dimensions(37, 32)
+            .texture_dimensions(32, 35)
+            .z_layers(3)
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();
@@ -109,10 +108,9 @@ fn build_world(
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
 
-        let grass_floor: Handle<Texture> =
-            asset_server.get_handle("textures/hex-floor-grass_alt.png");
+        let floor: Handle<Texture> = asset_server.get_handle("textures/square-floor_alt.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
-        let grass_index = texture_atlas.get_texture_index(&grass_floor).unwrap();
+        let floor_index = texture_atlas.get_texture_index(&floor).unwrap();
 
         let mut tiles = Vec::new();
         for y in 0..chunk_height {
@@ -121,7 +119,7 @@ fn build_world(
                 let x = x - chunk_width / 2;
                 let tile = Tile {
                     point: (x, y),
-                    sprite_index: grass_index,
+                    sprite_index: floor_index,
                     ..Default::default()
                 };
                 tiles.push(tile);

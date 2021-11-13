@@ -104,7 +104,7 @@ pub(crate) fn chunk_auto_radius(
             for (_camera, camera_transform) in camera_query.iter() {
                 auto_spawn(
                     camera_transform,
-                    &tilemap_transform,
+                    tilemap_transform,
                     &mut tilemap,
                     spawn_dimensions,
                 );
@@ -128,7 +128,7 @@ pub(crate) fn chunk_auto_spawn(
             };
             auto_spawn(
                 camera_transform,
-                &tilemap_transform,
+                tilemap_transform,
                 &mut tilemap,
                 spawn_dimensions,
             );
@@ -143,8 +143,7 @@ mod tests {
 
     #[test]
     fn test_chunk_update() {
-        let mut app = AppBuilder::default();
-        let app = &mut app
+        let mut app = App::new()
             // .add_plugin(ReflectPlugin)
             .add_plugin(CorePlugin)
             .add_plugin(ScheduleRunnerPlugin {})
@@ -152,8 +151,7 @@ mod tests {
             .add_stage("update", SystemStage::parallel())
             .add_system_to_stage("update", tilemap_events.system())
             .add_system_to_stage("update", chunk_update.system())
-            .add_asset::<Mesh>()
-            .app;
+            .add_asset::<Mesh>();
         let mut command_queue = CommandQueue::default();
         let mut commands = Commands::new(&mut command_queue, &app.world);
 
