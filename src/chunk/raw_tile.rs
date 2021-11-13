@@ -1,4 +1,4 @@
-use crate::lib::*;
+use crate::{lib::*, Tile};
 
 #[derive(Component, Copy, Clone, PartialEq, Debug, Serialize, Deserialize, Reflect)]
 #[reflect(Component, Serialize, Deserialize, PartialEq)]
@@ -21,13 +21,13 @@ impl Default for RawTile {
 
 /// A utility function that takes an array of `Tile`s and splits the indexes and
 /// colors and returns them as separate vectors for use in the renderer.
-pub(crate) fn dense_tiles_to_attributes(tiles: &[RawTile]) -> (Vec<f32>, Vec<[f32; 4]>) {
+pub(crate) fn dense_tiles_to_attributes(tiles: Vec<&Tile<Point3>>) -> (Vec<f32>, Vec<[f32; 4]>) {
     let capacity = tiles.len() * 4;
     let mut tile_indexes: Vec<f32> = Vec::with_capacity(capacity);
     let mut tile_colors: Vec<[f32; 4]> = Vec::with_capacity(capacity);
     for tile in tiles.iter() {
-        tile_indexes.extend([tile.index as f32; 4].iter());
-        tile_colors.extend([tile.color.into(); 4].iter());
+        tile_indexes.extend([tile.sprite_index as f32; 4].iter());
+        tile_colors.extend([tile.tint.into(); 4].iter());
     }
     (tile_indexes, tile_colors)
 }
@@ -35,20 +35,22 @@ pub(crate) fn dense_tiles_to_attributes(tiles: &[RawTile]) -> (Vec<f32>, Vec<[f3
 /// A utility function that takes a sparse map of `Tile`s and splits the indexes
 /// and colors and returns them as separate vectors for use in the renderer.
 pub(crate) fn sparse_tiles_to_attributes(
+    tile_query: &Query<&Tile<Point3>>,
     dimension: Dimension3,
-    tiles: &HashMap<usize, RawTile>,
+    tiles: &HashMap<usize, Entity>,
 ) -> (Vec<f32>, Vec<[f32; 4]>) {
     let area = (dimension.width * dimension.height) as usize;
     let mut tile_indexes = vec![0.; area * 4];
     // If tiles are set with an alpha of 0, they are discarded.
     let mut tile_colors = vec![[0.0, 0.0, 0.0, 0.0]; area * 4];
     for (index, tile) in tiles.iter() {
+        let tile: &Tile<Point3> = tile_query.get(*tile).expect("Can't fail");
         for i in 0..4 {
             if let Some(index) = tile_indexes.get_mut(index * 4 + i) {
-                *index = tile.index as f32;
+                *index = tile.sprite_index as f32;
             }
             if let Some(index) = tile_colors.get_mut(index * 4 + i) {
-                *index = tile.color.into();
+                *index = tile.tint.into();
             }
         }
     }

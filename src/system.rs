@@ -8,7 +8,7 @@ use crate::{
         Chunk, LayerKind,
     },
     lib::*,
-    Tilemap,
+    Tile, Tilemap,
 };
 
 /// Takes a grid topology and returns altered translation coordinates.
@@ -62,6 +62,7 @@ fn handle_spawned_chunks(
     meshes: &mut Assets<Mesh>,
     tilemap: &mut Tilemap,
     spawned_chunks: Vec<Point2>,
+    tile_query: &Query<&Tile<Point3>>,
 ) {
     let capacity = spawned_chunks.len();
     let mut entities = Vec::with_capacity(capacity);
@@ -86,7 +87,7 @@ fn handle_spawned_chunks(
             continue;
         };
         let mut mesh = Mesh::from(&chunk_mesh);
-        let (indexes, colors) = chunk.tiles_to_renderer_parts(chunk_dimensions);
+        let (indexes, colors) = chunk.tiles_to_renderer_parts(&tile_query, chunk_dimensions);
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
         let mesh_handle = meshes.add(mesh);
@@ -177,6 +178,7 @@ fn handle_despawned_chunks(
 
 /// Recalculates a mesh.
 fn recalculate_mesh(
+    tile_query: &Query<&Tile<Point3>>,
     meshes: &mut Assets<Mesh>,
     mesh: &Handle<Mesh>,
     chunk: &Chunk,
@@ -190,7 +192,7 @@ fn recalculate_mesh(
         }
         Some(m) => m,
     };
-    let (indexes, colors) = chunk.tiles_to_renderer_parts(chunk_dimensions);
+    let (indexes, colors) = chunk.tiles_to_renderer_parts(&tile_query, chunk_dimensions);
     let vertices: Vec<[f32; 3]> = chunk_mesh
         .vertices
         .clone()
@@ -205,6 +207,8 @@ fn recalculate_mesh(
 
 /// Adds a sprite layer to all chunks and recalculates the mesh.
 fn handle_add_sprite_layers(
+    commands: &mut Commands,
+    tile_query: &Query<&Tile<Point3>>,
     meshes: &mut Assets<Mesh>,
     tilemap: &mut Tilemap,
     add_sprite_layers: Vec<(LayerKind, usize)>,
@@ -213,9 +217,16 @@ fn handle_add_sprite_layers(
     let chunk_mesh = tilemap.chunk_mesh().clone();
     for chunk in tilemap.chunks_mut().values_mut() {
         for (kind, sprite_layer) in &add_sprite_layers {
-            chunk.add_sprite_layer(kind, *sprite_layer, chunk_dimensions);
+            chunk.add_sprite_layer(commands, kind, *sprite_layer, chunk_dimensions);
             if let Some(mesh) = chunk.mesh() {
-                recalculate_mesh(meshes, mesh, chunk, &chunk_mesh, chunk_dimensions);
+                recalculate_mesh(
+                    &tile_query,
+                    meshes,
+                    mesh,
+                    chunk,
+                    &chunk_mesh,
+                    chunk_dimensions,
+                );
             }
         }
     }
@@ -223,6 +234,7 @@ fn handle_add_sprite_layers(
 
 /// Removes a sprite layer from all chunks and recalculates the mesh if needed.
 fn handle_remove_sprite_layers(
+    tile_query: &Query<&Tile<Point3>>,
     meshes: &mut Assets<Mesh>,
     tilemap: &mut Tilemap,
     remove_sprite_layers: Vec<usize>,
@@ -233,7 +245,14 @@ fn handle_remove_sprite_layers(
         for chunk in tilemap.chunks_mut().values_mut() {
             chunk.remove_sprite_layer(sprite_layer);
             if let Some(mesh) = chunk.mesh() {
-                recalculate_mesh(meshes, mesh, chunk, &chunk_mesh, chunk_dimensions);
+                recalculate_mesh(
+                    &tile_query,
+                    meshes,
+                    mesh,
+                    chunk,
+                    &chunk_mesh,
+                    chunk_dimensions,
+                );
             }
         }
     }
@@ -253,6 +272,7 @@ pub(crate) fn tilemap_events(
     mut meshes: ResMut<Assets<Mesh>>,
     mut tilemap_query: Query<(Entity, &mut Tilemap, &Visible)>,
     mut modified_query: Query<&mut Modified>,
+    tile_query: Query<&Tile<Point3>>,
 ) {
     for (tilemap_entity, mut tilemap, tilemap_visible) in tilemap_query.iter_mut() {
         tilemap.chunk_events_update();
@@ -295,6 +315,7 @@ pub(crate) fn tilemap_events(
                 &mut meshes,
                 &mut tilemap,
                 spawned_chunks,
+                &tile_query,
             );
         }
 
@@ -307,11 +328,22 @@ pub(crate) fn tilemap_events(
         }
 
         if !add_sprite_layers.is_empty() {
-            handle_add_sprite_layers(&mut meshes, &mut tilemap, add_sprite_layers);
+            handle_add_sprite_layers(
+                &mut commands,
+                &tile_query,
+                &mut meshes,
+                &mut tilemap,
+                add_sprite_layers,
+            );
         }
 
         if !remove_sprite_layers.is_empty() {
-            handle_remove_sprite_layers(&mut meshes, &mut tilemap, remove_sprite_layers);
+            handle_remove_sprite_layers(
+                &tile_query,
+                &mut meshes,
+                &mut tilemap,
+                remove_sprite_layers,
+            );
         }
     }
 }

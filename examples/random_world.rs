@@ -165,7 +165,7 @@ fn build_random_world(
         // insert a chunk. This will then communicate with us if we accidentally
         // insert a tile in a chunk we may not want. Also, we only expect to
         // have just 1 chunk.
-        map.insert_chunk((0, 0)).unwrap();
+        map.insert_chunk(&mut commands, (0, 0)).unwrap();
 
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
@@ -301,7 +301,7 @@ fn build_random_world(
         });
 
         // Now we pass all the tiles to our map.
-        map.insert_tiles(tiles).unwrap();
+        map.insert_tiles(&mut commands, tiles).unwrap();
 
         // Finally we spawn the chunk! In actual use this should be done in a
         // spawn system.
@@ -312,13 +312,14 @@ fn build_random_world(
 }
 
 fn move_sprite(
+    commands: &mut Commands,
     map: &mut Tilemap,
     previous_position: Position,
     position: Position,
     render: &Render,
 ) {
     // We need to first remove where we were prior.
-    map.clear_tile((previous_position.x, previous_position.y), 2)
+    map.clear_tile(commands, (previous_position.x, previous_position.y), 2)
         .unwrap();
     // We then need to update where we are going!
     let tile = Tile {
@@ -327,10 +328,11 @@ fn move_sprite(
         sprite_order: render.z_order,
         ..Default::default()
     };
-    map.insert_tile(tile).unwrap();
+    map.insert_tile(commands, tile).unwrap();
 }
 
 fn character_movement(
+    mut commands: Commands,
     mut game_state: ResMut<GameState>,
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
@@ -412,7 +414,13 @@ fn character_movement(
                 }
 
                 // This is a helpful function to make it easier to do stuff!
-                move_sprite(&mut map, previous_position, *position, render);
+                move_sprite(
+                    &mut commands,
+                    &mut map,
+                    previous_position,
+                    *position,
+                    render,
+                );
             }
         }
     }

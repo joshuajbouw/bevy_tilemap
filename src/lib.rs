@@ -122,6 +122,7 @@ pub enum TilemapSystem {
 impl Plugin for TilemapPlugin {
     fn build(&self, app: &mut App) {
         app.add_asset::<Tilemap>()
+            .add_asset::<Tile<Point3>>()
             .add_stage_before(
                 CoreStage::PostUpdate,
                 stage::TILEMAP,

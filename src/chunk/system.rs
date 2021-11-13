@@ -1,12 +1,13 @@
 use crate::{
     chunk::{entity::Modified, mesh::ChunkMesh},
     lib::*,
-    Tilemap,
+    Tile, Tilemap,
 };
 
 /// The chunk update system that is used to set attributes of the tiles and
 /// tints if they need updating.
 pub(crate) fn chunk_update(
+    tile_query: Query<&Tile<Point3>>,
     mut meshes: ResMut<Assets<Mesh>>,
     map_query: Query<&Tilemap>,
     mut chunk_query: Query<(&Parent, &Point2, &Handle<Mesh>), Changed<Modified>>,
@@ -30,7 +31,8 @@ pub(crate) fn chunk_update(
             error!("`Mesh` is missing, can not update chunk");
             return;
         };
-        let (indexes, colors) = chunk.tiles_to_renderer_parts(tilemap.chunk_dimensions());
+        let (indexes, colors) =
+            chunk.tiles_to_renderer_parts(&tile_query, tilemap.chunk_dimensions());
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
     }
@@ -193,12 +195,19 @@ mod tests {
                 .unwrap();
             for tile_point in &tile_points {
                 tilemap
-                    .insert_tile(Tile {
-                        point: *tile_point,
-                        sprite_order: 0,
-                        sprite_index: 1,
-                        tint: Color::BLUE,
-                    })
+                    .insert_tile(
+                        &mut commands,
+                        Tile {
+                            point: *tile_point,
+                            sprite_order: 0,
+                            sprite_index: 1,
+                            tint: Color::BLUE,
+                            flip_x: false,
+                            flip_y: false,
+                            flip_d: false,
+                            visible: true,
+                        },
+                    )
                     .unwrap();
                 tilemap.spawn_chunk(Point2::new(0, 0)).unwrap();
             }
