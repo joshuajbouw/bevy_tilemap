@@ -312,6 +312,7 @@ fn build_random_world(
 }
 
 fn move_sprite(
+    commands: &mut Commands,
     map: &mut Tilemap,
     previous_position: Position,
     position: Position,
@@ -331,6 +332,7 @@ fn move_sprite(
 }
 
 fn character_movement(
+    mut commands: Commands,
     mut game_state: ResMut<GameState>,
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
@@ -412,7 +414,13 @@ fn character_movement(
                 }
 
                 // This is a helpful function to make it easier to do stuff!
-                move_sprite(&mut map, previous_position, *position, render);
+                move_sprite(
+                    &mut commands,
+                    &mut map,
+                    previous_position,
+                    *position,
+                    render,
+                );
             }
         }
     }

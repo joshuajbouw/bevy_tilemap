@@ -61,8 +61,6 @@ pub(crate) mod entity;
 mod layer;
 /// Meshes for rendering to vertices.
 pub(crate) mod mesh;
-/// Raw tile that is stored in the chunks.
-pub mod raw_tile;
 /// Files and helpers for rendering.
 pub(crate) mod render;
 /// Systems for chunks.
@@ -71,10 +69,48 @@ pub(crate) mod system;
 use crate::{lib::*, tile::Tile};
 pub use layer::LayerKind;
 use layer::{DenseLayer, LayerKindInner, SparseLayer, SpriteLayer};
-pub use raw_tile::RawTile;
 
 /// A type for sprite layers.
 type SpriteLayers = Vec<Option<SpriteLayer>>;
+
+/// A utility function that takes an array of `Tile`s and splits the indexes and
+/// colors and returns them as separate vectors for use in the renderer.
+pub(crate) fn dense_tiles_to_attributes(tiles: Vec<&Tile<Point3>>) -> (Vec<f32>, Vec<[f32; 4]>) {
+    let capacity = tiles.len() * 4;
+    let mut tile_indexes: Vec<f32> = Vec::with_capacity(capacity);
+    let mut tile_colors: Vec<[f32; 4]> = Vec::with_capacity(capacity);
+    for tile in tiles.iter() {
+        tile_indexes.extend([tile.sprite_index as f32; 4].iter());
+        tile_colors.extend([tile.tint.into(); 4].iter());
+    }
+    (tile_indexes, tile_colors)
+}
+
+/// A utility function that takes a sparse map of `Tile`s and splits the indexes
+/// and colors and returns them as separate vectors for use in the renderer.
+pub(crate) fn sparse_tiles_to_attributes(
+    tile_query: &Query<&Tile<Point3>>,
+    dimension: Dimension3,
+    tiles: &HashMap<usize, Entity>,
+) -> (Vec<f32>, Vec<[f32; 4]>) {
+    let area = (dimension.width * dimension.height) as usize;
+    let mut tile_indexes = vec![0.; area * 4];
+    // If tiles are set with an alpha of 0, they are discarded.
+    let mut tile_colors = vec![[0.0, 0.0, 0.0, 0.0]; area * 4];
+    for (index, tile) in tiles.iter() {
+        let tile: &Tile<Point3> = tile_query.get(*tile).expect("Can't fail");
+        for i in 0..4 {
+            if let Some(index) = tile_indexes.get_mut(index * 4 + i) {
+                *index = tile.sprite_index as f32;
+            }
+            if let Some(index) = tile_colors.get_mut(index * 4 + i) {
+                *index = tile.tint.into();
+            }
+        }
+    }
+    assert_eq!(area * 4, tile_colors.len());
+    (tile_indexes, tile_colors)
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 /// A chunk which holds all the tiles to be rendered.
@@ -127,13 +163,7 @@ impl Chunk {
         for z in 0..dimensions.depth as usize {
             match kind {
                 LayerKind::Dense => {
-                    let tiles = vec![
-                        RawTile {
-                            index: 0,
-                            color: Color::rgba(0.0, 0.0, 0.0, 0.0)
-                        };
-                        (dimensions.width * dimensions.height) as usize
-                    ];
+                    let tiles = vec![None; (dimensions.width * dimensions.height) as usize];
                     if let Some(z_layer) = self.z_layers.get_mut(z) {
                         if let Some(sprite_order_layer) = z_layer.get_mut(sprite_order) {
                             if !sprite_order_layer.is_some() {
@@ -189,6 +219,7 @@ impl Chunk {
 
     /// Removes a layer from the specified layer.
     pub(crate) fn remove_sprite_layer(&mut self, sprite_layer: usize) {
+        info!("THIS SHOULD NOT!");
         for z_layer in &mut self.z_layers {
             z_layer.remove(sprite_layer);
         }
@@ -209,39 +240,92 @@ impl Chunk {
         self.mesh.take()
     }
 
+
+    // /// Sets a single raw tile to be added to a z layer and index.
+    // pub(crate) fn set_tile(&mut self, index: usize, z: usize, sprite_order: usize, entity: Entity) {
+    //     if let Some(z_depth) = self.z_layers.get_mut(z) {
+    //         if let Some(maybe_layer) = z_depth.get_mut(sprite_order) {
+    //             if let Some(layer) = maybe_layer {
+    //                 layer.inner.as_mut().set_tile(index, entity);
+    //             } else {
+    //                 error!("sprite layer {} does not exist, cannot set tile", sprite_order);
+    //             }
+    //         } else {
+    //             error!(
+    //                 "{} exceeded max number of sprite layers: {}",
+    //                 sprite_order,
+    //                 z_depth.len()
+    //             );
+    //         }
+    //     } else {
+    //         error!("z layer {} does not exist, cannot set tile", z);
+    //     }
+    // }
+    //
+    // /// Removes a tile from a sprite layer with a given index and z order.
+    // pub(crate) fn remove_tile(
+    //     &mut self,
+    //     index: usize,
+    //     z: usize,
+    //     sprite_order: usize,
+    // ) -> Option<Entity> {
+    //     if let Some(z_depth) = self.z_layers.get_mut(z) {
+    //         if let Some(maybe_layer) = z_depth.get_mut(sprite_order) {
+    //             if let Some(layer) = maybe_layer {
+    //                 layer.inner.as_mut().remove_tile(index)
+    //             } else {
+    //                 error!("sprite layer {} does not exist, cannot remove tile", index);
+    //                 None
+    //             }
+    //         } else {
+    //             error!(
+    //                 "{} exceeded max number of sprite layers: {}",
+    //                 index,
+    //                 z_depth.len()
+    //             );
+    //             None
+    //         }
+    //     } else {
+    //         error!("z layer {} does not exist, cannot remove tile", sprite_order);
+    //         None
+    //     }
+    // }
+
     /// Sets a single raw tile to be added to a z layer and index.
-    pub(crate) fn set_tile(&mut self, index: usize, tile: Tile<Point3>) {
-        if let Some(z_depth) = self.z_layers.get_mut(tile.point.z as usize) {
-            if let Some(layer) = z_depth.get_mut(tile.sprite_order) {
-                let raw_tile = RawTile {
-                    index: tile.sprite_index,
-                    color: tile.tint,
-                };
+    pub(crate) fn set_tile(&mut self, index: usize, z: usize, sprite_order: usize, entity: Entity) {
+        if let Some(z_depth) = self.z_layers.get_mut(z) {
+            if let Some(layer) = z_depth.get_mut(sprite_order) {
                 if let Some(layer) = layer {
-                    layer.inner.as_mut().set_tile(index, raw_tile);
+                    layer.inner.as_mut().set_tile(index, entity);
                 } else {
-                    error!("sprite layer {} does not exist", tile.sprite_order);
+                    error!("sprite layer {} does not exist", sprite_order);
                 }
             } else {
                 error!(
                     "{} exceeded max number of sprite layers: {}",
-                    tile.sprite_order,
+                    sprite_order,
                     z_depth.len()
                 );
             }
         } else {
-            error!("z layer {} does not exist", tile.point.z);
+            error!("z layer {} does not exist", z);
         }
     }
 
     /// Removes a tile from a sprite layer with a given index and z order.
-    pub(crate) fn remove_tile(&mut self, index: usize, sprite_layer: usize, z_depth: usize) {
+    pub(crate) fn remove_tile(
+        &mut self,
+        index: usize,
+        sprite_layer: usize,
+        z_depth: usize,
+    ) -> Option<Entity> {
         if let Some(layers) = self.z_layers.get_mut(z_depth) {
             if let Some(layer) = layers.get_mut(sprite_layer) {
                 if let Some(layer) = layer {
-                    layer.inner.as_mut().remove_tile(index);
+                    layer.inner.as_mut().remove_tile(index)
                 } else {
                     error!("sprite layer {} does not exist", index);
+                    None
                 }
             } else {
                 error!(
@@ -249,9 +333,11 @@ impl Chunk {
                     index,
                     layers.len()
                 );
+                None
             }
         } else {
             error!("sprite layer {} does not exist", sprite_layer);
+            None
         }
     }
 
@@ -276,7 +362,7 @@ impl Chunk {
         index: usize,
         sprite_order: usize,
         z_depth: usize,
-    ) -> Option<&RawTile> {
+    ) -> Option<Entity> {
         self.z_layers.get(z_depth).and_then(|z_depth| {
             z_depth.get(sprite_order).and_then(|layer| {
                 layer
@@ -286,27 +372,12 @@ impl Chunk {
         })
     }
 
-    /// Gets a mutable reference to a tile from a provided z order and index.
-    pub(crate) fn get_tile_mut(
-        &mut self,
-        index: usize,
-        sprite_order: usize,
-        z_depth: usize,
-    ) -> Option<&mut RawTile> {
-        self.z_layers.get_mut(z_depth).and_then(|z_depth| {
-            z_depth.get_mut(sprite_order).and_then(|layer| {
-                layer
-                    .as_mut()
-                    .and_then(|layer| layer.inner.as_mut().get_tile_mut(index))
-            })
-        })
-    }
-
     /// Clears a given layer of all sprites.
-    pub(crate) fn clear_layer(&mut self, layer: usize) {
+    pub(crate) fn clear_layer(&mut self, commands: &mut Commands, layer: usize) {
+        // TODO: Delete all tiles from world.
         if let Some(sprite_layer) = self.z_layers.get_mut(layer) {
             for layer in sprite_layer.iter_mut().flatten() {
-                layer.inner.as_mut().clear();
+                layer.inner.as_mut().clear(commands);
             }
         }
     }
@@ -317,14 +388,17 @@ impl Chunk {
     /// Easier to pass in the dimensions opposed to storing it everywhere.
     pub(crate) fn tiles_to_renderer_parts(
         &self,
+        tile_query: &Query<&Tile<Point3>>,
         dimensions: Dimension3,
     ) -> (Vec<f32>, Vec<[f32; 4]>) {
         let mut tile_indices = Vec::new();
         let mut tile_colors = Vec::new();
         for depth in &self.z_layers {
             for layer in depth.iter().flatten() {
-                let (mut indices, mut colors) =
-                    layer.inner.as_ref().tiles_to_attributes(dimensions);
+                let (mut indices, mut colors) = layer
+                    .inner
+                    .as_ref()
+                    .tiles_to_attributes(tile_query, dimensions);
                 tile_indices.append(&mut indices);
                 tile_colors.append(&mut colors);
             }

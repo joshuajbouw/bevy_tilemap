@@ -8,7 +8,7 @@ use crate::{
         Chunk, LayerKind,
     },
     lib::*,
-    Tilemap,
+    Tile, Tilemap,
 };
 
 /// Takes a grid topology and returns altered translation coordinates.
@@ -62,6 +62,7 @@ fn handle_spawned_chunks(
     meshes: &mut Assets<Mesh>,
     tilemap: &mut Tilemap,
     spawned_chunks: Vec<Point2>,
+    tile_query: &Query<&Tile<Point3>>,
 ) {
     let capacity = spawned_chunks.len();
     let mut entities = Vec::with_capacity(capacity);
@@ -86,7 +87,7 @@ fn handle_spawned_chunks(
             continue;
         };
         let mut mesh = Mesh::from(&chunk_mesh);
-        let (indexes, colors) = chunk.tiles_to_renderer_parts(chunk_dimensions);
+        let (indexes, colors) = chunk.tiles_to_renderer_parts(tile_query, chunk_dimensions);
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_INDEX, indexes);
         mesh.set_attribute(ChunkMesh::ATTRIBUTE_TILE_COLOR, colors);
         let mesh_handle = meshes.add(mesh);
@@ -177,6 +178,7 @@ fn handle_despawned_chunks(
 
 /// Recalculates a mesh.
 fn recalculate_mesh(
+    tile_query: &Query<&Tile<Point3>>,
     meshes: &mut Assets<Mesh>,
     mesh: &Handle<Mesh>,
     chunk: &Chunk,
@@ -190,7 +192,7 @@ fn recalculate_mesh(
         }
         Some(m) => m,
     };
-    let (indexes, colors) = chunk.tiles_to_renderer_parts(chunk_dimensions);
+    let (indexes, colors) = chunk.tiles_to_renderer_parts(tile_query, chunk_dimensions);
     let vertices: Vec<[f32; 3]> = chunk_mesh
         .vertices
         .clone()
@@ -205,6 +207,7 @@ fn recalculate_mesh(
 
 /// Adds a sprite layer to all chunks and recalculates the mesh.
 fn handle_add_sprite_layers(
+    tile_query: &Query<&Tile<Point3>>,
     meshes: &mut Assets<Mesh>,
     tilemap: &mut Tilemap,
     add_sprite_layers: Vec<(LayerKind, usize)>,
@@ -215,7 +218,14 @@ fn handle_add_sprite_layers(
         for (kind, sprite_layer) in &add_sprite_layers {
             chunk.add_sprite_layer(kind, *sprite_layer, chunk_dimensions);
             if let Some(mesh) = chunk.mesh() {
-                recalculate_mesh(meshes, mesh, chunk, &chunk_mesh, chunk_dimensions);
+                recalculate_mesh(
+                    tile_query,
+                    meshes,
+                    mesh,
+                    chunk,
+                    &chunk_mesh,
+                    chunk_dimensions,
+                );
             }
         }
     }
@@ -223,6 +233,7 @@ fn handle_add_sprite_layers(
 
 /// Removes a sprite layer from all chunks and recalculates the mesh if needed.
 fn handle_remove_sprite_layers(
+    tile_query: &Query<&Tile<Point3>>,
     meshes: &mut Assets<Mesh>,
     tilemap: &mut Tilemap,
     remove_sprite_layers: Vec<usize>,
@@ -233,8 +244,95 @@ fn handle_remove_sprite_layers(
         for chunk in tilemap.chunks_mut().values_mut() {
             chunk.remove_sprite_layer(sprite_layer);
             if let Some(mesh) = chunk.mesh() {
-                recalculate_mesh(meshes, mesh, chunk, &chunk_mesh, chunk_dimensions);
+                recalculate_mesh(
+                    tile_query,
+                    meshes,
+                    mesh,
+                    chunk,
+                    &chunk_mesh,
+                    chunk_dimensions,
+                );
             }
+        }
+    }
+}
+
+/// Spawns all queued tiles into the World.
+fn handle_spawn_tiles(
+    commands: &mut Commands,
+    tilemap: &mut Tilemap,
+    tiles: Vec<(Point2, Vec<Tile<Point3>>)>,
+) {
+    for (chunk_point, tiles) in tiles.into_iter() {
+        let chunk_dimensions = tilemap.chunk_dimensions();
+        let maybe_chunk = tilemap.get_chunk_mut(&chunk_point);
+        if let Some(chunk) = maybe_chunk {
+            for tile in tiles {
+                let index = chunk_dimensions.encode_point_unchecked(tile.point);
+                let z = tile.point.z as usize;
+                let sprite_order = tile.sprite_order;
+                let entity = commands.spawn().insert(tile).id();
+                chunk.set_tile(index, z, sprite_order, entity);
+            }
+        }
+    }
+}
+
+/// Despawns all tiles from the World.
+fn handle_despawned_tiles(
+    commands: &mut Commands,
+    tilemap: &mut Tilemap,
+    tiles: Vec<(Point2, Vec<Tile<Point3>>)>,
+) {
+    for (chunk_point, tiles) in tiles.into_iter() {
+        let chunk_dimensions = tilemap.chunk_dimensions();
+        let maybe_chunk = tilemap.get_chunk_mut(&chunk_point);
+        if let Some(chunk) = maybe_chunk {
+            for tile in tiles {
+                let index = chunk_dimensions.encode_point_unchecked(tile.point);
+                let z = tile.point.z as usize;
+                let sprite_order = tile.sprite_order;
+                let maybe_entity = chunk.remove_tile(index, sprite_order, z);
+                if let Some(entity) = maybe_entity {
+                    commands.entity(entity).despawn();
+                }
+            }
+        }
+    }
+}
+
+pub(crate) fn tilemap_tile_events(
+    mut commands: Commands,
+    mut tilemap_query: Query<&mut Tilemap>,
+) {
+    for mut tilemap in tilemap_query.iter_mut() {
+        tilemap.chunk_events_update();
+        let mut reader = tilemap.chunk_events().get_reader();
+
+        let mut spawned_tiles = Vec::new();
+        let mut despawned_tiles = Vec::new();
+        for event in reader.iter(tilemap.chunk_events()) {
+            use crate::TilemapChunkEvent::*;
+            match event {
+                SpawnTiles {
+                    ref chunk_point,
+                    tiles,
+                } => spawned_tiles.push((*chunk_point, tiles.clone())),
+                DespawnTiles {
+                    ref chunk_point,
+                    tiles,
+                } => despawned_tiles.push((*chunk_point, tiles.clone())),
+                _ => {},
+            }
+        }
+
+        if !spawned_tiles.is_empty() {
+            handle_spawn_tiles(&mut commands, &mut tilemap, spawned_tiles)
+        }
+
+        // Must despawn first, else we may remove new tiles unintentionally.
+        if !despawned_tiles.is_empty() {
+            handle_despawned_tiles(&mut commands, &mut tilemap, despawned_tiles)
         }
     }
 }
@@ -253,9 +351,9 @@ pub(crate) fn tilemap_events(
     mut meshes: ResMut<Assets<Mesh>>,
     mut tilemap_query: Query<(Entity, &mut Tilemap, &Visible)>,
     mut modified_query: Query<&mut Modified>,
+    tile_query: Query<&Tile<Point3>>,
 ) {
     for (tilemap_entity, mut tilemap, tilemap_visible) in tilemap_query.iter_mut() {
-        tilemap.chunk_events_update();
         let mut reader = tilemap.chunk_events().get_reader();
 
         let mut modified_chunks = Vec::new();
@@ -284,6 +382,7 @@ pub(crate) fn tilemap_events(
                 RemoveLayer { ref sprite_layer } => {
                     remove_sprite_layers.push(*sprite_layer);
                 }
+                _ => {},
             }
         }
 
@@ -295,6 +394,7 @@ pub(crate) fn tilemap_events(
                 &mut meshes,
                 &mut tilemap,
                 spawned_chunks,
+                &tile_query,
             );
         }
 
@@ -307,12 +407,19 @@ pub(crate) fn tilemap_events(
         }
 
         if !add_sprite_layers.is_empty() {
-            handle_add_sprite_layers(&mut meshes, &mut tilemap, add_sprite_layers);
+            handle_add_sprite_layers(&tile_query, &mut meshes, &mut tilemap, add_sprite_layers);
         }
 
         if !remove_sprite_layers.is_empty() {
-            handle_remove_sprite_layers(&mut meshes, &mut tilemap, remove_sprite_layers);
+            handle_remove_sprite_layers(
+                &tile_query,
+                &mut meshes,
+                &mut tilemap,
+                remove_sprite_layers,
+            );
         }
+
+        tilemap.chunk_events_update();
     }
 }
 
@@ -472,8 +579,6 @@ mod tests {
 
         let tilemap_entity = commands.spawn().insert_bundle(tilemap_bundle).id();
 
-        command_queue.apply(&mut app.world);
-
         {
             let mut tilemap = app
                 .world
@@ -488,6 +593,8 @@ mod tests {
             tilemap.spawn_chunk(Point2::new(1, 1)).unwrap();
             tilemap.spawn_chunk(Point2::new(-1, -1)).unwrap();
         }
+
+        // command_queue.apply(&mut app.world);
 
         app.update();
 

@@ -90,6 +90,7 @@ pub mod entity;
 pub mod prelude;
 pub mod stage {
     //! The stages for the tilemap in the bevy app.
+    pub const TILE: &str = "tile";
 
     /// The tilemap stage, set to run before `POST_UPDATE` stage.
     pub const TILEMAP: &str = "tilemap";
@@ -113,6 +114,7 @@ pub struct TilemapPlugin;
 /// The tilemap system stages.
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
 pub enum TilemapSystem {
+    TileEvents,
     /// The events stage.
     Events,
     /// The auto spawn stage.
@@ -122,10 +124,21 @@ pub enum TilemapSystem {
 impl Plugin for TilemapPlugin {
     fn build(&self, app: &mut App) {
         app.add_asset::<Tilemap>()
+            .add_asset::<Tile<Point3>>()
             .add_stage_before(
                 CoreStage::PostUpdate,
                 stage::TILEMAP,
                 SystemStage::parallel(),
+            )
+            .add_stage_before(
+                stage::TILEMAP,
+                stage::TILE,
+                SystemStage::parallel(),
+            )
+            .add_system_to_stage(
+                stage::TILE,
+                crate::system::tilemap_tile_events.system()
+                    .label(TilemapSystem::TileEvents)
             )
             .add_system_to_stage(
                 stage::TILEMAP,

@@ -264,6 +264,7 @@ fn build_map(
 }
 
 fn move_sprite(
+    commands: &mut Commands,
     map: &mut Tilemap,
     previous_position: Position,
     position: Position,
@@ -281,6 +282,7 @@ fn move_sprite(
 }
 
 fn drunk_stumbles(
+    mut commands: Commands,
     mut state: ResMut<State>,
     mut map_query: Query<&mut Tilemap>,
     mut drunk_query: Query<(&mut Position, &Render)>,
@@ -297,7 +299,13 @@ fn drunk_stumbles(
             if previous_position == *position {
                 continue;
             }
-            move_sprite(&mut map, previous_position, *position, render);
+            move_sprite(
+                &mut commands,
+                &mut map,
+                previous_position,
+                *position,
+                render,
+            );
         }
     }
 }

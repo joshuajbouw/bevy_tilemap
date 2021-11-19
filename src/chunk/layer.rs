@@ -1,27 +1,28 @@
-use crate::{chunk::raw_tile::RawTile, lib::*};
+use crate::{lib::*, Tile};
 
 /// Common methods for layers in a chunk.
 pub(super) trait Layer: 'static {
     /// Sets a raw tile for a layer at an index.
-    fn set_tile(&mut self, index: usize, tile: RawTile);
+    fn set_tile(&mut self, index: usize, tile: Entity);
 
     /// Removes a tile for a layer at an index.
-    fn remove_tile(&mut self, index: usize);
+    fn remove_tile(&mut self, index: usize) -> Option<Entity>;
 
     /// Gets a tile by an index.
-    fn get_tile(&self, index: usize) -> Option<&RawTile>;
-
-    /// Gets a tile with a mutable reference by an index.
-    fn get_tile_mut(&mut self, index: usize) -> Option<&mut RawTile>;
+    fn get_tile(&self, index: usize) -> Option<Entity>;
 
     /// Gets all the tile indices in the layer that exist.
     fn get_tile_indices(&self) -> Vec<usize>;
 
     /// Clears a layer of all sprites.
-    fn clear(&mut self);
+    fn clear(&mut self, commands: &mut Commands);
 
     /// Takes all the tiles in the layer and returns attributes for the renderer.
-    fn tiles_to_attributes(&self, dimension: Dimension3) -> (Vec<f32>, Vec<[f32; 4]>);
+    fn tiles_to_attributes(
+        &self,
+        tile_query: &Query<&Tile<Point3>>,
+        dimension: Dimension3,
+    ) -> (Vec<f32>, Vec<[f32; 4]>);
 }
 
 /// A layer with dense sprite tiles.
@@ -32,16 +33,16 @@ pub(super) trait Layer: 'static {
 #[reflect(Component, PartialEq, Serialize, Deserialize)]
 pub(super) struct DenseLayer {
     /// A vector of all the tiles in the chunk.
-    tiles: Vec<RawTile>,
+    tiles: Vec<Option<Entity>>,
     /// A count of the tiles to keep track if layer is empty or not.
     tile_count: usize,
 }
 
 impl Layer for DenseLayer {
-    fn set_tile(&mut self, index: usize, tile: RawTile) {
+    fn set_tile(&mut self, index: usize, tile: Entity) {
         if let Some(inner_tile) = self.tiles.get_mut(index) {
             self.tile_count += 1;
-            *inner_tile = tile;
+            *inner_tile = Some(tile);
         } else {
             warn!(
                 "tile is out of bounds at index {} and can not be set",
@@ -50,39 +51,24 @@ impl Layer for DenseLayer {
         }
     }
 
-    fn remove_tile(&mut self, index: usize) {
-        if let Some(tile) = self.tiles.get_mut(index) {
-            if self.tile_count != 0 {
-                self.tile_count -= 1;
-                tile.color.set_a(0.0);
-            }
+    fn remove_tile(&mut self, index: usize) -> Option<Entity> {
+        let maybe_entity = self.tiles.remove(index);
+
+        if maybe_entity.is_some() && self.tile_count != 0 {
+            self.tile_count -= 1;
         }
+
+        maybe_entity
     }
 
-    fn get_tile(&self, index: usize) -> Option<&RawTile> {
-        self.tiles.get(index).and_then(|tile| {
-            if tile.color.a() == 0.0 {
-                None
-            } else {
-                Some(tile)
-            }
-        })
-    }
-
-    fn get_tile_mut(&mut self, index: usize) -> Option<&mut RawTile> {
-        self.tiles.get_mut(index).and_then(|tile| {
-            if tile.color.a() == 0.0 {
-                None
-            } else {
-                Some(tile)
-            }
-        })
+    fn get_tile(&self, index: usize) -> Option<Entity> {
+        self.tiles.get(index).and_then(|tile| *tile)
     }
 
     fn get_tile_indices(&self) -> Vec<usize> {
         let mut indices = Vec::with_capacity(self.tiles.len());
         for (index, tile) in self.tiles.iter().enumerate() {
-            if tile.color.a() != 0.0 {
+            if tile.is_some() {
                 indices.push(index);
             }
         }
@@ -90,18 +76,31 @@ impl Layer for DenseLayer {
         indices
     }
 
-    fn clear(&mut self) {
+    fn clear(&mut self, commands: &mut Commands) {
+        for entity in self.tiles.iter().flatten() {
+            commands.entity(*entity).despawn();
+        }
         self.tiles.clear();
     }
 
-    fn tiles_to_attributes(&self, _dimension: Dimension3) -> (Vec<f32>, Vec<[f32; 4]>) {
-        crate::chunk::raw_tile::dense_tiles_to_attributes(&self.tiles)
+    fn tiles_to_attributes(
+        &self,
+        tile_query: &Query<&Tile<Point3>>,
+        _dimension: Dimension3,
+    ) -> (Vec<f32>, Vec<[f32; 4]>) {
+        let mut tiles: Vec<&Tile<Point3>> = Vec::with_capacity(self.tiles.len());
+        for entity in self.tiles.iter().flatten() {
+            let tile: &Tile<Point3> = tile_query.get(*entity).expect("Can't fail");
+            tiles.push(tile);
+        }
+
+        crate::chunk::dense_tiles_to_attributes(tiles)
     }
 }
 
 impl DenseLayer {
     /// Constructs a new dense layer with tiles.
-    pub fn new(tiles: Vec<RawTile>) -> DenseLayer {
+    pub fn new(tiles: Vec<Option<Entity>>) -> DenseLayer {
         DenseLayer {
             tiles,
             tile_count: 0,
@@ -113,27 +112,20 @@ impl DenseLayer {
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub(super) struct SparseLayer {
     /// A map of all the tiles in the chunk.
-    tiles: HashMap<usize, RawTile>,
+    tiles: HashMap<usize, Entity>,
 }
 
 impl Layer for SparseLayer {
-    fn set_tile(&mut self, index: usize, tile: RawTile) {
-        if tile.color.a() == 0.0 {
-            self.tiles.remove(&index);
-        }
+    fn set_tile(&mut self, index: usize, tile: Entity) {
         self.tiles.insert(index, tile);
     }
 
-    fn remove_tile(&mut self, index: usize) {
-        self.tiles.remove(&index);
+    fn remove_tile(&mut self, index: usize) -> Option<Entity> {
+        self.tiles.remove(&index)
     }
 
-    fn get_tile(&self, index: usize) -> Option<&RawTile> {
-        self.tiles.get(&index)
-    }
-
-    fn get_tile_mut(&mut self, index: usize) -> Option<&mut RawTile> {
-        self.tiles.get_mut(&index)
+    fn get_tile(&self, index: usize) -> Option<Entity> {
+        self.tiles.get(&index).cloned()
     }
 
     fn get_tile_indices(&self) -> Vec<usize> {
@@ -144,18 +136,25 @@ impl Layer for SparseLayer {
         indices
     }
 
-    fn clear(&mut self) {
+    fn clear(&mut self, commands: &mut Commands) {
+        for (_, entity) in self.tiles.iter() {
+            commands.entity(*entity).despawn();
+        }
         self.tiles.clear();
     }
 
-    fn tiles_to_attributes(&self, dimension: Dimension3) -> (Vec<f32>, Vec<[f32; 4]>) {
-        crate::chunk::raw_tile::sparse_tiles_to_attributes(dimension, &self.tiles)
+    fn tiles_to_attributes(
+        &self,
+        tile_query: &Query<&Tile<Point3>>,
+        dimension: Dimension3,
+    ) -> (Vec<f32>, Vec<[f32; 4]>) {
+        crate::chunk::sparse_tiles_to_attributes(tile_query, dimension, &self.tiles)
     }
 }
 
 impl SparseLayer {
     /// Constructs a new sparse layer with a tile hashmap.
-    pub fn new(tiles: HashMap<usize, RawTile>) -> SparseLayer {
+    pub fn new(tiles: HashMap<usize, Entity>) -> SparseLayer {
         SparseLayer { tiles }
     }
 }
