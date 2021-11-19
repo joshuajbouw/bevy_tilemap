@@ -666,11 +666,6 @@ impl TilemapBuilder {
         } else {
             0
         };
-        info!(
-            "TilemapBuilder::finish dimensions: {}",
-            self.chunk_dimensions
-        );
-        info!("TilemapBuilder::finish layers: {}", layer_count);
         let chunk_mesh =
             ChunkMesh::new(self.chunk_dimensions, layer_count as u32, self.layer_offset);
 
@@ -1001,8 +996,6 @@ impl Tilemap {
                 layers += 1;
             }
         }
-        info!("Tilemap::add_layer dimensions: {}", self.chunk_dimensions);
-        info!("Tilemap::add_layer layers: {}", layers);
         let chunk_mesh = ChunkMesh::new(self.chunk_dimensions, layers, self.layer_offset);
         self.chunk_mesh = chunk_mesh;
 

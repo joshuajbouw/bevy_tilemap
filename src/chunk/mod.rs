@@ -83,7 +83,6 @@ pub(crate) fn dense_tiles_to_attributes(tiles: Vec<&Tile<Point3>>) -> (Vec<f32>,
         tile_indexes.extend([tile.sprite_index as f32; 4].iter());
         tile_colors.extend([tile.tint.into(); 4].iter());
     }
-    info!("dense tile colors: {}", tile_colors.len());
     (tile_indexes, tile_colors)
 }
 
@@ -110,7 +109,6 @@ pub(crate) fn sparse_tiles_to_attributes(
         }
     }
     assert_eq!(area * 4, tile_colors.len());
-    info!("sparse tile colors: {}", tile_colors.len());
     (tile_indexes, tile_colors)
 }
 
@@ -241,6 +239,57 @@ impl Chunk {
     pub(crate) fn take_mesh(&mut self) -> Option<Handle<Mesh>> {
         self.mesh.take()
     }
+
+
+    // /// Sets a single raw tile to be added to a z layer and index.
+    // pub(crate) fn set_tile(&mut self, index: usize, z: usize, sprite_order: usize, entity: Entity) {
+    //     if let Some(z_depth) = self.z_layers.get_mut(z) {
+    //         if let Some(maybe_layer) = z_depth.get_mut(sprite_order) {
+    //             if let Some(layer) = maybe_layer {
+    //                 layer.inner.as_mut().set_tile(index, entity);
+    //             } else {
+    //                 error!("sprite layer {} does not exist, cannot set tile", sprite_order);
+    //             }
+    //         } else {
+    //             error!(
+    //                 "{} exceeded max number of sprite layers: {}",
+    //                 sprite_order,
+    //                 z_depth.len()
+    //             );
+    //         }
+    //     } else {
+    //         error!("z layer {} does not exist, cannot set tile", z);
+    //     }
+    // }
+    //
+    // /// Removes a tile from a sprite layer with a given index and z order.
+    // pub(crate) fn remove_tile(
+    //     &mut self,
+    //     index: usize,
+    //     z: usize,
+    //     sprite_order: usize,
+    // ) -> Option<Entity> {
+    //     if let Some(z_depth) = self.z_layers.get_mut(z) {
+    //         if let Some(maybe_layer) = z_depth.get_mut(sprite_order) {
+    //             if let Some(layer) = maybe_layer {
+    //                 layer.inner.as_mut().remove_tile(index)
+    //             } else {
+    //                 error!("sprite layer {} does not exist, cannot remove tile", index);
+    //                 None
+    //             }
+    //         } else {
+    //             error!(
+    //                 "{} exceeded max number of sprite layers: {}",
+    //                 index,
+    //                 z_depth.len()
+    //             );
+    //             None
+    //         }
+    //     } else {
+    //         error!("z layer {} does not exist, cannot remove tile", sprite_order);
+    //         None
+    //     }
+    // }
 
     /// Sets a single raw tile to be added to a z layer and index.
     pub(crate) fn set_tile(&mut self, index: usize, z: usize, sprite_order: usize, entity: Entity) {

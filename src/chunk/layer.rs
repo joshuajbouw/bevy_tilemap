@@ -88,7 +88,6 @@ impl Layer for DenseLayer {
         tile_query: &Query<&Tile<Point3>>,
         _dimension: Dimension3,
     ) -> (Vec<f32>, Vec<[f32; 4]>) {
-        info!("tiles_to_attributes");
         let mut tiles: Vec<&Tile<Point3>> = Vec::with_capacity(self.tiles.len());
         for entity in self.tiles.iter().flatten() {
             let tile: &Tile<Point3> = tile_query.get(*entity).expect("Can't fail");
@@ -149,7 +148,6 @@ impl Layer for SparseLayer {
         tile_query: &Query<&Tile<Point3>>,
         dimension: Dimension3,
     ) -> (Vec<f32>, Vec<[f32; 4]>) {
-        info!("tiles_to_attributes");
         crate::chunk::sparse_tiles_to_attributes(tile_query, dimension, &self.tiles)
     }
 }

@@ -51,8 +51,6 @@ impl ChunkMesh {
             })
             .collect::<Vec<_>>();
 
-        info!("mesh vertices: {}", vertices.len());
-
         ChunkMesh { indices, vertices }
     }
 }

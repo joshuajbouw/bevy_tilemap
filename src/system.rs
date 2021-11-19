@@ -263,7 +263,6 @@ fn handle_spawn_tiles(
     tilemap: &mut Tilemap,
     tiles: Vec<(Point2, Vec<Tile<Point3>>)>,
 ) {
-    info!("handle_spawn_tiles ran");
     for (chunk_point, tiles) in tiles.into_iter() {
         let chunk_dimensions = tilemap.chunk_dimensions();
         let maybe_chunk = tilemap.get_chunk_mut(&chunk_point);
@@ -293,11 +292,47 @@ fn handle_despawned_tiles(
                 let index = chunk_dimensions.encode_point_unchecked(tile.point);
                 let z = tile.point.z as usize;
                 let sprite_order = tile.sprite_order;
-                let maybe_entity = chunk.remove_tile(index, z, sprite_order);
+                let maybe_entity = chunk.remove_tile(index, sprite_order, z);
                 if let Some(entity) = maybe_entity {
                     commands.entity(entity).despawn();
                 }
             }
+        }
+    }
+}
+
+pub(crate) fn tilemap_tile_events(
+    mut commands: Commands,
+    mut tilemap_query: Query<&mut Tilemap>,
+) {
+    for mut tilemap in tilemap_query.iter_mut() {
+        tilemap.chunk_events_update();
+        let mut reader = tilemap.chunk_events().get_reader();
+
+        let mut spawned_tiles = Vec::new();
+        let mut despawned_tiles = Vec::new();
+        for event in reader.iter(tilemap.chunk_events()) {
+            use crate::TilemapChunkEvent::*;
+            match event {
+                SpawnTiles {
+                    ref chunk_point,
+                    tiles,
+                } => spawned_tiles.push((*chunk_point, tiles.clone())),
+                DespawnTiles {
+                    ref chunk_point,
+                    tiles,
+                } => despawned_tiles.push((*chunk_point, tiles.clone())),
+                _ => {},
+            }
+        }
+
+        if !spawned_tiles.is_empty() {
+            handle_spawn_tiles(&mut commands, &mut tilemap, spawned_tiles)
+        }
+
+        // Must despawn first, else we may remove new tiles unintentionally.
+        if !despawned_tiles.is_empty() {
+            handle_despawned_tiles(&mut commands, &mut tilemap, despawned_tiles)
         }
     }
 }
@@ -319,7 +354,6 @@ pub(crate) fn tilemap_events(
     tile_query: Query<&Tile<Point3>>,
 ) {
     for (tilemap_entity, mut tilemap, tilemap_visible) in tilemap_query.iter_mut() {
-        tilemap.chunk_events_update();
         let mut reader = tilemap.chunk_events().get_reader();
 
         let mut modified_chunks = Vec::new();
@@ -327,8 +361,6 @@ pub(crate) fn tilemap_events(
         let mut despawned_chunks = Vec::new();
         let mut add_sprite_layers = Vec::new();
         let mut remove_sprite_layers = Vec::new();
-        let mut spawned_tiles = Vec::new();
-        let mut despawned_tiles = Vec::new();
         for event in reader.iter(tilemap.chunk_events()) {
             use crate::TilemapChunkEvent::*;
             match event {
@@ -350,23 +382,8 @@ pub(crate) fn tilemap_events(
                 RemoveLayer { ref sprite_layer } => {
                     remove_sprite_layers.push(*sprite_layer);
                 }
-                SpawnTiles {
-                    ref chunk_point,
-                    tiles,
-                } => spawned_tiles.push((*chunk_point, tiles.clone())),
-                DespawnTiles {
-                    ref chunk_point,
-                    tiles,
-                } => despawned_tiles.push((*chunk_point, tiles.clone())),
+                _ => {},
             }
-        }
-
-        if !spawned_tiles.is_empty() {
-            handle_spawn_tiles(&mut commands, &mut tilemap, spawned_tiles)
-        }
-
-        if !despawned_tiles.is_empty() {
-            handle_despawned_tiles(&mut commands, &mut tilemap, despawned_tiles)
         }
 
         if !spawned_chunks.is_empty() {
@@ -401,6 +418,8 @@ pub(crate) fn tilemap_events(
                 remove_sprite_layers,
             );
         }
+
+        tilemap.chunk_events_update();
     }
 }
 
