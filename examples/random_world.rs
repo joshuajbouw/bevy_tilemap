@@ -165,7 +165,7 @@ fn build_random_world(
         // insert a chunk. This will then communicate with us if we accidentally
         // insert a tile in a chunk we may not want. Also, we only expect to
         // have just 1 chunk.
-        map.insert_chunk(&mut commands, (0, 0)).unwrap();
+        map.insert_chunk((0, 0)).unwrap();
 
         let chunk_width = (map.width().unwrap() * map.chunk_width()) as i32;
         let chunk_height = (map.height().unwrap() * map.chunk_height()) as i32;
@@ -301,7 +301,7 @@ fn build_random_world(
         });
 
         // Now we pass all the tiles to our map.
-        map.insert_tiles(&mut commands, tiles).unwrap();
+        map.insert_tiles(tiles).unwrap();
 
         // Finally we spawn the chunk! In actual use this should be done in a
         // spawn system.
@@ -319,7 +319,7 @@ fn move_sprite(
     render: &Render,
 ) {
     // We need to first remove where we were prior.
-    map.clear_tile(commands, (previous_position.x, previous_position.y), 2)
+    map.clear_tile((previous_position.x, previous_position.y), 2)
         .unwrap();
     // We then need to update where we are going!
     let tile = Tile {
@@ -328,7 +328,7 @@ fn move_sprite(
         sprite_order: render.z_order,
         ..Default::default()
     };
-    map.insert_tile(commands, tile).unwrap();
+    map.insert_tile(tile).unwrap();
 }
 
 fn character_movement(

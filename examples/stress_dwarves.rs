@@ -258,7 +258,7 @@ fn build_map(
         }
         info!("{} drunken dwarves spawned.", DWARF_COUNT);
 
-        map.insert_tiles(&mut commands, tiles).unwrap();
+        map.insert_tiles(tiles).unwrap();
         state.map_loaded = true;
     }
 }
@@ -270,7 +270,7 @@ fn move_sprite(
     position: Position,
     render: &Render,
 ) {
-    map.clear_tile(commands, (previous_position.x, previous_position.y), 1)
+    map.clear_tile((previous_position.x, previous_position.y), 1)
         .unwrap();
     let tile = Tile {
         point: (position.x, position.y),
@@ -278,7 +278,7 @@ fn move_sprite(
         sprite_order: render.sprite_order,
         ..Default::default()
     };
-    map.insert_tile(commands, tile).unwrap();
+    map.insert_tile(tile).unwrap();
 }
 
 fn drunk_stumbles(

@@ -1,6 +1,6 @@
 //! The tilemap events.
 
-use crate::{chunk::LayerKind, lib::*};
+use crate::{chunk::LayerKind, lib::*, Tile};
 
 #[derive(Debug)]
 /// Events that can happen to chunks.
@@ -31,5 +31,19 @@ pub enum TilemapChunkEvent {
     RemoveLayer {
         /// Which sprite layer we are removing.
         sprite_layer: usize,
+    },
+    /// An event which spawns tiles into the World.
+    SpawnTiles {
+        /// The chunk point.
+        chunk_point: Point2,
+        /// The vector of tiles to spawn into the World.
+        tiles: Vec<Tile<Point3>>,
+    },
+    /// An event which despawns tiles in the World.
+    DespawnTiles {
+        /// The chunk point.
+        chunk_point: Point2,
+        /// The vector of tiles to despawn from the World.
+        tiles: Vec<Tile<Point3>>,
     },
 }

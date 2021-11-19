@@ -95,7 +95,6 @@ fn load(
 }
 
 fn build_world(
-    mut commands: Commands,
     mut game_state: ResMut<GameState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
@@ -126,7 +125,7 @@ fn build_world(
                 tiles.push(tile);
             }
         }
-        map.insert_tiles(&mut commands, tiles).unwrap();
+        map.insert_tiles(tiles).unwrap();
 
         map.spawn_chunk((-1, 0)).unwrap();
         map.spawn_chunk((0, 0)).unwrap();

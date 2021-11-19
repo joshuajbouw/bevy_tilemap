@@ -141,7 +141,10 @@ pub(crate) fn chunk_auto_spawn(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{entity::TilemapBundle, system::tilemap_events, tilemap::TilemapBuilder, Tile};
+    use crate::{
+        entity::TilemapBundle, tilemap::TilemapBuilder, Tile,
+    };
+    use crate::system::tilemap_events;
 
     #[test]
     fn test_chunk_update() {
@@ -153,6 +156,16 @@ mod tests {
             .add_system_to_stage("update", tilemap_events.system())
             .add_system_to_stage("update", chunk_update.system())
             .add_asset::<Mesh>();
+        // let mut world = World::default();
+
+        // let mut update_stage = SystemStage::parallel();
+        // update_stage.add_plugin(CorePlugin);
+        // update_stage.add_plugin(AssetPlugin);
+
+        // world
+        // update_stage.add_state("update", SystemStage::parallel());
+        // update_stage.add_system_to_stage("update",)
+
         let mut command_queue = CommandQueue::default();
         let mut commands = Commands::new(&mut command_queue, &app.world);
 
@@ -177,8 +190,6 @@ mod tests {
 
         let _tilemap_entity = commands.spawn().insert_bundle(tilemap_bundle).id();
 
-        command_queue.apply(&mut app.world);
-
         let tile_points = vec![
             Point2::new(-2, -2),
             Point2::new(-2, 2),
@@ -195,19 +206,16 @@ mod tests {
                 .unwrap();
             for tile_point in &tile_points {
                 tilemap
-                    .insert_tile(
-                        &mut commands,
-                        Tile {
-                            point: *tile_point,
-                            sprite_order: 0,
-                            sprite_index: 1,
-                            tint: Color::BLUE,
-                            flip_x: false,
-                            flip_y: false,
-                            flip_d: false,
-                            visible: true,
-                        },
-                    )
+                    .insert_tile(Tile {
+                        point: *tile_point,
+                        sprite_order: 0,
+                        sprite_index: 1,
+                        tint: Color::BLUE,
+                        flip_x: false,
+                        flip_y: false,
+                        flip_d: false,
+                        visible: true,
+                    })
                     .unwrap();
                 tilemap.spawn_chunk(Point2::new(0, 0)).unwrap();
             }

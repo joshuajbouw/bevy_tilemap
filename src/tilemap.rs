@@ -666,6 +666,11 @@ impl TilemapBuilder {
         } else {
             0
         };
+        info!(
+            "TilemapBuilder::finish dimensions: {}",
+            self.chunk_dimensions
+        );
+        info!("TilemapBuilder::finish layers: {}", layer_count);
         let chunk_mesh =
             ChunkMesh::new(self.chunk_dimensions, layer_count as u32, self.layer_offset);
 
@@ -874,11 +879,7 @@ impl Tilemap {
     /// and was intentional, it is best to remove the chunk first. This is
     /// simply a fail safe without actually returning the chunk as it is meant
     /// to be kept internal.
-    pub fn insert_chunk<P: Into<Point2>>(
-        &mut self,
-        commands: &mut Commands,
-        point: P,
-    ) -> TilemapResult<()> {
+    pub fn insert_chunk<P: Into<Point2>>(&mut self, point: P) -> TilemapResult<()> {
         let point: Point2 = point.into();
         if let Some(dimensions) = &self.dimensions {
             dimensions.check_point(point)?;
@@ -888,7 +889,7 @@ impl Tilemap {
             .iter()
             .map(|x| x.and_then(|y| Some(y.kind)))
             .collect::<Vec<Option<LayerKind>>>();
-        let chunk = Chunk::new(commands, point, &layer_kinds, self.chunk_dimensions);
+        let chunk = Chunk::new(point, &layer_kinds, self.chunk_dimensions);
         match self.chunks.insert(point, chunk) {
             Some(_) => Err(ErrorKind::ChunkAlreadyExists(point).into()),
             None => Ok(()),
@@ -924,7 +925,6 @@ impl Tilemap {
     #[doc(hidden)]
     pub fn add_layer_with_kind(
         &mut self,
-        commands: &mut Commands,
         kind: LayerKind,
         sprite_order: usize,
     ) -> TilemapResult<()> {
@@ -937,7 +937,7 @@ impl Tilemap {
         }
 
         for chunk in self.chunks.values_mut() {
-            chunk.add_sprite_layer(commands, &kind, sprite_order, self.chunk_dimensions);
+            chunk.add_sprite_layer(&kind, sprite_order, self.chunk_dimensions);
         }
 
         Ok(())
@@ -1001,6 +1001,8 @@ impl Tilemap {
                 layers += 1;
             }
         }
+        info!("Tilemap::add_layer dimensions: {}", self.chunk_dimensions);
+        info!("Tilemap::add_layer layers: {}", layers);
         let chunk_mesh = ChunkMesh::new(self.chunk_dimensions, layers, self.layer_offset);
         self.chunk_mesh = chunk_mesh;
 
@@ -1346,6 +1348,7 @@ impl Tilemap {
 
             if let Some(layer) = self.layers.get(tile.sprite_order as usize) {
                 if layer.as_ref().is_none() {
+                    info!("ADDED LAYER!!!!");
                     self.add_layer(TilemapLayer::default(), tile.sprite_order as usize)?;
                 }
             } else {
@@ -1427,7 +1430,7 @@ impl Tilemap {
     /// ```
     ///
     /// [`insert_tile`]: Tilemap::insert_tile
-    pub fn insert_tiles<P, I>(&mut self, commands: &mut Commands, tiles: I) -> TilemapResult<()>
+    pub fn insert_tiles<P, I>(&mut self, tiles: I) -> TilemapResult<()>
     where
         P: Into<Point3> + Sync + Send + 'static,
         I: IntoIterator<Item = Tile<P>>,
@@ -1446,7 +1449,7 @@ impl Tilemap {
                         .iter()
                         .map(|x| x.and_then(|y| Some(y.kind)))
                         .collect::<Vec<Option<LayerKind>>>();
-                    Chunk::new(commands, chunk_point, &layer_kinds, chunk_dimensions)
+                    Chunk::new(chunk_point, &layer_kinds, chunk_dimensions)
                 })
             } else {
                 match self.chunks.get_mut(&chunk_point) {
@@ -1455,10 +1458,8 @@ impl Tilemap {
                 }
             };
 
-            for tile in tiles.iter() {
-                let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
-                chunk.set_tile(commands, index, *tile);
-            }
+            self.chunk_events
+                .send(TilemapChunkEvent::SpawnTiles { chunk_point, tiles });
 
             if chunk.mesh().is_some() {
                 self.chunk_events.send(TilemapChunkEvent::Modified {
@@ -1508,11 +1509,10 @@ impl Tilemap {
     /// Returns an error if the given coordinate or index is out of bounds.
     pub fn insert_tile<P: Into<Point3> + Sync + Send>(
         &mut self,
-        commands: &mut Commands,
         tile: Tile<P>,
     ) -> TilemapResult<()> {
         let tiles = vec![tile];
-        self.insert_tiles(commands, tiles)
+        self.insert_tiles(tiles)
     }
 
     /// Clears the tiles at the specified points from the tilemap.
@@ -1557,7 +1557,7 @@ impl Tilemap {
     ///
     /// An error can occure if the point is outside of the tilemap. This can
     /// only happen if the tilemap has dimensions.
-    pub fn clear_tiles<P, I>(&mut self, commands: &mut Commands, points: I) -> TilemapResult<()>
+    pub fn clear_tiles<P, I>(&mut self, points: I) -> TilemapResult<()>
     where
         P: Into<Point3>,
         I: IntoIterator<Item = (P, usize)>,
@@ -1581,10 +1581,9 @@ impl Tilemap {
                 Some(c) => c,
                 None => return Err(ErrorKind::MissingChunk.into()),
             };
-            for tile in tiles.iter() {
-                let index = self.chunk_dimensions.encode_point_unchecked(tile.point);
-                chunk.remove_tile(commands, index, tile.sprite_order, tile.point.z as usize);
-            }
+
+            self.chunk_events
+                .send(TilemapChunkEvent::DespawnTiles { chunk_point, tiles });
 
             self.chunk_events.send(TilemapChunkEvent::Modified {
                 point: chunk.point(),
@@ -1637,17 +1636,12 @@ impl Tilemap {
     ///
     /// An error can occure if the point is outside of the tilemap. This can
     /// only happen if the tilemap has dimensions.
-    pub fn clear_tile<P>(
-        &mut self,
-        commands: &mut Commands,
-        point: P,
-        sprite_order: usize,
-    ) -> TilemapResult<()>
+    pub fn clear_tile<P>(&mut self, point: P, sprite_order: usize) -> TilemapResult<()>
     where
         P: Into<Point3>,
     {
         let points = vec![(point, sprite_order)];
-        self.clear_tiles(commands, points)
+        self.clear_tiles(points)
     }
 
     /// Gets a raw tile from a given point and z order.
@@ -1949,6 +1943,10 @@ impl Tilemap {
     /// Gets a reference to a chunk.
     pub(crate) fn get_chunk(&self, point: &Point2) -> Option<&Chunk> {
         self.chunks.get(point)
+    }
+
+    pub(crate) fn get_chunk_mut(&mut self, point: &Point2) -> Option<&mut Chunk> {
+        self.chunks.get_mut(point)
     }
 
     /// The topology of the tilemap grid.

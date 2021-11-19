@@ -280,21 +280,20 @@ fn build_random_dungeon(
         });
 
         // Now we pass all the tiles to our map.
-        map.insert_tiles(&mut commands, tiles).unwrap();
+        map.insert_tiles(tiles).unwrap();
 
         game_state.map_loaded = true;
     }
 }
 
 fn move_sprite(
-    commands: &mut Commands,
     map: &mut Tilemap,
     previous_position: Position,
     position: Position,
     render: &Render,
 ) {
     // We need to first remove where we were prior.
-    map.clear_tile(commands, (previous_position.x, previous_position.y), 1)
+    map.clear_tile((previous_position.x, previous_position.y), 1)
         .unwrap();
     // We then need to update where we are going!
     let tile = Tile {
@@ -303,11 +302,10 @@ fn move_sprite(
         sprite_order: render.sprite_order,
         ..Default::default()
     };
-    map.insert_tile(commands, tile).unwrap();
+    map.insert_tile(tile).unwrap();
 }
 
 fn character_movement(
-    mut commands: Commands,
     mut game_state: ResMut<GameState>,
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
@@ -390,13 +388,7 @@ fn character_movement(
 
                     // Finally now we will move the sprite! ... Provided he had
                     // moved!
-                    move_sprite(
-                        &mut commands,
-                        &mut map,
-                        previous_position,
-                        *position,
-                        render,
-                    );
+                    move_sprite(&mut map, previous_position, *position, render);
                 }
             }
         }

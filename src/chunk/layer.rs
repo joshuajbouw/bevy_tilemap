@@ -6,7 +6,7 @@ pub(super) trait Layer: 'static {
     fn set_tile(&mut self, index: usize, tile: Entity);
 
     /// Removes a tile for a layer at an index.
-    fn remove_tile(&mut self, commands: &mut Commands, index: usize);
+    fn remove_tile(&mut self, index: usize) -> Option<Entity>;
 
     /// Gets a tile by an index.
     fn get_tile(&self, index: usize) -> Option<Entity>;
@@ -51,16 +51,14 @@ impl Layer for DenseLayer {
         }
     }
 
-    fn remove_tile(&mut self, commands: &mut Commands, index: usize) {
-        if let Some(maybe_tile) = self.tiles.get_mut(index) {
-            if let Some(entity) = maybe_tile {
-                commands.entity(*entity).despawn();
-                if self.tile_count != 0 {
-                    self.tile_count -= 1;
-                    *maybe_tile = None;
-                }
-            }
+    fn remove_tile(&mut self, index: usize) -> Option<Entity> {
+        let maybe_entity = self.tiles.remove(index);
+
+        if maybe_entity.is_some() && self.tile_count != 0 {
+            self.tile_count -= 1;
         }
+
+        maybe_entity
     }
 
     fn get_tile(&self, index: usize) -> Option<Entity> {
@@ -79,10 +77,8 @@ impl Layer for DenseLayer {
     }
 
     fn clear(&mut self, commands: &mut Commands) {
-        for tile in self.tiles.iter() {
-            if let Some(entity) = tile {
-                commands.entity(*entity).despawn();
-            }
+        for entity in self.tiles.iter().flatten() {
+            commands.entity(*entity).despawn();
         }
         self.tiles.clear();
     }
@@ -92,15 +88,14 @@ impl Layer for DenseLayer {
         tile_query: &Query<&Tile<Point3>>,
         _dimension: Dimension3,
     ) -> (Vec<f32>, Vec<[f32; 4]>) {
+        info!("tiles_to_attributes");
         let mut tiles: Vec<&Tile<Point3>> = Vec::with_capacity(self.tiles.len());
-        for tile in self.tiles.iter() {
-            if let Some(e) = tile {
-                let tile: &Tile<Point3> = tile_query.get(*e).expect("Can't fail");
-                tiles.push(tile);
-            }
+        for entity in self.tiles.iter().flatten() {
+            let tile: &Tile<Point3> = tile_query.get(*entity).expect("Can't fail");
+            tiles.push(tile);
         }
 
-        crate::chunk::raw_tile::dense_tiles_to_attributes(tiles)
+        crate::chunk::dense_tiles_to_attributes(tiles)
     }
 }
 
@@ -126,10 +121,8 @@ impl Layer for SparseLayer {
         self.tiles.insert(index, tile);
     }
 
-    fn remove_tile(&mut self, commands: &mut Commands, index: usize) {
-        if let Some(entity) = self.tiles.remove(&index) {
-            commands.entity(entity).despawn();
-        }
+    fn remove_tile(&mut self, index: usize) -> Option<Entity> {
+        self.tiles.remove(&index)
     }
 
     fn get_tile(&self, index: usize) -> Option<Entity> {
@@ -156,7 +149,8 @@ impl Layer for SparseLayer {
         tile_query: &Query<&Tile<Point3>>,
         dimension: Dimension3,
     ) -> (Vec<f32>, Vec<[f32; 4]>) {
-        crate::chunk::raw_tile::sparse_tiles_to_attributes(tile_query, dimension, &self.tiles)
+        info!("tiles_to_attributes");
+        crate::chunk::sparse_tiles_to_attributes(tile_query, dimension, &self.tiles)
     }
 }
 
