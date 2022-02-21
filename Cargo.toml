@@ -28,7 +28,7 @@ members = ["library/*"]
 bevy = { git = "https://github.com/bevyengine/bevy.git", branch = "main" }
 bevy_tilemap_types = { path = "library/types", version = "0.4" }
 bitflags = "1.3"
-hexasphere = "6.0"
+hexasphere = "7.0"
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
