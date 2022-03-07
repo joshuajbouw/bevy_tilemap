@@ -31,7 +31,7 @@ jobs:
     needs: lint
     steps:
       - name: checkout the source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -67,7 +67,7 @@ jobs:
     needs: lint
     steps:
       - name: checkout the source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -99,7 +99,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: checkout the source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
